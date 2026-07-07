@@ -19,22 +19,32 @@ import { regionaisSeed } from "./data/mock";
 import { competenciasNorteadoras, descritoresNorteadores, questoesNorteadoras } from "./data/norteadoresSeed";
 import { supabaseConfigured } from "./lib/supabase";
 import {
+  carregarCompetencias,
   carregarCompetenciasLocais,
+  carregarDescritores,
   carregarDescritoresLocais,
+  carregarQuestoes,
   carregarQuestoesLocais,
+  salvarCompetencia,
   salvarCompetenciaLocal,
+  salvarDescritor,
   salvarDescritorLocal,
+  salvarQuestao,
   salvarQuestaoLocal,
+  sincronizarBancoItensSupabase,
   substituirBancoItensLocal,
 } from "./services/itemBankRepository";
 import {
   carregarAvaliacoes,
+  carregarAvaliacoesLocais,
   carregarCodigosAvaliacaoBloqueados,
   carregarCodigosAvaliacaoBloqueadosOnline,
   carregarRespostasAvaliacao,
   carregarRespostasLocais,
   carregarEscolas,
+  carregarEscolasLocais,
   carregarProfessores,
+  carregarProfessoresLocais,
   bloquearCodigoAvaliacao,
   excluirAvaliacao as excluirAvaliacaoPersistida,
   salvarAvaliacao,
@@ -42,6 +52,7 @@ import {
   salvarEscola,
   salvarProfessor,
   salvarRespostaAvaliacao,
+  sincronizarRegionaisSupabase,
 } from "./services/registryRepository";
 import type {
   AlternativaKey,
@@ -429,19 +440,19 @@ export function App() {
   useEffect(() => {
     async function load() {
       try {
-        const [escolas, professores, avaliacoesOnline, respostasOnline] = await Promise.all([
+        const [escolas, professores, avaliacoesOnline, respostasOnline, competenciasBase, descritoresBase, questoesBase] = await Promise.all([
           carregarEscolas(),
           carregarProfessores(),
           carregarAvaliacoes(),
           carregarRespostasAvaliacao(),
+          carregarCompetencias(),
+          carregarDescritores(),
+          carregarQuestoes(),
         ]);
-        const competenciasLocais = carregarCompetenciasLocais();
-        const descritoresLocais = carregarDescritoresLocais();
-        const questoesLocais = carregarQuestoesLocais();
-        const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasLocais, descritoresLocais, questoesLocais);
+        const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
         const banco = precisaSanearBanco
-          ? montarBancoNorteadorAtualizado(competenciasLocais, descritoresLocais, questoesLocais)
-          : { competencias: competenciasLocais, descritores: descritoresLocais, questoes: questoesLocais };
+          ? montarBancoNorteadorAtualizado(competenciasBase, descritoresBase, questoesBase)
+          : { competencias: competenciasBase, descritores: descritoresBase, questoes: questoesBase };
 
         if (precisaSanearBanco) {
           substituirBancoItensLocal(banco);
@@ -788,13 +799,21 @@ export function App() {
           {view === "reports" && (
             <Reports
               schools={scopedSchools}
+              setSchools={setSchools}
               teachers={scopedTeachers}
+              setTeachers={setTeachers}
               assessments={scopedAssessments}
+              setAssessments={setAssessments}
               questoes={questoes}
+              setQuestoes={setQuestoes}
               respostas={respostas}
+              setRespostas={setRespostas}
               competencias={competencias}
+              setCompetencias={setCompetencias}
               descritores={descritores}
+              setDescritores={setDescritores}
               currentUser={currentUser}
+              setMessage={setMessage}
             />
           )}
         </section>
@@ -1748,20 +1767,20 @@ function ItemBank({
   const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
   const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
 
-  function saveCompetencia() {
+  async function saveCompetencia() {
     if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
       setMessage("Preencha código, curso técnico e descrição da competência.");
       return;
     }
 
     const normalized = { ...competenciaDraft, codigo: competenciaDraft.codigo.toUpperCase() };
-    const result = salvarCompetenciaLocal(normalized);
+    const result = await salvarCompetencia(normalized);
     setCompetencias([...competencias.filter((item) => item.codigo !== normalized.codigo), normalized]);
     setDescritorDraft({ ...descritorDraft, competencia_codigo: normalized.codigo });
-    setMessage(`Competência salva em modo ${result.modo}.`);
+    setMessage(result.erro ?? `Competência salva em modo ${result.modo}.`);
   }
 
-  function saveDescritor() {
+  async function saveDescritor() {
     if (!descritorDraft.codigo || !descritorDraft.competencia_codigo || !descritorDraft.descricao) {
       setMessage("Preencha código, competência vinculada e descrição do descritor.");
       return;
@@ -1772,17 +1791,17 @@ function ItemBank({
     }
 
     const normalized = { ...descritorDraft, codigo: descritorDraft.codigo.toUpperCase() };
-    const result = salvarDescritorLocal(normalized);
+    const result = await salvarDescritor(normalized);
     setDescritores([...descritores.filter((item) => item.codigo !== normalized.codigo), normalized]);
     setQuestaoDraft({
       ...questaoDraft,
       descritor_codigo: normalized.codigo,
       componente_curricular: normalized.componente_curricular,
     });
-    setMessage(`Descritor salvo em modo ${result.modo}.`);
+    setMessage(result.erro ?? `Descritor salvo em modo ${result.modo}.`);
   }
 
-  function saveQuestao() {
+  async function saveQuestao() {
     const alternativas = [
       questaoDraft.alternativa_a,
       questaoDraft.alternativa_b,
@@ -1819,9 +1838,9 @@ function ItemBank({
       return;
     }
 
-    const result = salvarQuestaoLocal(normalized);
+    const result = await salvarQuestao(normalized);
     setQuestoes([...questoes.filter((item) => item.codigo !== normalized.codigo), normalized]);
-    setMessage(`Questão salva em modo ${result.modo}. Ela já pode compor avaliações futuras.`);
+    setMessage(result.erro ?? `Questão salva em modo ${result.modo}. Ela já pode compor avaliações futuras.`);
   }
 
   function importNorteadores() {
@@ -1834,7 +1853,7 @@ function ItemBank({
     setMessage("Banco v0.3 importado: descritores-base de Informática com meta de 20 questões e itens novos em revisão docente.");
   }
 
-  function alterarStatusQuestao(codigo: string, status: QuestaoDraft["status"]) {
+  async function alterarStatusQuestao(codigo: string, status: QuestaoDraft["status"]) {
     const questao = questoes.find((item) => item.codigo === codigo);
     if (!questao) {
       setMessage("Questão não encontrada no banco de itens.");
@@ -1842,7 +1861,7 @@ function ItemBank({
     }
 
     const atualizada = { ...questao, status };
-    salvarQuestaoLocal(atualizada);
+    await salvarQuestao(atualizada);
     setQuestoes(questoes.map((item) => (item.codigo === codigo ? atualizada : item)));
     setMessage(`${codigo} alterada para ${questaoStatusLabel(status)}. ${questaoStatusHint(status)}`);
   }
@@ -2902,23 +2921,40 @@ function AssessmentsV2({
 
 function Reports({
   schools,
+  setSchools,
   teachers,
+  setTeachers,
   assessments,
+  setAssessments,
   questoes,
+  setQuestoes,
   respostas,
+  setRespostas,
   competencias,
+  setCompetencias,
   descritores,
+  setDescritores,
   currentUser,
+  setMessage,
 }: {
   schools: EscolaDraft[];
+  setSchools: (schools: EscolaDraft[]) => void;
   teachers: ProfessorDraft[];
+  setTeachers: (teachers: ProfessorDraft[]) => void;
   assessments: AvaliacaoDraft[];
+  setAssessments: (assessments: AvaliacaoDraft[]) => void;
   questoes: QuestaoDraft[];
+  setQuestoes: (questoes: QuestaoDraft[]) => void;
   respostas: RespostaAvaliacaoDraft[];
+  setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
   competencias: CompetenciaDraft[];
+  setCompetencias: (competencias: CompetenciaDraft[]) => void;
   descritores: DescritorDraft[];
+  setDescritores: (descritores: DescritorDraft[]) => void;
   currentUser: AuthUser;
+  setMessage: (message: string) => void;
 }) {
+  const [syncing, setSyncing] = useState(false);
   const assessmentCodes = new Set(assessments.map((assessment) => assessment.codigo_acesso));
   const respostasEscopo = respostas.filter((resposta) => assessmentCodes.has(resposta.avaliacao_codigo));
   const mediaGeral = respostasEscopo.length
@@ -3034,6 +3070,74 @@ function Reports({
     URL.revokeObjectURL(url);
   }
 
+  async function subirBaseLocalParaSupabase() {
+    if (!supabaseConfigured) {
+      setMessage("Configure o Supabase antes de subir a base local.");
+      return;
+    }
+    if (currentUser.role !== "administrador") {
+      setMessage("Somente o administrador master pode subir a base local completa para o Supabase.");
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const competenciasLocais = carregarCompetenciasLocais();
+      const descritoresLocais = carregarDescritoresLocais();
+      const questoesLocais = carregarQuestoesLocais();
+      const banco = montarBancoNorteadorAtualizado(competenciasLocais, descritoresLocais, questoesLocais);
+      const escolasLocais = carregarEscolasLocais();
+      const professoresLocais = carregarProfessoresLocais();
+      const avaliacoesLocais = carregarAvaliacoesLocais();
+      const respostasLocais = carregarRespostasLocais();
+      const codigosBloqueados = carregarCodigosAvaliacaoBloqueados();
+
+      await sincronizarRegionaisSupabase(regionaisSeed);
+
+      for (const escola of escolasLocais) {
+        const result = await salvarEscola(escola);
+        if (result.erro) throw new Error(`Escola ${escola.codigo_inep}: ${result.erro}`);
+      }
+
+      for (const professor of professoresLocais) {
+        const result = await salvarProfessor(professor);
+        if (result.erro) throw new Error(`Professor ${professor.matricula}: ${result.erro}`);
+      }
+
+      const syncBanco = await sincronizarBancoItensSupabase(banco);
+
+      for (const avaliacao of avaliacoesLocais) {
+        const result = await salvarAvaliacao(avaliacao);
+        if (result.erro) throw new Error(`Avaliação ${avaliacao.codigo_acesso}: ${result.erro}`);
+      }
+
+      for (const codigo of codigosBloqueados) {
+        const result = await bloquearCodigoAvaliacao(codigo, { motivo: "migracao_local", avaliacao_codigo: codigo });
+        if ("erro" in result && result.erro) throw new Error(`Código ${codigo}: ${result.erro}`);
+      }
+
+      for (const resposta of respostasLocais) {
+        const result = await salvarRespostaAvaliacao(resposta);
+        if (result.erro) throw new Error(`Resposta ${resposta.avaliacao_codigo}/${resposta.estudante_nome}: ${result.erro}`);
+      }
+
+      setSchools(escolasLocais);
+      setTeachers(professoresLocais);
+      setCompetencias(banco.competencias);
+      setDescritores(banco.descritores);
+      setQuestoes(banco.questoes);
+      setAssessments(avaliacoesLocais);
+      setRespostas(respostasLocais);
+      setMessage(
+        `Base local enviada ao Supabase: ${escolasLocais.length} escolas, ${professoresLocais.length} professores, ${syncBanco.competencias} competências, ${syncBanco.descritores} descritores, ${syncBanco.questoes} questões, ${avaliacoesLocais.length} avaliações e ${respostasLocais.length} respostas.`,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao subir a base local para o Supabase.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <section className="panel">
       <h2>Relatórios e Learning Analytics</h2>
@@ -3050,6 +3154,11 @@ function Reports({
         <button className="secondary small inline-action" type="button" onClick={exportarBackupSemanal}>
           Baixar backup semanal JSON
         </button>
+        {currentUser.role === "administrador" && (
+          <button className="secondary small inline-action" type="button" onClick={subirBaseLocalParaSupabase} disabled={syncing}>
+            {syncing ? "Subindo..." : "Subir base local para Supabase"}
+          </button>
+        )}
       </div>
       <div className="kpis">
         <article className="kpi"><span>Escolas cadastradas</span><strong>{schools.length}</strong></article>

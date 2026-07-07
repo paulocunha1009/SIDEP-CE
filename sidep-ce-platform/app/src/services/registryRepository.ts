@@ -1,5 +1,5 @@
 import { supabase, supabaseConfigured } from "../lib/supabase";
-import type { AvaliacaoDraft, EscolaDraft, ProfessorDraft, RespostaAvaliacaoDraft, ResultadoAcao } from "../types";
+import type { AvaliacaoDraft, EscolaDraft, ProfessorDraft, Regional, RespostaAvaliacaoDraft, ResultadoAcao } from "../types";
 
 const STORAGE_KEYS = {
   escolas: "sidep-ce:escolas",
@@ -81,6 +81,28 @@ export async function carregarEscolas(): Promise<EscolaDraft[]> {
   }));
 }
 
+export function carregarEscolasLocais() {
+  return readLocal<EscolaDraft>(STORAGE_KEYS.escolas);
+}
+
+export async function sincronizarRegionaisSupabase(regionais: Regional[]) {
+  if (!supabaseConfigured || !supabase) return { modo: "local" as const, total: regionais.length };
+
+  const { error } = await supabase.from("regional").upsert(
+    regionais.map((regional) => ({
+      codigo: regional.codigo,
+      nome: regional.nome,
+      tipo: regional.tipo,
+      ativa: true,
+      atualizado_em: new Date().toISOString(),
+    })),
+    { onConflict: "codigo" },
+  );
+
+  if (error) throw error;
+  return { modo: "supabase" as const, total: regionais.length };
+}
+
 export async function salvarEscola(escola: EscolaDraft): Promise<ResultadoAcao<EscolaDraft>> {
   if (!supabaseConfigured || !supabase) {
     const escolas = readLocal<EscolaDraft>(STORAGE_KEYS.escolas).filter(
@@ -155,6 +177,10 @@ export async function carregarProfessores(): Promise<ProfessorDraft[]> {
     componentes_responsaveis: "",
     perfil_acesso: row.perfil_acesso,
   }));
+}
+
+export function carregarProfessoresLocais() {
+  return readLocal<ProfessorDraft>(STORAGE_KEYS.professores);
 }
 
 export async function salvarProfessor(professor: ProfessorDraft): Promise<ResultadoAcao<ProfessorDraft>> {
