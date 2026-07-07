@@ -1,8 +1,10 @@
--- SIDEP-CE - Modelo inicial de banco de dados
+﻿-- SIDEP-CE - Modelo inicial de banco de dados
 -- Banco alvo: PostgreSQL
--- Fase: fundação institucional + avaliação diagnóstica pré-TRI
+-- Fase: fundacao institucional + avaliacao diagnostica pre-TRI
 
-create table regional (
+create extension if not exists pgcrypto;
+
+create table if not exists regional (
   id uuid primary key default gen_random_uuid(),
   codigo varchar(20) not null unique,
   nome varchar(120) not null,
@@ -16,7 +18,7 @@ create table regional (
   atualizado_em timestamptz not null default now()
 );
 
-create table escola (
+create table if not exists escola (
   id uuid primary key default gen_random_uuid(),
   codigo_inep varchar(20) not null unique,
   nome_oficial varchar(220) not null,
@@ -35,7 +37,7 @@ create table escola (
   atualizado_em timestamptz not null default now()
 );
 
-create table escola_email (
+create table if not exists escola_email (
   id uuid primary key default gen_random_uuid(),
   escola_id uuid not null references escola(id) on delete cascade,
   email varchar(180) not null,
@@ -44,13 +46,13 @@ create table escola_email (
   unique (escola_id, email)
 );
 
-create table eixo_tecnologico (
+create table if not exists eixo_tecnologico (
   id uuid primary key default gen_random_uuid(),
   nome varchar(160) not null unique,
   ativo boolean not null default true
 );
 
-create table curso_tecnico (
+create table if not exists curso_tecnico (
   id uuid primary key default gen_random_uuid(),
   nome varchar(180) not null,
   eixo_tecnologico_id uuid not null references eixo_tecnologico(id),
@@ -60,7 +62,7 @@ create table curso_tecnico (
   unique (nome, eixo_tecnologico_id)
 );
 
-create table escola_curso (
+create table if not exists escola_curso (
   id uuid primary key default gen_random_uuid(),
   escola_id uuid not null references escola(id),
   curso_tecnico_id uuid not null references curso_tecnico(id),
@@ -70,7 +72,7 @@ create table escola_curso (
   unique (escola_id, curso_tecnico_id, matriz_vigente)
 );
 
-create table professor (
+create table if not exists professor (
   id uuid primary key default gen_random_uuid(),
   matricula varchar(40) not null unique,
   nome_completo varchar(180) not null,
@@ -88,7 +90,7 @@ create table professor (
   atualizado_em timestamptz not null default now()
 );
 
-create table componente_curricular (
+create table if not exists componente_curricular (
   id uuid primary key default gen_random_uuid(),
   curso_tecnico_id uuid not null references curso_tecnico(id),
   nome varchar(180) not null,
@@ -99,7 +101,7 @@ create table componente_curricular (
   unique (curso_tecnico_id, nome, serie, semestre)
 );
 
-create table turma (
+create table if not exists turma (
   id uuid primary key default gen_random_uuid(),
   escola_id uuid not null references escola(id),
   curso_tecnico_id uuid not null references curso_tecnico(id),
@@ -112,7 +114,7 @@ create table turma (
   unique (escola_id, codigo, ano_letivo)
 );
 
-create table professor_vinculo (
+create table if not exists professor_vinculo (
   id uuid primary key default gen_random_uuid(),
   professor_id uuid not null references professor(id),
   escola_id uuid not null references escola(id),
@@ -125,7 +127,7 @@ create table professor_vinculo (
   ativo boolean not null default true
 );
 
-create table competencia (
+create table if not exists competencia (
   id uuid primary key default gen_random_uuid(),
   curso_tecnico_id uuid not null references curso_tecnico(id),
   codigo varchar(40),
@@ -134,7 +136,7 @@ create table competencia (
   ativo boolean not null default true
 );
 
-create table descritor (
+create table if not exists descritor (
   id uuid primary key default gen_random_uuid(),
   competencia_id uuid not null references competencia(id),
   componente_curricular_id uuid references componente_curricular(id),
@@ -145,7 +147,7 @@ create table descritor (
   unique (competencia_id, codigo)
 );
 
-create table questao (
+create table if not exists questao (
   id uuid primary key default gen_random_uuid(),
   descritor_id uuid not null references descritor(id),
   autor_professor_id uuid references professor(id),
@@ -162,7 +164,7 @@ create table questao (
   atualizado_em timestamptz not null default now()
 );
 
-create table avaliacao (
+create table if not exists avaliacao (
   id uuid primary key default gen_random_uuid(),
   professor_id uuid not null references professor(id),
   turma_id uuid not null references turma(id),
@@ -176,7 +178,7 @@ create table avaliacao (
   criada_em timestamptz not null default now()
 );
 
-create table avaliacao_questao (
+create table if not exists avaliacao_questao (
   avaliacao_id uuid not null references avaliacao(id) on delete cascade,
   questao_id uuid not null references questao(id),
   ordem integer not null,
@@ -184,7 +186,7 @@ create table avaliacao_questao (
   primary key (avaliacao_id, questao_id)
 );
 
-create table estudante_aplicacao (
+create table if not exists estudante_aplicacao (
   id uuid primary key default gen_random_uuid(),
   avaliacao_id uuid not null references avaliacao(id),
   nome_completo varchar(180) not null,
@@ -196,7 +198,7 @@ create table estudante_aplicacao (
     check (status in ('em_andamento', 'finalizada', 'cancelada'))
 );
 
-create table resposta (
+create table if not exists resposta (
   id uuid primary key default gen_random_uuid(),
   estudante_aplicacao_id uuid not null references estudante_aplicacao(id) on delete cascade,
   questao_id uuid not null references questao(id),
@@ -208,9 +210,9 @@ create table resposta (
 );
 
 -- Registro consolidado usado pelo MVP React/Supabase.
--- Mantém uma tentativa por estudante normalizado e código de avaliação,
--- preserva a ordem sorteada das questões e os agregados pedagógicos.
-create table resposta_avaliacao (
+-- Mantem uma tentativa por estudante normalizado e codigo de avaliacao,
+-- preserva a ordem sorteada das questoes e os agregados pedagogicos.
+create table if not exists resposta_avaliacao (
   id uuid primary key default gen_random_uuid(),
   avaliacao_codigo varchar(40) not null,
   avaliacao_titulo varchar(220) not null,
@@ -233,14 +235,14 @@ create table resposta_avaliacao (
   unique (avaliacao_codigo, estudante_chave)
 );
 
-create index resposta_avaliacao_codigo_idx on resposta_avaliacao (avaliacao_codigo);
-create index resposta_avaliacao_escola_idx on resposta_avaliacao (escola_inep);
-create index resposta_avaliacao_professor_idx on resposta_avaliacao (professor_matricula);
+create index if not exists resposta_avaliacao_codigo_idx on resposta_avaliacao (avaliacao_codigo);
+create index if not exists resposta_avaliacao_escola_idx on resposta_avaliacao (escola_inep);
+create index if not exists resposta_avaliacao_professor_idx on resposta_avaliacao (professor_matricula);
 
 -- Tabelas leves para o MVP online.
 -- Elas preservam o formato atual do React sem quebrar o modo local.
 -- A resposta continua consolidada em JSON por aluno/prova, evitando uma linha por alternativa.
-create table avaliacao_mvp (
+create table if not exists avaliacao_mvp (
   codigo_acesso varchar(40) primary key,
   titulo varchar(220) not null,
   curso_tecnico varchar(180) not null,
@@ -262,7 +264,7 @@ create table avaliacao_mvp (
   atualizada_em timestamptz not null default now()
 );
 
-create table avaliacao_codigo_bloqueado (
+create table if not exists avaliacao_codigo_bloqueado (
   codigo varchar(40) primary key,
   motivo varchar(80) not null default 'codigo_usado',
   avaliacao_codigo varchar(40),
@@ -272,11 +274,11 @@ create table avaliacao_codigo_bloqueado (
   metadados jsonb not null default '{}'::jsonb
 );
 
-create index avaliacao_mvp_escola_idx on avaliacao_mvp (escola_inep);
-create index avaliacao_mvp_professor_idx on avaliacao_mvp (professor_matricula);
-create index avaliacao_mvp_status_idx on avaliacao_mvp (status);
+create index if not exists avaliacao_mvp_escola_idx on avaliacao_mvp (escola_inep);
+create index if not exists avaliacao_mvp_professor_idx on avaliacao_mvp (professor_matricula);
+create index if not exists avaliacao_mvp_status_idx on avaliacao_mvp (status);
 
-create table resultado_individual (
+create table if not exists resultado_individual (
   id uuid primary key default gen_random_uuid(),
   estudante_aplicacao_id uuid not null references estudante_aplicacao(id),
   percentual_bruto numeric(5,2) not null,
@@ -287,7 +289,7 @@ create table resultado_individual (
   gerado_em timestamptz not null default now()
 );
 
-create table intervencao_pedagogica (
+create table if not exists intervencao_pedagogica (
   id uuid primary key default gen_random_uuid(),
   avaliacao_id uuid not null references avaliacao(id),
   turma_id uuid not null references turma(id),
@@ -300,7 +302,7 @@ create table intervencao_pedagogica (
   criada_em timestamptz not null default now()
 );
 
-create table log_auditoria (
+create table if not exists log_auditoria (
   id uuid primary key default gen_random_uuid(),
   usuario_tipo varchar(40),
   usuario_id uuid,
@@ -310,3 +312,4 @@ create table log_auditoria (
   metadados jsonb,
   criado_em timestamptz not null default now()
 );
+
