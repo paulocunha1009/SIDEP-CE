@@ -1,0 +1,33 @@
+# Dependencias e builds
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Variaveis locais e chaves
+.env
+.env.local
+.env.*.local
+
+# Logs e caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache/
+
+# Temporarios do sistema/editor
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+~$*
+
+# Artefatos de trabalho gerados para QA/local
+work/render_*/
+work/**/__pycache__/
+work/**/tmp/qa/
+
+# Arquivo externo nao relacionado ao SIDEP-CE
+corrigir_pdfplumber_erp.bat

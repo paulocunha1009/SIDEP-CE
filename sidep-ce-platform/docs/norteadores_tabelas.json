@@ -1,0 +1,477 @@
+[
+  {
+    "arquivo": "norteadores\\Artigo_SIDEP-CE.docx",
+    "tabelas": [
+      [
+        [
+          "Norma",
+          "Contribuição para o SIDEP-CE"
+        ],
+        [
+          "Lei nº 14.945/2024",
+          "Base legal da carga horária das matrizes curriculares da EPT integrada."
+        ],
+        [
+          "Decreto nº 12.603/2025",
+          "Institui a PNEPT e o SINAEPT; art. 19 define as dimensões avaliativas nacionais que o SIDEP-CE operacionaliza em nível estadual."
+        ],
+        [
+          "Lei nº 15.388/2026 (PNE 2026-2036)",
+          "Estabelece meta de expansão e melhoria da qualidade da EPT técnica de nível médio."
+        ],
+        [
+          "Resolução CNE/CEB nº 4/2025",
+          "Parâmetros dos Itinerários Formativos de Aprofundamento, incluindo o eixo Ensino Técnico e Profissional."
+        ],
+        [
+          "CNCT — Catálogo Nacional de Cursos Técnicos",
+          "Base de organização por eixo tecnológico (art. 12 do Decreto nº 12.603/2025)."
+        ],
+        [
+          "Parecer CNE/CP nº 20/2024",
+          "Orienta a Educação Híbrida na Educação Básica, distinguindo-a da EaD (Resolução CNE/CEB nº 1/2016)."
+        ]
+      ]
+    ]
+  },
+  {
+    "arquivo": "norteadores\\Artigo_SIDEP-CE_revisado.docx",
+    "tabelas": [
+      [
+        [
+          "Norma",
+          "Contribuição para o SIDEP-CE"
+        ],
+        [
+          "Lei nº 14.945/2024",
+          "Base legal da carga horária das matrizes curriculares da EPT integrada."
+        ],
+        [
+          "Decreto nº 12.603/2025",
+          "Institui a PNEPT e o SINAEPT; art. 19 define as dimensões avaliativas nacionais que o SIDEP-CE operacionaliza em nível estadual."
+        ],
+        [
+          "Lei nº 15.388/2026 (PNE 2026-2036)",
+          "Estabelece meta de expansão e melhoria da qualidade da EPT técnica de nível médio."
+        ],
+        [
+          "Resolução CNE/CEB nº 4/2025",
+          "Parâmetros dos Itinerários Formativos de Aprofundamento, incluindo o eixo Ensino Técnico e Profissional."
+        ],
+        [
+          "CNCT — Catálogo Nacional de Cursos Técnicos",
+          "Base de organização por eixo tecnológico (art. 12 do Decreto nº 12.603/2025)."
+        ],
+        [
+          "Parecer CNE/CP nº 20/2024",
+          "Orienta a Educação Híbrida na Educação Básica, distinguindo-a da EaD (Resolução CNE/CEB nº 1/2016)."
+        ]
+      ]
+    ]
+  },
+  {
+    "arquivo": "norteadores\\Resumo_SeminarioDoCEntes2026_SIDEP-CE.docx",
+    "tabelas": []
+  },
+  {
+    "arquivo": "norteadores\\TCC_SIDEP-CE.docx",
+    "tabelas": [
+      [
+        [
+          "Referencial",
+          "Contribuição para o SIDEP-CE"
+        ],
+        [
+          "DCRC",
+          "Orienta a formação integral, o currículo do Ensino Médio no Ceará e a articulação entre competências, território e projeto de vida."
+        ],
+        [
+          "Matrizes 2025/2026 da SEDUC-CE",
+          "Definem cursos ofertados, carga horária, componentes curriculares, séries e organização da formação profissional."
+        ],
+        [
+          "CNCT",
+          "Define eixos tecnológicos, perfis profissionais de conclusão, carga horária mínima e identidade nacional dos cursos técnicos."
+        ],
+        [
+          "Sinaept/Inep",
+          "Oferece referência para dimensões de avaliação da EPT: mundo do trabalho, condições de oferta, permanência, desenvolvimento e impacto social."
+        ],
+        [
+          "TRI",
+          "Permite construir escala de proficiência e interpretar resultados para além do percentual bruto de acertos."
+        ],
+        [
+          "Educação híbrida",
+          "Exige diferenciar evidências presenciais, remotas, laboratoriais, simuladas, supervisionadas e territoriais."
+        ]
+      ],
+      [
+        [
+          "Dimensão",
+          "O que avalia",
+          "Exemplos de evidência"
+        ],
+        [
+          "Formação geral aplicada",
+          "Leitura técnica, matemática aplicada, interpretação de normas, gráficos e problemas.",
+          "Itens objetivos, estudos de caso, problemas contextualizados."
+        ],
+        [
+          "Competências técnicas específicas",
+          "Conhecimentos e habilidades próprias do curso e do eixo tecnológico.",
+          "Itens técnicos, simulações, tarefas de laboratório."
+        ],
+        [
+          "Prática profissional",
+          "Execução de procedimentos, uso de equipamentos, segurança e qualidade.",
+          "Rubricas, checklists, protocolos práticos."
+        ],
+        [
+          "Mundo do trabalho",
+          "Ética, comunicação, organização produtiva, empreendedorismo e trabalho em equipe.",
+          "Projetos, relatórios, apresentação técnica."
+        ],
+        [
+          "Condições de oferta",
+          "Infraestrutura, laboratório, conectividade, insumos e suporte pedagógico.",
+          "Instrumento institucional, questionários, observação."
+        ],
+        [
+          "Permanência e progressão",
+          "Evolução por semestre, frequência, risco de evasão e recuperação.",
+          "Dashboard, histórico escolar, acompanhamento docente."
+        ]
+      ],
+      [
+        [
+          "Nível",
+          "Descrição sintética",
+          "Interpretação pedagógica"
+        ],
+        [
+          "Nível 1 - Inicial",
+          "Reconhece conceitos básicos, mas depende de orientação constante.",
+          "Requer recomposição de pré-requisitos e acompanhamento próximo."
+        ],
+        [
+          "Nível 2 - Básico operacional",
+          "Executa procedimentos simples em situações conhecidas.",
+          "Precisa ampliar repertório e praticar variações de tarefa."
+        ],
+        [
+          "Nível 3 - Intermediário",
+          "Resolve problemas técnicos previsíveis e justifica procedimentos.",
+          "Pode avançar para situações integradoras e projetos."
+        ],
+        [
+          "Nível 4 - Autônomo",
+          "Seleciona estratégias, executa com segurança e adapta procedimentos.",
+          "Está próximo do perfil profissional esperado."
+        ],
+        [
+          "Nível 5 - Integrador",
+          "Integra conhecimentos, propõe soluções e comunica decisões técnicas.",
+          "Demonstra prontidão para desafios complexos, estágio e inovação."
+        ]
+      ],
+      [
+        [
+          "Instrumento",
+          "Finalidade"
+        ],
+        [
+          "Matriz avaliativa",
+          "Relacionar componentes curriculares, competências, descritores e tipos de evidência."
+        ],
+        [
+          "Teste diagnóstico",
+          "Medir conhecimentos de entrada e pré-requisitos."
+        ],
+        [
+          "Teste de percurso",
+          "Acompanhar desenvolvimento semestral de competências."
+        ],
+        [
+          "Situação-problema",
+          "Avaliar aplicação técnica em contexto próximo do mundo do trabalho."
+        ],
+        [
+          "Rubrica prática",
+          "Registrar desempenho em laboratório, campo, estágio ou projeto."
+        ],
+        [
+          "Questionário docente",
+          "Coletar percepção sobre validade, clareza e utilidade dos resultados."
+        ],
+        [
+          "Dashboard diagnóstico",
+          "Organizar devolutivas por estudante, turma, curso, escola e eixo."
+        ]
+      ],
+      [
+        [
+          "Risco",
+          "Efeito possível",
+          "Mitigação"
+        ],
+        [
+          "Transformar o método em exame classificatório",
+          "Reduzir a função formativa e gerar pressão indevida.",
+          "Definir finalidade diagnóstica, devolutiva pedagógica e plano de intervenção obrigatório."
+        ],
+        [
+          "Itens desalinhados ao currículo",
+          "Medir conteúdos que não representam o curso.",
+          "Validação por professores especialistas e revisão a partir das matrizes vigentes."
+        ],
+        [
+          "Baixa adesão docente",
+          "Uso superficial dos relatórios.",
+          "Formação continuada, coautoria dos instrumentos e relatórios claros."
+        ],
+        [
+          "Pouco volume de dados para TRI",
+          "Impossibilidade de calibrar escala robusta no início.",
+          "Iniciar com análise clássica, ampliar aplicações e criar banco progressivo."
+        ],
+        [
+          "Uso inadequado de IA",
+          "Atividades genéricas, vieses ou exposição de dados.",
+          "Revisão humana, anonimização e protocolo de uso responsável."
+        ]
+      ],
+      [
+        [
+          "Componente do produto",
+          "Descrição"
+        ],
+        [
+          "Caderno metodológico",
+          "Explica fundamentos, dimensões, etapas de aplicação, papéis da equipe e critérios de interpretação."
+        ],
+        [
+          "Matrizes avaliativas piloto",
+          "Relacionam competências, descritores, componentes curriculares e evidências por curso."
+        ],
+        [
+          "Banco inicial de itens",
+          "Reúne questões objetivas e situações-problema classificadas por descritor e nível de dificuldade esperado."
+        ],
+        [
+          "Rubricas práticas",
+          "Avaliam execução técnica, segurança, comunicação, autonomia e resolução de problemas."
+        ],
+        [
+          "Protocolo de aplicação",
+          "Define momentos de aplicação, devolutiva, recomposição e reavaliação."
+        ],
+        [
+          "Modelo de dashboard",
+          "Apresenta indicadores por estudante, turma, curso, escola, eixo tecnológico e momento avaliativo."
+        ]
+      ],
+      [
+        [
+          "Período",
+          "Atividade principal",
+          "Produto parcial"
+        ],
+        [
+          "Mês 1",
+          "Revisão bibliográfica e análise documental",
+          "Quadro teórico e normativo"
+        ],
+        [
+          "Mês 2",
+          "Seleção dos cursos-piloto e desenho da matriz avaliativa",
+          "Matriz avaliativa preliminar"
+        ],
+        [
+          "Mês 3",
+          "Elaboração de itens, situações-problema e rubricas",
+          "Banco inicial de instrumentos"
+        ],
+        [
+          "Mês 4",
+          "Validação por especialistas e ajustes",
+          "Instrumentos revisados"
+        ],
+        [
+          "Mês 5",
+          "Aplicação diagnóstica de entrada",
+          "Relatório inicial"
+        ],
+        [
+          "Meses 6 e 7",
+          "Intervenção pedagógica e trilhas de recomposição",
+          "Planos por descritor"
+        ],
+        [
+          "Mês 8",
+          "Avaliação de percurso",
+          "Relatório comparativo"
+        ],
+        [
+          "Meses 9 e 10",
+          "Ajuste metodológico e expansão controlada",
+          "Versão 2 do método"
+        ],
+        [
+          "Mês 11",
+          "Avaliação de saída",
+          "Relatório final de proficiência"
+        ],
+        [
+          "Mês 12",
+          "Redação final e consolidação do produto",
+          "TCC e caderno metodológico"
+        ]
+      ],
+      [
+        [
+          "Indicador de sucesso",
+          "Como será observado"
+        ],
+        [
+          "Clareza dos descritores",
+          "Percentual de professores que consideram os descritores compreensíveis e alinhados ao curso."
+        ],
+        [
+          "Utilidade pedagógica",
+          "Uso dos relatórios para replanejamento, recomposição e agrupamento de estudantes."
+        ],
+        [
+          "Evolução dos estudantes",
+          "Comparação entre avaliação de entrada, percurso e saída por descritor."
+        ],
+        [
+          "Qualidade dos itens",
+          "Análise de dificuldade, discriminação e revisão por especialistas."
+        ],
+        [
+          "Escalabilidade",
+          "Capacidade de adaptar o método para outros cursos e eixos tecnológicos."
+        ],
+        [
+          "Equidade",
+          "Identificação de lacunas sem exposição indevida ou rotulação dos estudantes."
+        ]
+      ],
+      [
+        [
+          "Componente",
+          "Descritor avaliável",
+          "Tipo de evidência",
+          "Momento"
+        ],
+        [
+          "Informática Básica",
+          "Identificar componentes de hardware, periféricos, sistemas operacionais e práticas seguras de uso.",
+          "Teste objetivo e tarefa prática",
+          "Entrada"
+        ],
+        [
+          "Lógica de Programação",
+          "Interpretar problemas, decompor etapas e representar algoritmos em pseudocódigo ou fluxograma.",
+          "Situação-problema",
+          "Percurso"
+        ],
+        [
+          "Arquitetura e Manutenção",
+          "Diagnosticar falhas simples, propor procedimento e justificar cuidados de segurança.",
+          "Rubrica prática",
+          "Percurso"
+        ],
+        [
+          "HTML/CSS",
+          "Construir página web simples com estrutura semântica e estilização coerente.",
+          "Produto prático",
+          "Percurso"
+        ],
+        [
+          "Banco de Dados",
+          "Modelar entidades, atributos e relações para um problema contextualizado.",
+          "Estudo de caso",
+          "Percurso"
+        ],
+        [
+          "Programação Web",
+          "Integrar lógica, interface e persistência em solução funcional simples.",
+          "Projeto integrador",
+          "Saída"
+        ],
+        [
+          "Redes de Computadores",
+          "Interpretar topologia básica e propor configuração ou diagnóstico inicial.",
+          "Situação-problema",
+          "Saída"
+        ]
+      ],
+      [
+        [
+          "Indicador",
+          "Uso pedagógico"
+        ],
+        [
+          "Proficiência estimada",
+          "Interpretar posição do estudante na escala técnica."
+        ],
+        [
+          "Descritores críticos",
+          "Planejar recomposição específica."
+        ],
+        [
+          "Evolução temporal",
+          "Comparar entrada, percurso e saída."
+        ],
+        [
+          "Mapa da turma",
+          "Formar grupos de intervenção."
+        ],
+        [
+          "Condições de oferta",
+          "Relacionar desempenho a laboratório, insumos e carga prática."
+        ],
+        [
+          "Recomendação de IA",
+          "Gerar atividades e trilhas, sempre revisadas pelo professor."
+        ]
+      ],
+      [
+        [
+          "Campo",
+          "Exemplo"
+        ],
+        [
+          "Curso",
+          "Técnico em Informática"
+        ],
+        [
+          "Componente",
+          "Lógica de Programação"
+        ],
+        [
+          "Descritor",
+          "Resolver problema simples por decomposição de etapas e representação algorítmica."
+        ],
+        [
+          "Nível esperado",
+          "Nível 2 - Básico operacional"
+        ],
+        [
+          "Situação-problema",
+          "Uma escola deseja calcular a média final de um estudante a partir de quatro notas e informar se ele foi aprovado, em recuperação ou reprovado."
+        ],
+        [
+          "Evidência",
+          "Escolha da sequência lógica correta, uso de condição e interpretação do resultado."
+        ],
+        [
+          "Parâmetro inicial esperado",
+          "Dificuldade média; item candidato a calibração após aplicação piloto."
+        ]
+      ]
+    ]
+  }
+]

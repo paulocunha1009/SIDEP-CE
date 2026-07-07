@@ -1,0 +1,214 @@
+{"kind":"deck","id":"pr/ctwgbj","name":"Deck"}
+{"kind":"layout","layoutId":"7bcc0b09-ee10-41ff-a93b-af9a3e507453","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"9ea2af38-0134-46da-b500-7395b8995803","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/a7tbkh","slide":1,"title":"SATEC-CE/TRI","textShapes":9}
+{"kind":"shape","id":"sh/9s36hcrm","slide":1,"bbox":[0,0,1280,720]}
+{"kind":"textbox","id":"sh/y1kre1w7","slide":1,"text":"SATEC-CE/TRI","textPreview":"SATEC-CE/TRI","textChars":12,"textLines":1,"bbox":[72,70,520,70]}
+{"kind":"textbox","id":"sh/rmhk3q5o","slide":1,"text":"Sistema de Avaliação Técnica da Educação Profissional do Ceará baseado em TRI","textPreview":"Sistema de Avaliação Técnica da Educação Profissional do Ceará baseado em TRI","textChars":77,"textLines":1,"bbox":[74,154,720,92]}
+{"kind":"textbox","id":"sh/gfmlkjm1","slide":1,"text":"Projeto de avaliação diagnóstica, formativa e final para cursos técnicos da rede estadual","textPreview":"Projeto de avaliação diagnóstica, formativa e final para cursos técnicos da rede estadual","textChars":89,"textLines":1,"bbox":[76,286,650,70]}
+{"kind":"shape","id":"sh/90je9cvi","slide":1,"bbox":[790,96,360,430]}
+{"kind":"textbox","id":"sh/yd0z6103","slide":1,"text":"Entrada","textPreview":"Entrada","textChars":7,"textLines":1,"bbox":[835,148,250,34]}
+{"kind":"textbox","id":"sh/rytsvu9k","slide":1,"text":"Percurso","textPreview":"Percurso","textChars":8,"textLines":1,"bbox":[835,254,250,34]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":1,"text":"Saída","textPreview":"Saída","textChars":5,"textLines":1,"bbox":[835,360,250,34]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":1,"text":"Diagnosticar, acompanhar e aprimorar a aprendizagem profissional.","textPreview":"Diagnosticar, acompanhar e aprimorar a aprendizagem profissional.","textChars":65,"textLines":1,"bbox":[835,464,250,54]}
+{"kind":"textbox","id":"sh/tovahoza","slide":1,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/032lszqt","slide":1,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/a7tbkh","slide":1,"text":""}
+{"kind":"slide","id":"sl/8pmviz","slide":2,"title":"POR QUE ESTE PROJETO IMPORTA","textShapes":11}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":2,"text":"POR QUE ESTE PROJETO IMPORTA","textPreview":"POR QUE ESTE PROJETO IMPORTA","textChars":28,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/1kre1w7m","slide":2,"text":"Tema e justificativa","textPreview":"Tema e justificativa","textChars":20,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/c3ylc7u5","slide":2,"bbox":[70,166,1140,1]}
+{"kind":"textbox","id":"sh/j6tovaho","slide":2,"text":"As escolas profissionalizantes do Ceará já possuem matrizes robustas. O desafio é transformar essa organização curricular em diagnóstico contínuo, comparável e útil para a melhoria do ensino.","textPreview":"As escolas profissionalizantes do Ceará já possuem matrizes robustas. O desafio é transformar essa organização curricular em diagnóstico ...","textChars":191,"textLines":1,"bbox":[70,200,800,94]}
+{"kind":"shape","id":"sh/ulwval87","slide":2,"bbox":[70,340,350,180]}
+{"kind":"shape","id":"sh/1cfa9w3m","slide":2,"bbox":[70,340,7,180]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":2,"text":"Motivação","textPreview":"Motivação","textChars":9,"textLines":1,"bbox":[94,360,308,28]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":2,"text":"Resultados avaliativos costumam chegar como nota ou percentual. O projeto propõe transformá-los em evidências sobre competências técnicas.","textPreview":"Resultados avaliativos costumam chegar como nota ou percentual. O projeto propõe transformá-los em evidências sobre competências técnicas.","textChars":138,"textLines":1,"bbox":[94,398,308,108]}
+{"kind":"shape","id":"sh/qh0fepkz","slide":2,"bbox":[465,340,350,180]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":2,"bbox":[465,340,7,180]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":2,"text":"Importância","textPreview":"Importância","textChars":11,"textLines":1,"bbox":[489,360,308,28]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":2,"text":"A EPT precisa mostrar o que o estudante sabe fazer antes, durante e ao final do curso, com foco no mundo do trabalho.","textPreview":"A EPT precisa mostrar o que o estudante sabe fazer antes, durante e ao final do curso, com foco no mundo do trabalho.","textChars":117,"textLines":1,"bbox":[489,398,308,108]}
+{"kind":"shape","id":"sh/zidonyd0","slide":2,"bbox":[860,340,350,180]}
+{"kind":"shape","id":"sh/svu9knih","slide":2,"bbox":[860,340,7,180]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":2,"text":"Oportunidade","textPreview":"Oportunidade","textChars":12,"textLines":1,"bbox":[884,360,308,28]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":2,"text":"A TRI permite criar escalas de proficiência e comparar evolução entre turmas, escolas, cursos e eixos tecnológicos.","textPreview":"A TRI permite criar escalas de proficiência e comparar evolução entre turmas, escolas, cursos e eixos tecnológicos.","textChars":115,"textLines":1,"bbox":[884,398,308,108]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":2,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/sji5snel","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/8pmviz","slide":2,"text":""}
+{"kind":"slide","id":"sl/0luzv3","slide":3,"title":"IDEIA CENTRAL","textShapes":10}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":3,"text":"IDEIA CENTRAL","textPreview":"IDEIA CENTRAL","textChars":13,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":3,"text":"A matriz curricular vira uma matriz avaliativa","textPreview":"A matriz curricular vira uma matriz avaliativa","textChars":46,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/w7mp0bi9","slide":3,"bbox":[70,166,1140,1]}
+{"kind":"shape","id":"sh/7adsji5s","slide":3,"bbox":[90,230,190,90]}
+{"kind":"shape","id":"sh/epkzupwb","slide":3,"bbox":[340,230,190,90]}
+{"kind":"shape","id":"sh/pg3ex0nu","slide":3,"bbox":[590,230,190,90]}
+{"kind":"shape","id":"sh/wval87ed","slide":3,"bbox":[840,230,190,90]}
+{"kind":"shape","id":"sh/36hcrmhk","slide":3,"bbox":[1090,230,120,90]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":3,"text":"Currículo","textPreview":"Currículo","textChars":9,"textLines":1,"bbox":[120,256,130,32]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":3,"text":"Competências","textPreview":"Competências","textChars":12,"textLines":1,"bbox":[360,256,160,32]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":3,"text":"Descritores","textPreview":"Descritores","textChars":11,"textLines":1,"bbox":[618,256,145,32]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":3,"text":"Itens","textPreview":"Itens","textChars":5,"textLines":1,"bbox":[905,256,70,32]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":3,"text":"TRI","textPreview":"TRI","textChars":3,"textLines":1,"bbox":[1128,256,60,32]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":3,"text":"O método parte dos componentes curriculares dos cursos técnicos e cria descritores avaliáveis, capazes de alimentar banco de itens, rubricas práticas e escala de proficiência.","textPreview":"O método parte dos componentes curriculares dos cursos técnicos e cria descritores avaliáveis, capazes de alimentar banco de itens, rubri...","textChars":175,"textLines":1,"bbox":[160,390,930,88]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":3,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/0luzv3","slide":3,"text":""}
+{"kind":"slide","id":"sl/p3z2bm","slide":4,"title":"O QUE OS ESTUDANTES VÃO ALCANÇAR","textShapes":11}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":4,"text":"O QUE OS ESTUDANTES VÃO ALCANÇAR","textPreview":"O QUE OS ESTUDANTES VÃO ALCANÇAR","textChars":32,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":4,"text":"Objetivos do projeto","textPreview":"Objetivos do projeto","textChars":20,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/kb6xkf6d","slide":4,"bbox":[70,166,1140,1]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":4,"text":"Objetivo geral","textPreview":"Objetivo geral","textChars":14,"textLines":1,"bbox":[70,202,330,30]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":4,"text":"Desenvolver e aplicar um método de avaliação técnica baseado em competências e parâmetros da TRI para diagnosticar, acompanhar e aprimorar a aprendizagem nos cursos técnicos da rede estadual.","textPreview":"Desenvolver e aplicar um método de avaliação técnica baseado em competências e parâmetros da TRI para diagnosticar, acompanhar e aprimora...","textChars":191,"textLines":1,"bbox":[70,236,1050,74]}
+{"kind":"textbox","id":"sh/9knih4by","slide":4,"text":"Objetivos específicos","textPreview":"Objetivos específicos","textChars":21,"textLines":1,"bbox":[70,350,330,30]}
+{"kind":"shape","id":"sh/kzupwb2h","slide":4,"bbox":[80,400,7,7]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":4,"text":"Identificar conhecimentos prévios e lacunas de aprendizagem no início do curso.","textPreview":"Identificar conhecimentos prévios e lacunas de aprendizagem no início do curso.","textChars":79,"textLines":1,"bbox":[102,392,1028,38]}
+{"kind":"shape","id":"sh/2p8nqxs7","slide":4,"bbox":[80,446,7,7]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":4,"text":"Acompanhar o desenvolvimento de competências técnicas ao longo dos semestres.","textPreview":"Acompanhar o desenvolvimento de competências técnicas ao longo dos semestres.","textChars":77,"textLines":1,"bbox":[102,438,1028,38]}
+{"kind":"shape","id":"sh/9gr2p8nq","slide":4,"bbox":[80,492,7,7]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":4,"text":"Avaliar o perfil profissional de conclusão com evidências teóricas e práticas.","textPreview":"Avaliar o perfil profissional de conclusão com evidências teóricas e práticas.","textChars":78,"textLines":1,"bbox":[102,484,1028,38]}
+{"kind":"shape","id":"sh/ra5gbq1o","slide":4,"bbox":[80,538,7,7]}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":4,"text":"Gerar relatórios para orientar intervenção pedagógica, planejamento e gestão.","textPreview":"Gerar relatórios para orientar intervenção pedagógica, planejamento e gestão.","textChars":77,"textLines":1,"bbox":[102,530,1028,38]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":4,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/p3z2bm","slide":4,"text":""}
+{"kind":"slide","id":"sl/g0ow7q","slide":5,"title":"BASE CURRICULAR OBRIGATÓRIA","textShapes":11}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":5,"text":"BASE CURRICULAR OBRIGATÓRIA","textPreview":"BASE CURRICULAR OBRIGATÓRIA","textChars":27,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":5,"text":"Alinhamento com o DCRC e a EPT","textPreview":"Alinhamento com o DCRC e a EPT","textChars":30,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/3m94fu18","slide":5,"bbox":[70,166,1140,1]}
+{"kind":"shape","id":"sh/sji5snel","slide":5,"bbox":[70,210,340,250]}
+{"kind":"shape","id":"sh/h4byhgn2","slide":5,"bbox":[70,210,7,250]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":5,"text":"DCRC","textPreview":"DCRC","textChars":4,"textLines":1,"bbox":[94,230,298,28]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":5,"text":"O projeto considera a formação integral, as competências gerais, a contextualização das aprendizagens e a articulação entre teoria, prática e território.","textPreview":"O projeto considera a formação integral, as competências gerais, a contextualização das aprendizagens e a articulação entre teoria, práti...","textChars":153,"textLines":1,"bbox":[94,268,298,178]}
+{"kind":"shape","id":"sh/svu9knih","slide":5,"bbox":[470,210,340,250]}
+{"kind":"shape","id":"sh/hgn29gr2","slide":5,"bbox":[470,210,7,250]}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":5,"text":"Matrizes 2025/2026","textPreview":"Matrizes 2025/2026","textChars":18,"textLines":1,"bbox":[494,230,298,28]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":5,"text":"As matrizes das EEEPs organizam formação geral, formação profissional, parte diversificada e estágio em 5.400 h/a.","textPreview":"As matrizes das EEEPs organizam formação geral, formação profissional, parte diversificada e estágio em 5.400 h/a.","textChars":114,"textLines":1,"bbox":[494,268,298,178]}
+{"kind":"shape","id":"sh/bat47y1k","slide":5,"bbox":[870,210,340,250]}
+{"kind":"shape","id":"sh/mp0bi9s3","slide":5,"bbox":[870,210,7,250]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":5,"text":"CNCT e mundo do trabalho","textPreview":"CNCT e mundo do trabalho","textChars":24,"textLines":1,"bbox":[894,230,298,28]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":5,"text":"Cada curso será analisado por eixo tecnológico, perfil profissional de conclusão, competências técnicas e possibilidades de atuação.","textPreview":"Cada curso será analisado por eixo tecnológico, perfil profissional de conclusão, competências técnicas e possibilidades de atuação.","textChars":132,"textLines":1,"bbox":[894,268,298,178]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":5,"text":"Nas escolas do campo e EFA, o método também reconhece tempo escola, tempo comunidade, pedagogia da alternância e evidências territoriais de aprendizagem.","textPreview":"Nas escolas do campo e EFA, o método também reconhece tempo escola, tempo comunidade, pedagogia da alternância e evidências territoriais ...","textChars":153,"textLines":1,"bbox":[110,520,1000,56]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":5,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/g0ow7q","slide":5,"text":""}
+{"kind":"slide","id":"sl/s0d2tb","slide":6,"title":"COMO AS ATIVIDADES SERÃO FEITAS","textShapes":19}
+{"kind":"textbox","id":"sh/z61032ls","slide":6,"text":"COMO AS ATIVIDADES SERÃO FEITAS","textPreview":"COMO AS ATIVIDADES SERÃO FEITAS","textChars":31,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":6,"text":"Metodologia prática","textPreview":"Metodologia prática","textChars":19,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/hcrmhk3q","slide":6,"bbox":[70,166,1140,1]}
+{"kind":"shape","id":"sh/a9w3m94f","slide":6,"bbox":[75,205,50,50]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":6,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[91,214,24,26]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":6,"text":"Mapear o curso","textPreview":"Mapear o curso","textChars":14,"textLines":1,"bbox":[150,203,320,28]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":6,"text":"Selecionar componentes da matriz e relacionar com competências do CNCT.","textPreview":"Selecionar componentes da matriz e relacionar com competências do CNCT.","textChars":71,"textLines":1,"bbox":[150,235,900,34]}
+{"kind":"shape","id":"sh/65wjudg7","slide":6,"bbox":[75,283,50,50]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":6,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[91,292,24,26]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":6,"text":"Criar descritores","textPreview":"Criar descritores","textChars":17,"textLines":1,"bbox":[150,281,320,28]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":6,"text":"Transformar competências em habilidades observáveis e mensuráveis.","textPreview":"Transformar competências em habilidades observáveis e mensuráveis.","textChars":66,"textLines":1,"bbox":[150,313,900,34]}
+{"kind":"shape","id":"sh/h0fepkzu","slide":6,"bbox":[75,361,50,50]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":6,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[91,370,24,26]}
+{"kind":"textbox","id":"sh/z61032ls","slide":6,"text":"Construir instrumentos","textPreview":"Construir instrumentos","textChars":22,"textLines":1,"bbox":[150,359,320,28]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":6,"text":"Elaborar itens objetivos, situações-problema, rubricas e tarefas práticas.","textPreview":"Elaborar itens objetivos, situações-problema, rubricas e tarefas práticas.","textChars":74,"textLines":1,"bbox":[150,391,900,34]}
+{"kind":"shape","id":"sh/hcrmhk3q","slide":6,"bbox":[75,439,50,50]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":6,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[91,448,24,26]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":6,"text":"Aplicar em três momentos","textPreview":"Aplicar em três momentos","textChars":24,"textLines":1,"bbox":[150,437,320,28]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":6,"text":"Entrada, percurso e saída, com devolutiva para professor e estudante.","textPreview":"Entrada, percurso e saída, com devolutiva para professor e estudante.","textChars":69,"textLines":1,"bbox":[150,469,900,34]}
+{"kind":"shape","id":"sh/e1w7mp0b","slide":6,"bbox":[75,517,50,50]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":6,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[91,526,24,26]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":6,"text":"Intervir e reavaliar","textPreview":"Intervir e reavaliar","textChars":20,"textLines":1,"bbox":[150,515,320,28]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":6,"text":"Usar IA para trilhas, atividades personalizadas e recomposição por descritor.","textPreview":"Usar IA para trilhas, atividades personalizadas e recomposição por descritor.","textChars":77,"textLines":1,"bbox":[150,547,900,34]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":6,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/s0d2tb","slide":6,"text":""}
+{"kind":"slide","id":"sl/0zkrkv","slide":7,"title":"APLICAÇÃO NA REDE","textShapes":16}
+{"kind":"textbox","id":"sh/s72x4nap","slide":7,"text":"APLICAÇÃO NA REDE","textPreview":"APLICAÇÃO NA REDE","textChars":17,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/3m94fu18","slide":7,"text":"Como o piloto pode começar","textPreview":"Como o piloto pode começar","textChars":26,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/a5gbq1or","slide":7,"bbox":[70,166,1140,1]}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":7,"text":"A implantação deve começar pequena, calibrar os instrumentos e depois escalar para os demais cursos.","textPreview":"A implantação deve começar pequena, calibrar os instrumentos e depois escalar para os demais cursos.","textChars":100,"textLines":1,"bbox":[70,198,940,40]}
+{"kind":"shape","id":"sh/sji5snel","slide":7,"bbox":[70,285,230,180]}
+{"kind":"shape","id":"sh/3ylc7u54","slide":7,"bbox":[70,285,7,180]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":7,"text":"Tecnologia","textPreview":"Tecnologia","textChars":10,"textLines":1,"bbox":[94,305,188,28]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":7,"text":"Informática ou Desenvolvimento de Sistemas.","textPreview":"Informática ou Desenvolvimento de Sistemas.","textChars":43,"textLines":1,"bbox":[94,343,188,108]}
+{"kind":"shape","id":"sh/svu9knih","slide":7,"bbox":[320,285,230,180]}
+{"kind":"shape","id":"sh/ed8bat47","slide":7,"bbox":[320,285,7,180]}
+{"kind":"textbox","id":"sh/7u54zido","slide":7,"text":"Gestão","textPreview":"Gestão","textChars":6,"textLines":1,"bbox":[344,305,188,28]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":7,"text":"Administração, com foco em processos, dados e projetos.","textPreview":"Administração, com foco em processos, dados e projetos.","textChars":55,"textLines":1,"bbox":[344,343,188,108]}
+{"kind":"shape","id":"sh/l0rqd4vm","slide":7,"bbox":[570,285,230,180]}
+{"kind":"shape","id":"sh/eloj2t83","slide":7,"bbox":[570,285,7,180]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":7,"text":"Campo","textPreview":"Campo","textChars":5,"textLines":1,"bbox":[594,305,188,28]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":7,"text":"Agroecologia ou Agropecuária, incluindo evidências territoriais.","textPreview":"Agroecologia ou Agropecuária, incluindo evidências territoriais.","textChars":64,"textLines":1,"bbox":[594,343,188,108]}
+{"kind":"shape","id":"sh/lc7u54zi","slide":7,"bbox":[820,285,230,180]}
+{"kind":"shape","id":"sh/epkzupwb","slide":7,"bbox":[820,285,7,180]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":7,"text":"Saúde","textPreview":"Saúde","textChars":5,"textLines":1,"bbox":[844,305,188,28]}
+{"kind":"textbox","id":"sh/z61032ls","slide":7,"text":"Enfermagem, com simulações e protocolos.","textPreview":"Enfermagem, com simulações e protocolos.","textChars":40,"textLines":1,"bbox":[844,343,188,108]}
+{"kind":"shape","id":"sh/al87ed8b","slide":7,"bbox":[1070,285,140,180]}
+{"kind":"shape","id":"sh/hcrmhk3q","slide":7,"bbox":[1070,285,7,180]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":7,"text":"Indústria","textPreview":"Indústria","textChars":9,"textLines":1,"bbox":[1094,305,98,28]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":7,"text":"Eletrotécnica ou Automação.","textPreview":"Eletrotécnica ou Automação.","textChars":27,"textLines":1,"bbox":[1094,343,98,108]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":7,"text":"Cada piloto gera banco de itens, rubricas práticas, relatórios de proficiência e plano de intervenção por turma.","textPreview":"Cada piloto gera banco de itens, rubricas práticas, relatórios de proficiência e plano de intervenção por turma.","textChars":112,"textLines":1,"bbox":[140,532,1000,54]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":7,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/0zkrkv","slide":7,"text":""}
+{"kind":"slide","id":"sl/du2c4u","slide":8,"title":"TEMPO ESTIMADO","textShapes":19}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":8,"text":"TEMPO ESTIMADO","textPreview":"TEMPO ESTIMADO","textChars":14,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":8,"text":"Cronograma de implantação","textPreview":"Cronograma de implantação","textChars":25,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/lc7u54zi","slide":8,"bbox":[70,166,1140,1]}
+{"kind":"shape","id":"sh/ed8bat47","slide":8,"bbox":[78,200,150,48]}
+{"kind":"textbox","id":"sh/7u54zido","slide":8,"text":"Mês 1","textPreview":"Mês 1","textChars":5,"textLines":1,"bbox":[98,211,110,22]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":8,"text":"Planejamento","textPreview":"Planejamento","textChars":12,"textLines":1,"bbox":[260,206,250,26]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":8,"text":"curso-piloto, equipe, matriz avaliativa","textPreview":"curso-piloto, equipe, matriz avaliativa","textChars":39,"textLines":1,"bbox":[525,208,620,24]}
+{"kind":"shape","id":"sh/e1w7mp0b","slide":8,"bbox":[78,272,150,48]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":8,"text":"Mês 2","textPreview":"Mês 2","textChars":5,"textLines":1,"bbox":[98,283,110,22]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":8,"text":"Instrumentos","textPreview":"Instrumentos","textChars":12,"textLines":1,"bbox":[260,278,250,26]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":8,"text":"descritores, itens, rubricas e formulário diagnóstico","textPreview":"descritores, itens, rubricas e formulário diagnóstico","textChars":53,"textLines":1,"bbox":[525,280,620,24]}
+{"kind":"shape","id":"sh/hk3q5o7q","slide":8,"bbox":[78,344,150,48]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":8,"text":"Mês 3","textPreview":"Mês 3","textChars":5,"textLines":1,"bbox":[98,355,110,22]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":8,"text":"Aplicação inicial","textPreview":"Aplicação inicial","textChars":17,"textLines":1,"bbox":[260,350,250,26]}
+{"kind":"textbox","id":"sh/65wjudg7","slide":8,"text":"avaliação de entrada e primeiro relatório","textPreview":"avaliação de entrada e primeiro relatório","textChars":41,"textLines":1,"bbox":[525,352,620,24]}
+{"kind":"shape","id":"sh/hwfyxobm","slide":8,"bbox":[78,416,150,48]}
+{"kind":"textbox","id":"sh/obm58z25","slide":8,"text":"Meses 4 e 5","textPreview":"Meses 4 e 5","textChars":11,"textLines":1,"bbox":[98,427,110,22]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":8,"text":"Intervenção","textPreview":"Intervenção","textChars":11,"textLines":1,"bbox":[260,422,250,26]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":8,"text":"atividades por descritor, IA e reagrupamentos","textPreview":"atividades por descritor, IA e reagrupamentos","textChars":45,"textLines":1,"bbox":[525,424,620,24]}
+{"kind":"shape","id":"sh/eloj2t83","slide":8,"bbox":[78,488,150,48]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":8,"text":"Mês 6","textPreview":"Mês 6","textChars":5,"textLines":1,"bbox":[98,499,110,22]}
+{"kind":"textbox","id":"sh/wra5gbq1","slide":8,"text":"Avaliação final","textPreview":"Avaliação final","textChars":15,"textLines":1,"bbox":[260,494,250,26]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":8,"text":"comparação, escala preliminar e relatório de melhoria","textPreview":"comparação, escala preliminar e relatório de melhoria","textChars":53,"textLines":1,"bbox":[525,496,620,24]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":8,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/7u54zido","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/du2c4u","slide":8,"text":""}
+{"kind":"slide","id":"sl/h0v4ms","slide":9,"title":"ENTREGA PEDAGÓGICA","textShapes":11}
+{"kind":"textbox","id":"sh/cvixczed","slide":9,"text":"ENTREGA PEDAGÓGICA","textPreview":"ENTREGA PEDAGÓGICA","textChars":18,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/nap4r65w","slide":9,"text":"Produto final e avaliação dos estudantes","textPreview":"Produto final e avaliação dos estudantes","textChars":40,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/upwb2hwf","slide":9,"bbox":[70,166,1140,1]}
+{"kind":"shape","id":"sh/54zidony","slide":9,"bbox":[70,215,360,250]}
+{"kind":"shape","id":"sh/cj6tovah","slide":9,"bbox":[70,215,7,250]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":9,"text":"Produto final","textPreview":"Produto final","textChars":13,"textLines":1,"bbox":[94,235,318,28]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":9,"text":"Painel diagnóstico do curso-piloto, relatório por descritor e trilhas de recomposição geradas a partir dos resultados.","textPreview":"Painel diagnóstico do curso-piloto, relatório por descritor e trilhas de recomposição geradas a partir dos resultados.","textChars":118,"textLines":1,"bbox":[94,273,318,178]}
+{"kind":"shape","id":"sh/1032lszq","slide":9,"bbox":[460,215,360,250]}
+{"kind":"shape","id":"sh/cfa9w3m9","slide":9,"bbox":[460,215,7,250]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":9,"text":"Evidências dos estudantes","textPreview":"Evidências dos estudantes","textChars":25,"textLines":1,"bbox":[484,235,318,28]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":9,"text":"Prova diagnóstica, tarefa prática, projeto técnico, portfólio, relatório de estágio ou diário de campo.","textPreview":"Prova diagnóstica, tarefa prática, projeto técnico, portfólio, relatório de estágio ou diário de campo.","textChars":103,"textLines":1,"bbox":[484,273,318,178]}
+{"kind":"shape","id":"sh/kb6xkf6d","slide":9,"bbox":[850,215,360,250]}
+{"kind":"shape","id":"sh/9w3m94fu","slide":9,"bbox":[850,215,7,250]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":9,"text":"Avaliação docente","textPreview":"Avaliação docente","textChars":17,"textLines":1,"bbox":[874,235,318,28]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":9,"text":"Rubricas por competência, comparação antes/depois, participação, autonomia e aplicação técnica em situações reais.","textPreview":"Rubricas por competência, comparação antes/depois, participação, autonomia e aplicação técnica em situações reais.","textChars":114,"textLines":1,"bbox":[874,273,318,178]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":9,"text":"A nota deixa de ser o fim do processo. Ela passa a indicar quais competências precisam de reforço, aprofundamento ou nova oportunidade prática.","textPreview":"A nota deixa de ser o fim do processo. Ela passa a indicar quais competências precisam de reforço, aprofundamento ou nova oportunidade pr...","textChars":143,"textLines":1,"bbox":[112,530,1000,58]}
+{"kind":"textbox","id":"sh/9knih4by","slide":9,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/h0v4ms","slide":9,"text":""}
+{"kind":"slide","id":"sl/fi16jx","slide":10,"title":"SÍNTESE E PRÓXIMOS PASSOS","textShapes":11}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":10,"text":"SÍNTESE E PRÓXIMOS PASSOS","textPreview":"SÍNTESE E PRÓXIMOS PASSOS","textChars":25,"textLines":1,"bbox":[70,44,760,28]}
+{"kind":"textbox","id":"sh/xc3ylc7u","slide":10,"text":"O projeto pode virar método estadual","textPreview":"O projeto pode virar método estadual","textChars":36,"textLines":1,"bbox":[70,82,1070,78]}
+{"kind":"shape","id":"sh/4r65wjud","slide":10,"bbox":[70,166,1140,1]}
+{"kind":"textbox","id":"sh/fepkzupw","slide":10,"text":"O SATEC-CE/TRI propõe uma avaliação que mede evolução, orienta intervenção e fortalece a qualidade da Educação Profissional no Ceará.","textPreview":"O SATEC-CE/TRI propõe uma avaliação que mede evolução, orienta intervenção e fortalece a qualidade da Educação Profissional no Ceará.","textChars":133,"textLines":1,"bbox":[70,205,950,76]}
+{"kind":"shape","id":"sh/mtwra5gb","slide":10,"bbox":[88,352,7,7]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":10,"text":"Escolher o primeiro curso-piloto.","textPreview":"Escolher o primeiro curso-piloto.","textChars":33,"textLines":1,"bbox":[110,344,828,38]}
+{"kind":"shape","id":"sh/4zidonyd","slide":10,"bbox":[88,404,7,7]}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":10,"text":"Construir a matriz avaliativa com descritores.","textPreview":"Construir a matriz avaliativa com descritores.","textChars":46,"textLines":1,"bbox":[110,396,828,38]}
+{"kind":"shape","id":"sh/qxs72x4n","slide":10,"bbox":[88,456,7,7]}
+{"kind":"textbox","id":"sh/0bi9s36h","slide":10,"text":"Criar banco inicial de itens e rubricas práticas.","textPreview":"Criar banco inicial de itens e rubricas práticas.","textChars":49,"textLines":1,"bbox":[110,448,828,38]}
+{"kind":"shape","id":"sh/pwb2hwfy","slide":10,"bbox":[88,508,7,7]}
+{"kind":"textbox","id":"sh/i5sneloj","slide":10,"text":"Aplicar diagnóstico, gerar devolutivas e validar o modelo.","textPreview":"Aplicar diagnóstico, gerar devolutivas e validar o modelo.","textChars":58,"textLines":1,"bbox":[110,500,828,38]}
+{"kind":"shape","id":"sh/7qpg3ex0","slide":10,"bbox":[950,330,210,160]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":10,"text":"Meta","textPreview":"Meta","textChars":4,"textLines":1,"bbox":[990,360,130,28]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":10,"text":"Melhorar o ensino técnico com dados, prática e intervenção pedagógica.","textPreview":"Melhorar o ensino técnico com dados, prática e intervenção pedagógica.","textChars":70,"textLines":1,"bbox":[985,405,150,70]}
+{"kind":"textbox","id":"sh/ed8v6psf","slide":10,"text":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textPreview":"SATEC-CE/TRI | Avaliação da Educação Profissional do Ceará","textChars":58,"textLines":1,"bbox":[70,676,650,24]}
+{"kind":"textbox","id":"sh/7y1kre1w","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1166,672,44,24]}
+{"kind":"notes","id":"nt/fi16jx","slide":10,"text":""}

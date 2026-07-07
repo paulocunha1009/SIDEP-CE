@@ -1,0 +1,3189 @@
+﻿import {
+  BarChart3,
+  BookOpenCheck,
+  Building2,
+  ClipboardList,
+  Database,
+  FileQuestion,
+  GraduationCap,
+  KeyRound,
+  Layers3,
+  ShieldCheck,
+  UserRoundCog,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import logoCentec from "./assets/logo-centec-transparent.png";
+import logoCrede03 from "./assets/logo-crede-03-transparent.png";
+import logoSeduc from "./assets/logo-seduc-transparent.png";
+import { regionaisSeed } from "./data/mock";
+import { competenciasNorteadoras, descritoresNorteadores, questoesNorteadoras } from "./data/norteadoresSeed";
+import { supabaseConfigured } from "./lib/supabase";
+import {
+  carregarCompetenciasLocais,
+  carregarDescritoresLocais,
+  carregarQuestoesLocais,
+  salvarCompetenciaLocal,
+  salvarDescritorLocal,
+  salvarQuestaoLocal,
+  substituirBancoItensLocal,
+} from "./services/itemBankRepository";
+import {
+  carregarAvaliacoes,
+  carregarCodigosAvaliacaoBloqueados,
+  carregarCodigosAvaliacaoBloqueadosOnline,
+  carregarRespostasAvaliacao,
+  carregarRespostasLocais,
+  carregarEscolas,
+  carregarProfessores,
+  bloquearCodigoAvaliacao,
+  excluirAvaliacao as excluirAvaliacaoPersistida,
+  salvarAvaliacao,
+  salvarAvaliacaoLocal,
+  salvarEscola,
+  salvarProfessor,
+  salvarRespostaAvaliacao,
+} from "./services/registryRepository";
+import type {
+  AlternativaKey,
+  AvaliacaoDraft,
+  CompetenciaDraft,
+  DescritorDraft,
+  EscolaDraft,
+  PerfilAcesso,
+  ProfessorDraft,
+  QuestaoDraft,
+  RespostaAvaliacaoDraft,
+  TipoEscola,
+} from "./types";
+
+type Role = "student" | "teacher" | "management";
+type View = "home" | "student" | "schools" | "teachers" | "items" | "assessments" | "reports";
+type ItemBankTab = "competencias" | "descritores" | "questoes";
+type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
+type AuthRole = "aluno" | "professor" | "gestao_escolar" | "regional" | "seduc" | "administrador";
+
+type AuthUser = {
+  id: string;
+  usuario: string;
+  nome: string;
+  email: string;
+  role: AuthRole;
+  escola_inep?: string;
+  regional_codigo?: string;
+  professor_matricula?: string;
+  senha_acesso: string;
+  alterar_senha_primeiro_login?: boolean;
+  origem: "sistema" | "escola" | "professor";
+};
+
+const tipoEscolaOptions: TipoEscola[] = [
+  "EEEP",
+  "EEMCP",
+  "EEMTI",
+  "EEM",
+  "EJA",
+  "ESCOLA_DO_CAMPO",
+  "EFA",
+  "OUTRA",
+];
+
+const perfilOptions: Array<{ value: PerfilAcesso; label: string; description: string }> = [
+  {
+    value: "professor_tecnico",
+    label: "Professor Técnico",
+    description: "Docente da base técnica vinculado a curso, turma e práticas profissionais.",
+  },
+  {
+    value: "coordenador_professor_tecnico",
+    label: "Coordenador/Professor Técnico",
+    description: "Coordena o curso técnico e também pode atuar como docente/revisor.",
+  },
+  {
+    value: "coordenador_escolar",
+    label: "Gestão/Coordenação Escolar",
+    description: "Acompanha dados agregados da escola e apoia decisões pedagógicas.",
+  },
+  { value: "crede", label: "CREDE/SEFOR", description: "Acompanha escolas da regional." },
+  { value: "seduc", label: "SEDUC", description: "Acompanha indicadores da rede estadual." },
+  { value: "administrador", label: "Administrador", description: "Gerencia parametrizações e permissões do sistema." },
+];
+
+function perfilAcessoLabel(perfil: PerfilAcesso) {
+  if (perfil === "professor") return "Professor Técnico";
+  return perfilOptions.find((option) => option.value === perfil)?.label ?? perfil;
+}
+
+function authRoleLabel(role: AuthRole) {
+  const labels: Record<AuthRole, string> = {
+    aluno: "Aluno",
+    professor: "Professor Técnico",
+    gestao_escolar: "Gestão Escolar",
+    regional: "CREDE/SEFOR",
+    seduc: "SEDUC",
+    administrador: "Administrador",
+  };
+
+  return labels[role];
+}
+
+function authRoleFromPerfil(perfil: PerfilAcesso): AuthRole {
+  if (perfil === "administrador") return "administrador";
+  if (perfil === "seduc") return "seduc";
+  if (perfil === "crede") return "regional";
+  if (perfil === "coordenador_escolar") return "gestao_escolar";
+  return "professor";
+}
+
+const quantidadePorComponenteOptions = [2, 5, 10, 20];
+const DEFAULT_ACCESS_PASSWORD = "AGzzcso1$";
+const DEFAULT_TEACHER_CPF = "00000000000";
+const MASTER_USER_STORAGE_KEY = "sidep-ce:master-user";
+const ASSESSMENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const DEFAULT_MASTER_USER: AuthUser = {
+  id: "master-admin",
+  usuario: "MASTER",
+  nome: "Administrador Master SIDEP-CE",
+  email: "master@sidep.ce.gov.br",
+  role: "administrador",
+  senha_acesso: DEFAULT_ACCESS_PASSWORD,
+  alterar_senha_primeiro_login: true,
+  origem: "sistema",
+};
+
+function carregarMasterUser() {
+  if (typeof window === "undefined") return DEFAULT_MASTER_USER;
+  const raw = window.localStorage.getItem(MASTER_USER_STORAGE_KEY);
+  if (!raw) return DEFAULT_MASTER_USER;
+
+  try {
+    return { ...DEFAULT_MASTER_USER, ...JSON.parse(raw) } as AuthUser;
+  } catch {
+    return DEFAULT_MASTER_USER;
+  }
+}
+
+function salvarMasterUser(user: AuthUser) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MASTER_USER_STORAGE_KEY, JSON.stringify(user));
+}
+
+
+function normalizeKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeQuestionText(value: string) {
+  return normalizeKey(value)
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function questionFingerprint(questao: Pick<QuestaoDraft, "enunciado" | "alternativa_a" | "alternativa_b" | "alternativa_c" | "alternativa_d" | "alternativa_e">) {
+  return [
+    questao.enunciado,
+    questao.alternativa_a,
+    questao.alternativa_b,
+    questao.alternativa_c,
+    questao.alternativa_d,
+    questao.alternativa_e,
+  ]
+    .map(normalizeQuestionText)
+    .join("|");
+}
+
+function hashString(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function seededRandom(seed: number) {
+  let current = seed || 1;
+  return () => {
+    current += 0x6D2B79F5;
+    let value = current;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleWithSeed<T>(items: T[], seedSource: string) {
+  const shuffled = [...items];
+  const random = seededRandom(hashString(seedSource));
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+function studentAttemptKey(assessmentCode: string, studentName: string) {
+  return `${normalizeKey(assessmentCode)}:${normalizeKey(studentName)}`;
+}
+
+function randomAssessmentToken(length = 6) {
+  const bytes = new Uint8Array(length);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  return Array.from(bytes)
+    .map((byte) => ASSESSMENT_CODE_ALPHABET[byte % ASSESSMENT_CODE_ALPHABET.length])
+    .join("");
+}
+
+function courseAccessPrefix(cursoTecnico: string) {
+  const normalized = normalizeKey(cursoTecnico);
+  if (normalized.includes("informatica")) return "INF";
+  if (normalized.includes("administracao")) return "ADM";
+  if (normalized.includes("enfermagem")) return "ENF";
+  if (normalized.includes("agro")) return "AGR";
+
+  const initials = cursoTecnico
+    .replace(/^t[eé]cnico\s+em\s+/i, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => normalizeKey(word).charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 3);
+
+  return initials || "AV";
+}
+
+function stageAccessCode(etapa: AvaliacaoDraft["etapa"]) {
+  if (etapa === "formativa") return "F";
+  if (etapa === "final") return "N";
+  return "D";
+}
+
+function generateAssessmentAccessCode(
+  assessments: AvaliacaoDraft[],
+  cursoTecnico = "Técnico em Informática",
+  etapa: AvaliacaoDraft["etapa"] = "diagnostica",
+  reservedCodes: string[] = [],
+) {
+  const year = String(new Date().getFullYear()).slice(-2);
+  const prefix = `${courseAccessPrefix(cursoTecnico)}${year}-${stageAccessCode(etapa)}`;
+  const existingCodes = new Set([
+    ...assessments.map((assessment) => assessment.codigo_acesso.toUpperCase()),
+    ...reservedCodes.map((codigo) => codigo.toUpperCase()),
+  ]);
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const code = `${prefix}-${randomAssessmentToken()}`;
+    if (!existingCodes.has(code)) return code;
+  }
+
+  return `${prefix}-${Date.now().toString(36).toUpperCase().slice(-8)}`;
+}
+
+function calculateStudentResult(
+  assessment: AvaliacaoDraft,
+  assessmentQuestions: QuestaoDraft[],
+  answers: Record<string, AlternativaKey>,
+) {
+  const desempenho_por_descritor: RespostaAvaliacaoDraft["desempenho_por_descritor"] = {};
+  const desempenho_por_componente: RespostaAvaliacaoDraft["desempenho_por_componente"] = {};
+  let acertos = 0;
+
+  assessmentQuestions.forEach((questao) => {
+    const correta = answers[questao.codigo] === questao.gabarito;
+    if (correta) acertos += 1;
+
+    const descritor = desempenho_por_descritor[questao.descritor_codigo] ?? { acertos: 0, total: 0, percentual: 0 };
+    descritor.total += 1;
+    if (correta) descritor.acertos += 1;
+    descritor.percentual = Math.round((descritor.acertos / descritor.total) * 10000) / 100;
+    desempenho_por_descritor[questao.descritor_codigo] = descritor;
+
+    const componente = desempenho_por_componente[questao.componente_curricular] ?? { acertos: 0, total: 0, percentual: 0 };
+    componente.total += 1;
+    if (correta) componente.acertos += 1;
+    componente.percentual = Math.round((componente.acertos / componente.total) * 10000) / 100;
+    desempenho_por_componente[questao.componente_curricular] = componente;
+  });
+
+  return {
+    acertos,
+    total_questoes: assessmentQuestions.length,
+    percentual_bruto: assessmentQuestions.length ? Math.round((acertos / assessmentQuestions.length) * 10000) / 100 : 0,
+    desempenho_por_descritor,
+    desempenho_por_componente,
+    etapa: assessment.etapa,
+  };
+}
+
+function getAssessmentQuestions(assessment: AvaliacaoDraft, questoes: QuestaoDraft[]) {
+  const codes = assessment.questoes_codigos ?? [];
+  const byCode = new Map(questoes.map((questao) => [questao.codigo, questao]));
+  return codes
+    .map((codigo) => byCode.get(codigo))
+    .filter((questao): questao is QuestaoDraft => Boolean(questao));
+}
+
+function questaoStatusLabel(status: QuestaoDraft["status"]) {
+  const labels: Record<QuestaoDraft["status"], string> = {
+    rascunho: "Rascunho",
+    em_revisao: "Em revisao",
+    validada: "Validada",
+  };
+
+  return labels[status];
+}
+
+function questaoStatusHint(status: QuestaoDraft["status"]) {
+  const hints: Record<QuestaoDraft["status"], string> = {
+    rascunho: "Item em elaboração. Ainda não deve entrar na revisão nem nas provas.",
+    em_revisao: "Item aguardando curadoria docente. Não entra em avaliação.",
+    validada: "Item revisado e liberado para o criador de avaliações.",
+  };
+
+  return hints[status];
+}
+
+function isCompetenciaLegada(codigo: string) {
+  return codigo.startsWith("COMP-INF-");
+}
+
+function isDescritorLegado(codigo: string) {
+  return codigo.startsWith("D-INF-");
+}
+
+function isQuestaoPiloto(codigo: string) {
+  return /^Q-INF-\d{4}$/.test(codigo);
+}
+
+function montarBancoNorteadorAtualizado(
+  competenciasAtuais: CompetenciaDraft[],
+  descritoresAtuais: DescritorDraft[],
+  questoesAtuais: QuestaoDraft[],
+) {
+  return {
+    competencias: [
+      ...competenciasAtuais.filter((item) => (
+        !isCompetenciaLegada(item.codigo) &&
+        !competenciasNorteadoras.some((seed) => seed.codigo === item.codigo)
+      )),
+      ...competenciasNorteadoras,
+    ],
+    descritores: [
+      ...descritoresAtuais.filter((item) => (
+        !isDescritorLegado(item.codigo) &&
+        !descritoresNorteadores.some((seed) => seed.codigo === item.codigo)
+      )),
+      ...descritoresNorteadores,
+    ],
+    questoes: [
+      ...questoesAtuais.filter((item) => !isQuestaoPiloto(item.codigo) && !questoesNorteadoras.some((seed) => seed.codigo === item.codigo)),
+      ...questoesNorteadoras,
+    ],
+  };
+}
+
+function precisaAtualizarBancoNorteador(
+  competenciasAtuais: CompetenciaDraft[],
+  descritoresAtuais: DescritorDraft[],
+  questoesAtuais: QuestaoDraft[],
+) {
+  const faltamCompetencias = competenciasNorteadoras.some((seed) => !competenciasAtuais.some((item) => item.codigo === seed.codigo));
+  const faltamDescritores = descritoresNorteadores.some((seed) => !descritoresAtuais.some((item) => item.codigo === seed.codigo));
+  const faltamQuestoes = questoesNorteadoras.some((seed) => !questoesAtuais.some((item) => item.codigo === seed.codigo));
+
+  return competenciasAtuais.some((item) => isCompetenciaLegada(item.codigo)) ||
+    descritoresAtuais.some((item) => isDescritorLegado(item.codigo)) ||
+    faltamCompetencias ||
+    faltamDescritores ||
+    faltamQuestoes;
+}
+
+export function App() {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [forcePasswordChange, setForcePasswordChange] = useState(false);
+  const [view, setView] = useState<View>("home");
+  const [schools, setSchools] = useState<EscolaDraft[]>([]);
+  const [teachers, setTeachers] = useState<ProfessorDraft[]>([]);
+  const [competencias, setCompetencias] = useState<CompetenciaDraft[]>([]);
+  const [descritores, setDescritores] = useState<DescritorDraft[]>([]);
+  const [questoes, setQuestoes] = useState<QuestaoDraft[]>([]);
+  const [assessments, setAssessments] = useState<AvaliacaoDraft[]>([]);
+  const [respostas, setRespostas] = useState<RespostaAvaliacaoDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("Preparando ambiente do MVP.");
+  const [masterUser, setMasterUser] = useState<AuthUser>(() => carregarMasterUser());
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [escolas, professores, avaliacoesOnline, respostasOnline] = await Promise.all([
+          carregarEscolas(),
+          carregarProfessores(),
+          carregarAvaliacoes(),
+          carregarRespostasAvaliacao(),
+        ]);
+        const competenciasLocais = carregarCompetenciasLocais();
+        const descritoresLocais = carregarDescritoresLocais();
+        const questoesLocais = carregarQuestoesLocais();
+        const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasLocais, descritoresLocais, questoesLocais);
+        const banco = precisaSanearBanco
+          ? montarBancoNorteadorAtualizado(competenciasLocais, descritoresLocais, questoesLocais)
+          : { competencias: competenciasLocais, descritores: descritoresLocais, questoes: questoesLocais };
+
+        if (precisaSanearBanco) {
+          substituirBancoItensLocal(banco);
+        }
+
+        setSchools(escolas);
+        setTeachers(professores);
+        setCompetencias(banco.competencias);
+        setDescritores(banco.descritores);
+        setQuestoes(banco.questoes);
+        setAssessments(avaliacoesOnline);
+        setRespostas(respostasOnline);
+        setMessage(
+          precisaSanearBanco
+            ? "Banco local saneado: removi competências/descritores legados e apliquei a nomenclatura C/D."
+            : supabaseConfigured
+            ? "Conectado ao Supabase. Cadastros institucionais serão persistidos no banco."
+            : "Modo local ativo. Configure o Supabase para persistência estadual online.",
+        );
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Não foi possível carregar os dados.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  const stats = useMemo(
+    () => [
+      { label: "Escolas", value: schools.length, icon: Building2 },
+      { label: "Professores", value: teachers.length, icon: UserRoundCog },
+      { label: "Itens", value: questoes.length, icon: FileQuestion },
+      { label: "Banco", value: supabaseConfigured ? "Supabase" : "local", icon: Database },
+    ],
+    [questoes.length, schools.length, teachers.length],
+  );
+
+  const authUsers = useMemo<AuthUser[]>(
+    () => [
+      masterUser,
+      ...schools
+        .filter((school) => (school.status ?? "ativa") === "ativa")
+        .map((school) => ({
+          id: `escola-${school.codigo_inep}`,
+          usuario: school.codigo_inep,
+          nome: school.nome_oficial,
+          email: school.email_principal,
+          role: "gestao_escolar" as const,
+          escola_inep: school.codigo_inep,
+          senha_acesso: !school.senha_acesso || school.senha_acesso === DEFAULT_ACCESS_PASSWORD ? school.codigo_inep : school.senha_acesso,
+          alterar_senha_primeiro_login: school.alterar_senha_primeiro_login ?? true,
+          origem: "escola" as const,
+        })),
+      ...teachers
+        .filter((teacher) => (teacher.status ?? "ativo") === "ativo")
+        .map((teacher) => {
+          const school = schools.find((item) => item.codigo_inep === teacher.escola_inep);
+          const authRole = authRoleFromPerfil(teacher.perfil_acesso);
+
+          return {
+            id: `professor-${teacher.matricula}`,
+            usuario: teacher.email_institucional,
+            nome: teacher.nome_completo,
+            email: teacher.email_institucional,
+            role: authRole,
+            escola_inep: teacher.escola_inep,
+            regional_codigo: authRole === "regional" ? school?.regional_codigo : undefined,
+            professor_matricula: teacher.matricula,
+            senha_acesso: !teacher.senha_acesso || teacher.senha_acesso === DEFAULT_ACCESS_PASSWORD ? teacher.cpf || DEFAULT_TEACHER_CPF : teacher.senha_acesso,
+            alterar_senha_primeiro_login: teacher.alterar_senha_primeiro_login ?? true,
+            origem: "professor" as const,
+          };
+        }),
+    ],
+    [masterUser, schools, teachers],
+  );
+
+  const role: Role = currentUser?.role === "aluno" ? "student" : currentUser?.role === "professor" ? "teacher" : "management";
+  const canManageSchools = currentUser?.role === "regional" || currentUser?.role === "seduc" || currentUser?.role === "administrador";
+  const canManageTeachers = currentUser?.role === "gestao_escolar" || canManageSchools;
+  const canUseTeacherArea = currentUser?.role === "professor" || currentUser?.role === "regional" || currentUser?.role === "seduc" || currentUser?.role === "administrador";
+
+  const scopedSchools = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === "gestao_escolar") {
+      return schools.filter((school) => school.codigo_inep === currentUser.escola_inep);
+    }
+    if (currentUser.role === "regional") {
+      return schools.filter((school) => school.regional_codigo === currentUser.regional_codigo);
+    }
+    if (currentUser.role === "seduc" || currentUser.role === "administrador") return schools;
+    if (currentUser.role === "professor") {
+      return schools.filter((school) => school.codigo_inep === currentUser.escola_inep);
+    }
+    return [];
+  }, [currentUser, schools]);
+
+  const scopedTeachers = useMemo(() => {
+    if (!currentUser) return [];
+    const visibleSchoolIds = new Set(scopedSchools.map((school) => school.codigo_inep));
+    if (currentUser.role === "professor") {
+      return teachers.filter((teacher) => teacher.matricula === currentUser.professor_matricula || teacher.email_institucional === currentUser.email);
+    }
+    return teachers.filter((teacher) => !teacher.escola_inep || visibleSchoolIds.has(teacher.escola_inep));
+  }, [currentUser, scopedSchools, teachers]);
+
+  const scopedAssessments = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === "professor") {
+      return assessments.filter((assessment) => !assessment.professor_matricula || assessment.professor_matricula === currentUser.professor_matricula);
+    }
+    const visibleSchoolIds = new Set(scopedSchools.map((school) => school.codigo_inep));
+    if (currentUser.role === "gestao_escolar" || currentUser.role === "regional") {
+      return assessments.filter((assessment) => !assessment.escola_inep || visibleSchoolIds.has(assessment.escola_inep));
+    }
+    return assessments;
+  }, [assessments, currentUser, scopedSchools]);
+
+  function handleLogin(user: AuthUser, password: string) {
+    if (password !== user.senha_acesso) {
+      setMessage("Senha incorreta. Verifique a senha informada ou solicite redefinicao ao administrador.");
+      return;
+    }
+    setCurrentUser(user);
+    setForcePasswordChange(!!user.alterar_senha_primeiro_login);
+    setView(user.role === "aluno" ? "student" : "home");
+    setMessage(
+      user.alterar_senha_primeiro_login
+        ? "Primeiro acesso: altere sua senha para continuar."
+        : `Sessao iniciada como ${user.nome}.`,
+    );
+  }
+
+  function logout() {
+    setCurrentUser(null);
+    setForcePasswordChange(false);
+    setView("home");
+  }
+
+  async function updateCurrentUserPassword(newPassword: string) {
+    if (!currentUser) return;
+    if (newPassword.length < 8) {
+      setMessage("A nova senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    if (currentUser.origem === "sistema") {
+      const updated: AuthUser = { ...currentUser, senha_acesso: newPassword, alterar_senha_primeiro_login: false };
+      salvarMasterUser(updated);
+      setMasterUser(updated);
+      setCurrentUser(updated);
+      setForcePasswordChange(false);
+      setMessage("Senha do Administrador Master alterada com sucesso.");
+      return;
+    }
+
+    if (currentUser.origem === "professor" && currentUser.professor_matricula) {
+      const teacher = teachers.find((item) => item.matricula === currentUser.professor_matricula);
+      if (teacher) {
+        const updated: ProfessorDraft = { ...teacher, senha_acesso: newPassword, alterar_senha_primeiro_login: false };
+        const result = await salvarProfessor(updated);
+        if (result.erro) {
+          setMessage(result.erro);
+          return;
+        }
+        setTeachers([...teachers.filter((item) => item.matricula !== updated.matricula), updated]);
+      }
+    }
+
+    if (currentUser.origem === "escola" && currentUser.escola_inep) {
+      const school = schools.find((item) => item.codigo_inep === currentUser.escola_inep);
+      if (school) {
+        const updated: EscolaDraft = { ...school, senha_acesso: newPassword, alterar_senha_primeiro_login: false };
+        const result = await salvarEscola(updated);
+        if (result.erro) {
+          setMessage(result.erro);
+          return;
+        }
+        setSchools([...schools.filter((item) => item.codigo_inep !== updated.codigo_inep), updated]);
+      }
+    }
+
+    setCurrentUser({ ...currentUser, senha_acesso: newPassword, alterar_senha_primeiro_login: false });
+    setForcePasswordChange(false);
+    setMessage("Senha alterada com sucesso.");
+  }
+
+  if (!currentUser) {
+    return (
+      <LoginScreen
+        users={authUsers}
+        assessments={assessments}
+        questoes={questoes}
+        respostas={respostas}
+        setRespostas={setRespostas}
+        onLogin={handleLogin}
+        loading={loading}
+        message={message}
+        setMessage={setMessage}
+      />
+    );
+  }
+
+  if (forcePasswordChange) {
+    return <PasswordChangeScreen currentUser={currentUser} onChangePassword={updateCurrentUserPassword} onLogout={logout} message={message} />;
+  }
+
+  if (role === "student") {
+    return (
+      <div className="app role-student">
+        <header className="topbar">
+          <div className="brand compact-brand">
+            <div className="crest">CE</div>
+            <div>
+              <strong>SIDEP-CE</strong>
+              <span>Diagnóstico da Educação Profissional</span>
+            </div>
+          </div>
+          <button className="secondary small" onClick={logout}>Sair</button>
+        </header>
+
+        <main className="student-shell">
+          <section className="student-hero">
+            <div>
+              <p className="eyebrow">Acesso do estudante</p>
+              <h1>Avaliação diagnóstica online</h1>
+              <p className="lead">Informe o código recebido pela turma e seu nome completo para iniciar a prova.</p>
+            </div>
+            <aside className="student-seal">
+              <ShieldCheck size={26} />
+              <span>Ambiente do aluno</span>
+            </aside>
+          </section>
+          <StudentAccess
+            assessments={scopedAssessments.length ? scopedAssessments : assessments}
+            questoes={questoes}
+            respostas={respostas}
+            setRespostas={setRespostas}
+            setMessage={setMessage}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`app role-${role}`}>
+      <header className="topbar">
+        <div className="brand compact-brand">
+          <div className="crest">CE</div>
+          <div>
+            <strong>SIDEP-CE</strong>
+            <span>Diagnóstico da Educação Profissional</span>
+          </div>
+        </div>
+        <div className="session-box">
+          <span>{currentUser.nome}</span>
+          <strong>{authRoleLabel(currentUser.role)}</strong>
+          <button className="secondary small" onClick={logout}>Sair</button>
+        </div>
+      </header>
+
+      <main className="workspace-shell">
+        <aside className="sidebar">
+          <div className="sidebar-title">
+            <strong>
+              {currentUser.role === "administrador"
+                ? "Administrador"
+                : role === "teacher"
+                ? "Area do professor"
+                : "Gestão escolar"}
+            </strong>
+            <span>{supabaseConfigured ? "Banco online" : "Modo local"}</span>
+          </div>
+          <nav className="nav vertical" aria-label="Navegacao do ambiente">
+            <NavButton active={view === "home"} onClick={() => setView("home")} icon={BarChart3} label="Painel" />
+            {canUseTeacherArea && (
+              <>
+                <NavButton active={view === "items"} onClick={() => setView("items")} icon={Layers3} label="Banco de Itens" />
+                <NavButton active={view === "assessments"} onClick={() => setView("assessments")} icon={ClipboardList} label="Avaliacoes" />
+              </>
+            )}
+            {role === "management" && (
+              <>
+                {canManageSchools && <NavButton active={view === "schools"} onClick={() => setView("schools")} icon={Building2} label="Escolas" />}
+                {canManageTeachers && <NavButton active={view === "teachers"} onClick={() => setView("teachers")} icon={UserRoundCog} label="Professores" />}
+              </>
+            )}
+            <NavButton active={view === "reports"} onClick={() => setView("reports")} icon={BookOpenCheck} label="Relatorios" />
+          </nav>
+          <div className="sidebar-status">
+            <span>{loading ? "Carregando..." : message}</span>
+          </div>
+        </aside>
+
+        <section className="workspace-content">
+          <div className="workspace-header">
+            <div>
+              <p className="eyebrow">{role === "teacher" ? "Operacao pedagogica" : "Acompanhamento institucional"}</p>
+              <h1>
+                {currentUser.role === "administrador"
+                  ? "Controle geral do sistema"
+                  : role === "teacher"
+                  ? "Planejamento, itens e avaliações"
+                  : "Relatorios, cadastros e qualidade da rede"}
+              </h1>
+            </div>
+            <div className="status-chip">{supabaseConfigured ? "Supabase" : "Local"}</div>
+          </div>
+
+          {view === "home" && <Home stats={stats} />}
+          {role === "management" && view === "schools" && canManageSchools && (
+            <Schools schools={scopedSchools} allSchools={schools} setSchools={setSchools} setMessage={setMessage} currentUser={currentUser} />
+          )}
+          {role === "management" && view === "teachers" && canManageTeachers && (
+            <Teachers teachers={scopedTeachers} allTeachers={teachers} setTeachers={setTeachers} schools={scopedSchools} setMessage={setMessage} currentUser={currentUser} />
+          )}
+          {canUseTeacherArea && view === "items" && (
+            <ItemBank
+              competencias={competencias}
+              setCompetencias={setCompetencias}
+              descritores={descritores}
+              setDescritores={setDescritores}
+              questoes={questoes}
+              setQuestoes={setQuestoes}
+              setMessage={setMessage}
+            />
+          )}
+          {canUseTeacherArea && view === "assessments" && (
+            <AssessmentsV2
+              assessments={assessments}
+              setAssessments={setAssessments}
+              currentUser={currentUser}
+              competencias={competencias}
+              descritores={descritores}
+              questoes={questoes}
+              respostas={respostas}
+              setRespostas={setRespostas}
+              setMessage={setMessage}
+            />
+          )}
+          {view === "reports" && (
+            <Reports
+              schools={scopedSchools}
+              teachers={scopedTeachers}
+              assessments={scopedAssessments}
+              questoes={questoes}
+              respostas={respostas}
+              competencias={competencias}
+              descritores={descritores}
+              currentUser={currentUser}
+            />
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function NavButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof BarChart3;
+  label: string;
+}) {
+  return (
+    <button className={`nav-button ${active ? "active" : ""}`} onClick={onClick}>
+      <Icon size={18} />
+      {label}
+    </button>
+  );
+}
+
+function LoginScreen({
+  users,
+  assessments,
+  questoes,
+  respostas,
+  setRespostas,
+  onLogin,
+  loading,
+  message,
+  setMessage,
+}: {
+  users: AuthUser[];
+  assessments: AvaliacaoDraft[];
+  questoes: QuestaoDraft[];
+  respostas: RespostaAvaliacaoDraft[];
+  setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
+  onLogin: (user: AuthUser, password: string) => void;
+  loading: boolean;
+  message: string;
+  setMessage: (message: string) => void;
+}) {
+  const [loginMode, setLoginMode] = useState<"aluno" | "servidor">("aluno");
+  const [studentCode, setStudentCode] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [studentSession, setStudentSession] = useState<{ assessment: AvaliacaoDraft; name: string } | null>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const selectedUser = users.find((user) => normalizeKey(user.usuario) === normalizeKey(username));
+  const regionalName = selectedUser?.regional_codigo ? ` · ${selectedUser.regional_codigo}` : "";
+  const studentAssessment = assessments.find((item) => item.codigo_acesso === studentCode.trim().toUpperCase());
+  function submitLogin() {
+    if (!selectedUser) return;
+    onLogin(selectedUser, password);
+  }
+
+  function submitStudentAccess() {
+    if (!studentAssessment || studentName.trim().split(" ").length < 2) return;
+    if ((studentAssessment.status ?? "rascunho") !== "aberta") {
+      setMessage("Esta avaliação não está aberta para aplicação no momento.");
+      return;
+    }
+    if (respostas.some((resposta) => resposta.estudante_chave === studentAttemptKey(studentAssessment.codigo_acesso, studentName))) {
+      setMessage("Este aluno já enviou esta avaliação. Uma nova tentativa deve ser liberada pela gestão/professor.");
+      return;
+    }
+    setStudentSession({ assessment: studentAssessment, name: studentName.trim() });
+  }
+
+  if (studentSession) {
+    return (
+      <main className="student-shell">
+        <StudentAssessmentRunner
+          assessment={studentSession.assessment}
+          questoes={questoes}
+          studentName={studentSession.name}
+          respostas={respostas}
+          setRespostas={setRespostas}
+          previewMode={false}
+          onBack={() => setStudentSession(null)}
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main className="login-shell">
+      <section className="login-hero">
+        <div className="login-logo-strip" aria-label="Instituições parceiras">
+          <img src={logoSeduc} alt="Governo do Estado do Ceará - Secretaria da Educação" />
+          <img src={logoCrede03} alt="CREDE 3 Acaraú" />
+          <img src={logoCentec} alt="Instituto Centro de Ensino Tecnológico - CENTEC" />
+        </div>
+        <div>
+          <p className="eyebrow">SIDEP-CE</p>
+          <h1>Sistema de Diagnóstico da Educação Profissional</h1>
+          <p className="lead">
+            Acesso por perfil institucional para estudante, professor técnico, escola, CREDE/SEFOR e SEDUC.
+          </p>
+        </div>
+        <div className="login-partner">
+          <strong>SEDUC · CREDE 3 · CENTEC</strong>
+          <span>Avaliação diagnóstica, curadoria docente e gestão pedagógica da Educação Profissional.</span>
+        </div>
+      </section>
+
+      <section className="login-panel" aria-label="Entrar no SIDEP-CE">
+        <div className="login-panel-logos" aria-label="Logos institucionais">
+          <img src={logoSeduc} alt="SEDUC Ceará" />
+          <img src={logoCrede03} alt="CREDE 3" />
+          <img src={logoCentec} alt="CENTEC" />
+        </div>
+        <div>
+          <p className="eyebrow">Acesso</p>
+          <h2>{loginMode === "aluno" ? "Entrar na avaliação" : "Acesso institucional"}</h2>
+          <p>
+            {loginMode === "aluno"
+              ? "Informe o código da prova e seu nome completo. O aluno não acessa relatórios, pesos ou diagnóstico."
+              : "Professor, gestão escolar, CREDE/SEFOR, SEDUC e Administrador Master entram pelo acesso institucional."}
+          </p>
+        </div>
+
+        <div className="login-mode-switch" role="tablist" aria-label="Tipo de acesso">
+          <button className={loginMode === "aluno" ? "active" : ""} onClick={() => setLoginMode("aluno")}>Aluno</button>
+          <button className={loginMode === "servidor" ? "active" : ""} onClick={() => setLoginMode("servidor")}>Professor ou Gestão</button>
+        </div>
+
+        {loginMode === "aluno" && (
+          <div className="student-login-card">
+            <label>
+              Código da prova
+              <input
+                className="student-login-input"
+                value={studentCode}
+                onChange={(event) => setStudentCode(event.target.value.toUpperCase())}
+                placeholder="Ex.: TECINF-26-01"
+              />
+            </label>
+            <label>
+              Nome completo do aluno
+              <input
+                className="student-login-input"
+                value={studentName}
+                onChange={(event) => setStudentName(event.target.value)}
+                placeholder="Digite o nome completo"
+              />
+            </label>
+            {studentAssessment && (
+              <div className="assessment-card">
+                <strong>{studentAssessment.titulo}</strong>
+                <span>{studentAssessment.turma_codigo} · {studentAssessment.quantidade_questoes} questões · {studentAssessment.etapa}</span>
+              </div>
+            )}
+            <button className="primary" onClick={submitStudentAccess} disabled={!studentAssessment || studentName.trim().split(" ").length < 2}>
+              Acessar avaliação
+            </button>
+          </div>
+        )}
+
+        {loginMode === "servidor" && (
+          <>
+            <label>
+              Usuário
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="INEP, e-mail institucional ou MASTER"
+              />
+            </label>
+
+            <label>
+              Senha
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Escola: INEP · Professor: CPF · Master: senha definida" />
+            </label>
+
+            <div className="login-scope">
+              {selectedUser ? (
+                <>
+                  <strong>{authRoleLabel(selectedUser.role)}{regionalName}</strong>
+                  <span>Usuário: {selectedUser.usuario}</span>
+                  <span>{selectedUser.email}</span>
+                  {selectedUser.escola_inep && <span>Escola INEP: {selectedUser.escola_inep}</span>}
+                </>
+              ) : (
+                  <>
+                    <strong>Informe um usuário válido</strong>
+                    <span>Escola: use o INEP. Profissionais, gestão regional e SEDUC: use o e-mail institucional. Administrador Master: use MASTER.</span>
+                  </>
+              )}
+            </div>
+
+            <button className="primary" onClick={submitLogin} disabled={loading || !selectedUser}>
+              Entrar no sistema
+            </button>
+          </>
+        )}
+
+        <p className="helper">{loading ? "Carregando dados do MVP..." : message}</p>
+      </section>
+    </main>
+  );
+}
+
+function PasswordChangeScreen({
+  currentUser,
+  onChangePassword,
+  onLogout,
+  message,
+}: {
+  currentUser: AuthUser;
+  onChangePassword: (newPassword: string) => void;
+  onLogout: () => void;
+  message: string;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const canSubmit = newPassword.length >= 8 && newPassword === confirmation;
+
+  return (
+    <main className="login-shell password-shell">
+      <section className="login-hero">
+        <div className="login-brand-row">
+          <div className="gov-mark">
+            <span>CE</span>
+          </div>
+          <div>
+            <strong>SIDEP-CE</strong>
+            <small>Segurança de acesso institucional</small>
+          </div>
+        </div>
+        <div>
+          <p className="eyebrow">Primeiro acesso</p>
+          <h1>Altere sua senha antes de continuar</h1>
+          <p className="lead">A senha padrão só serve para o primeiro login. Depois disso, cada usuário deve definir sua senha pessoal.</p>
+        </div>
+      </section>
+
+      <section className="login-panel">
+        <div>
+          <p className="eyebrow">{authRoleLabel(currentUser.role)}</p>
+          <h2>{currentUser.nome}</h2>
+          <p>{currentUser.email}</p>
+        </div>
+        <label>
+          Nova senha
+          <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" />
+        </label>
+        <label>
+          Confirmar nova senha
+          <input type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Digite novamente" />
+        </label>
+        <button className="primary" disabled={!canSubmit} onClick={() => onChangePassword(newPassword)}>
+          Alterar senha e continuar
+        </button>
+        <button className="secondary" onClick={onLogout}>Sair</button>
+        <p className="helper">{message}</p>
+      </section>
+    </main>
+  );
+}
+
+function Home({ stats }: { stats: Array<{ label: string; value: string | number; icon: typeof BarChart3 }> }) {
+  return (
+    <section className="panel">
+      <h2>Painel do MVP</h2>
+      <p>
+        O SIDEP-CE começa pela fundação cadastral. Sem escola, professor, curso, turma e avaliação vinculados,
+        não existe relatório confiável por estudante, turma, escola, CREDE/SEFOR ou rede estadual.
+      </p>
+      <div className="kpis">
+        {stats.map((item) => (
+          <article className="kpi" key={item.label}>
+            <item.icon size={22} />
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </article>
+        ))}
+      </div>
+      <div className="notice">
+        <strong>Separação correta:</strong> o estudante vê apenas acesso e prova. Diagnóstico, intervenção,
+        banco de itens, parâmetros pré-TRI/TRI e relatórios ficam na área do professor e da gestão.
+      </div>
+    </section>
+  );
+}
+
+function StudentAccess({
+  assessments,
+  questoes,
+  respostas,
+  setRespostas,
+  setMessage,
+}: {
+  assessments: AvaliacaoDraft[];
+  questoes: QuestaoDraft[];
+  respostas: RespostaAvaliacaoDraft[];
+  setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
+  setMessage: (message: string) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [studentSession, setStudentSession] = useState<{ assessment: AvaliacaoDraft; name: string } | null>(null);
+  const assessment = assessments.find((item) => item.codigo_acesso === code.trim().toUpperCase());
+
+  if (studentSession) {
+    return (
+      <StudentAssessmentRunner
+        assessment={studentSession.assessment}
+        questoes={questoes}
+        studentName={studentSession.name}
+        respostas={respostas}
+        setRespostas={setRespostas}
+        previewMode={false}
+        onBack={() => setStudentSession(null)}
+      />
+    );
+  }
+
+  return (
+    <section className="panel compact">
+      <h2>Área do Estudante</h2>
+      <p>O estudante informa o código da turma/avaliação e o nome completo para iniciar a prova online.</p>
+      <div className="form-grid">
+        <label>
+          Código da avaliação
+          <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="Ex.: TECINF-26-01" />
+        </label>
+        <label>
+          Nome completo
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Digite o nome completo" />
+        </label>
+      </div>
+      {assessment && (
+        <div className="assessment-card">
+          <strong>{assessment.titulo}</strong>
+          <span>{assessment.turma_codigo} · {assessment.quantidade_questoes} questões · {assessment.etapa}</span>
+        </div>
+      )}
+      <button
+        className="primary"
+        disabled={!assessment || name.trim().split(" ").length < 2}
+        onClick={() => {
+          if (!assessment) return;
+          if ((assessment.status ?? "rascunho") !== "aberta") {
+            setMessage("Esta avaliação não está aberta para aplicação no momento.");
+            return;
+          }
+          if (respostas.some((resposta) => resposta.estudante_chave === studentAttemptKey(assessment.codigo_acesso, name))) {
+            setMessage("Este aluno já enviou esta avaliação. Uma nova tentativa deve ser liberada pela gestão/professor.");
+            return;
+          }
+          setStudentSession({ assessment, name: name.trim() });
+        }}
+      >
+        Iniciar avaliação
+      </button>
+      <p className="helper">Nenhum diagnóstico ou intervenção aparece para o estudante.</p>
+    </section>
+  );
+}
+
+function StudentAssessmentRunner({
+  assessment,
+  questoes,
+  studentName,
+  respostas,
+  setRespostas,
+  previewMode,
+  onBack,
+}: {
+  assessment: AvaliacaoDraft;
+  questoes: QuestaoDraft[];
+  studentName: string;
+  respostas: RespostaAvaliacaoDraft[];
+  setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
+  previewMode: boolean;
+  onBack: () => void;
+}) {
+  const [attemptSeed] = useState(() => `${assessment.codigo_acesso}-${studentName}-${Date.now()}-${Math.random()}`);
+  const assessmentQuestions = useMemo(
+    () => shuffleWithSeed(getAssessmentQuestions(assessment, questoes), attemptSeed),
+    [assessment, questoes, attemptSeed],
+  );
+  const [answers, setAnswers] = useState<Record<string, AlternativaKey>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const answeredCount = assessmentQuestions.filter((questao) => answers[questao.codigo]).length;
+  const allAnswered = assessmentQuestions.length > 0 && answeredCount === assessmentQuestions.length;
+
+  function setAnswer(questionCode: string, answer: AlternativaKey) {
+    setAnswers((current) => ({ ...current, [questionCode]: answer }));
+  }
+
+  async function submitAssessment() {
+    if (!allAnswered) return;
+    if (previewMode) {
+      setSubmitted(true);
+      return;
+    }
+    const estudante_chave = studentAttemptKey(assessment.codigo_acesso, studentName);
+    if (respostas.some((resposta) => resposta.estudante_chave === estudante_chave)) {
+      setSubmitted(true);
+      return;
+    }
+    const result = calculateStudentResult(assessment, assessmentQuestions, answers);
+    const submission: RespostaAvaliacaoDraft = {
+      id: crypto.randomUUID(),
+      avaliacao_codigo: assessment.codigo_acesso,
+      avaliacao_titulo: assessment.titulo,
+      estudante_nome: studentName,
+      estudante_chave,
+      turma_codigo: assessment.turma_codigo,
+      curso_tecnico: assessment.curso_tecnico,
+      escola_inep: assessment.escola_inep,
+      professor_matricula: assessment.professor_matricula,
+      etapa: assessment.etapa,
+      ordem_questoes: assessmentQuestions.map((questao) => questao.codigo),
+      respostas: answers,
+      acertos: result.acertos,
+      total_questoes: result.total_questoes,
+      percentual_bruto: result.percentual_bruto,
+      desempenho_por_descritor: result.desempenho_por_descritor,
+      desempenho_por_componente: result.desempenho_por_componente,
+      enviado_em: new Date().toISOString(),
+      origem: "local",
+    };
+    const saved = await salvarRespostaAvaliacao(submission);
+    if (saved.erro) {
+      setSubmitError(saved.erro);
+      return;
+    }
+    if (saved.data) {
+      setRespostas([...respostas.filter((resposta) => resposta.estudante_chave !== estudante_chave), saved.data]);
+    }
+    setSubmitError("");
+    setSubmitted(true);
+  }
+
+  if (!assessmentQuestions.length) {
+    return (
+      <section className="panel compact student-runner">
+        <div className="student-runner-header">
+          <div>
+            <p className="eyebrow">Avaliação indisponível</p>
+            <h2>{assessment.titulo}</h2>
+            <p>
+              Esta avaliação foi localizada pelo código, mas ainda não possui questões publicadas vinculadas.
+              O professor precisa republicar a avaliação com itens validados no Banco de Itens.
+            </p>
+          </div>
+        </div>
+        <button className="secondary" onClick={onBack}>Voltar ao acesso</button>
+      </section>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <section className="panel compact student-runner">
+        <div className="submission-card">
+          <ShieldCheck size={34} />
+          <p className="eyebrow">Envio registrado</p>
+          <h2>{previewMode ? "Pré-visualização finalizada" : "Avaliação finalizada"}</h2>
+          <p>
+            {previewMode
+              ? "Esta simulação não grava respostas nem altera relatórios."
+              : `${studentName}, suas respostas foram recebidas. O diagnóstico pedagógico, os relatórios e as intervenções ficam disponíveis apenas para professor e gestão.`}
+          </p>
+          <strong>{answeredCount}/{assessmentQuestions.length} questões respondidas</strong>
+        </div>
+        <button className="secondary" onClick={onBack}>Sair da avaliação</button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel compact student-runner">
+      <div className="student-runner-header">
+        <div>
+          <p className="eyebrow">{previewMode ? "Pré-visualização do professor" : "Prova online"}</p>
+          <h2>{assessment.titulo}</h2>
+          <p>{studentName} - {assessment.turma_codigo} - {assessment.etapa}</p>
+        </div>
+        <span className="count-chip">{answeredCount}/{assessmentQuestions.length} respondidas</span>
+      </div>
+
+      <div className="notice">
+        Prova individual com ordem de questões embaralhada por acesso. Responda todas as questões antes de enviar.
+        O estudante não visualiza gabarito, proficiência, TRI, diagnóstico ou trilhas de recomposição.
+      </div>
+
+      <div className="question-list">
+        {assessmentQuestions.map((questao, index) => (
+          <article className="student-question-card" key={questao.codigo}>
+            <div className="question-title-row">
+              <span>Questão {index + 1}</span>
+              <small>{questao.componente_curricular} - {questao.descritor_codigo}</small>
+            </div>
+            <p>{questao.enunciado}</p>
+            {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((option) => {
+              const text = questao[`alternativa_${option.toLowerCase()}` as keyof QuestaoDraft] as string;
+              return (
+                <label className="option-row" key={option}>
+                  <input
+                    type="radio"
+                    name={questao.codigo}
+                    checked={answers[questao.codigo] === option}
+                    onChange={() => setAnswer(questao.codigo, option)}
+                  />
+                  <strong>{option}</strong>
+                  <span>{text}</span>
+                </label>
+              );
+            })}
+          </article>
+        ))}
+      </div>
+
+      <div className="student-runner-actions">
+        <button className="secondary" onClick={onBack}>Voltar</button>
+        <button className="primary" disabled={!allAnswered} onClick={submitAssessment}>
+          Enviar avaliação
+        </button>
+      </div>
+      {submitError && <p className="notice warning">{submitError}</p>}
+      {!allAnswered && <p className="helper">Faltam {assessmentQuestions.length - answeredCount} questões para liberar o envio.</p>}
+    </section>
+  );
+}
+
+function Schools({
+  schools,
+  allSchools,
+  setSchools,
+  setMessage,
+  currentUser,
+}: {
+  schools: EscolaDraft[];
+  allSchools: EscolaDraft[];
+  setSchools: (schools: EscolaDraft[]) => void;
+  setMessage: (message: string) => void;
+  currentUser: AuthUser;
+}) {
+  const [draft, setDraft] = useState<EscolaDraft>({
+    codigo_inep: "",
+    nome_oficial: "",
+    tipo: "EEEP",
+    regional_codigo: "CREDE-3",
+    municipio: "",
+    email_principal: "",
+    emails_adicionais: "",
+    telefone: "",
+    diretor_nome: "",
+    coordenador_ep_nome: "",
+    status: "ativa",
+    senha_acesso: "",
+    alterar_senha_primeiro_login: true,
+  });
+  const canChooseRegional = currentUser.role === "seduc" || currentUser.role === "administrador";
+
+  async function save() {
+    if (!draft.codigo_inep || !draft.nome_oficial || !draft.email_principal || !draft.municipio) {
+      setMessage("Preencha INEP, nome oficial, município e e-mail institucional da escola.");
+      return;
+    }
+
+    const normalized: EscolaDraft = {
+      ...draft,
+      regional_codigo: canChooseRegional ? draft.regional_codigo : currentUser.regional_codigo ?? draft.regional_codigo,
+      status: draft.status ?? "ativa",
+      senha_acesso: draft.senha_acesso || draft.codigo_inep,
+      alterar_senha_primeiro_login: draft.alterar_senha_primeiro_login ?? true,
+    };
+
+    const result = await salvarEscola(normalized);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+
+    setSchools([...allSchools.filter((school) => school.codigo_inep !== normalized.codigo_inep), normalized]);
+    setMessage(`Escola salva em modo ${result.modo}.`);
+    setDraft({
+      ...draft,
+      codigo_inep: "",
+      nome_oficial: "",
+      municipio: "",
+      email_principal: "",
+      emails_adicionais: "",
+      telefone: "",
+      senha_acesso: "",
+      alterar_senha_primeiro_login: true,
+    });
+  }
+
+  async function resetSchoolPassword(school: EscolaDraft) {
+    const updated: EscolaDraft = {
+      ...school,
+      senha_acesso: school.codigo_inep,
+      alterar_senha_primeiro_login: true,
+    };
+    const result = await salvarEscola(updated);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    setSchools([...allSchools.filter((item) => item.codigo_inep !== updated.codigo_inep), updated]);
+    setMessage(`Senha da gestão escolar de ${updated.nome_oficial} redefinida para o INEP da escola.`);
+  }
+
+  function editSchool(school: EscolaDraft) {
+    setDraft({ ...school, status: school.status ?? "ativa" });
+    setMessage(`Editando cadastro de ${school.nome_oficial}.`);
+  }
+
+  async function toggleSchoolStatus(school: EscolaDraft) {
+    const updated: EscolaDraft = { ...school, status: (school.status ?? "ativa") === "ativa" ? "inativa" : "ativa" };
+    const result = await salvarEscola(updated);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    setSchools([...allSchools.filter((item) => item.codigo_inep !== updated.codigo_inep), updated]);
+    setMessage(`${updated.nome_oficial} marcada como ${updated.status}.`);
+  }
+
+  return (
+    <section className="panel">
+      <h2>Cadastro de Escolas</h2>
+      <p>Código INEP como identificador único, com vínculo obrigatório à CREDE/SEFOR e aos e-mails institucionais.</p>
+      <div className="form-grid">
+        <Field label="Código INEP" value={draft.codigo_inep} onChange={(value) => setDraft({ ...draft, codigo_inep: value })} />
+        <Field label="Nome oficial" value={draft.nome_oficial} onChange={(value) => setDraft({ ...draft, nome_oficial: value })} />
+        <label>
+          Tipo
+          <select value={draft.tipo} onChange={(event) => setDraft({ ...draft, tipo: event.target.value as TipoEscola })}>
+            {tipoEscolaOptions.map((tipo) => (
+              <option key={tipo}>{tipo}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          CREDE/SEFOR
+          <select value={canChooseRegional ? draft.regional_codigo : currentUser.regional_codigo ?? draft.regional_codigo} disabled={!canChooseRegional} onChange={(event) => setDraft({ ...draft, regional_codigo: event.target.value })}>
+            {regionaisSeed.map((regional) => (
+              <option value={regional.codigo} key={regional.codigo}>{regional.codigo}</option>
+            ))}
+          </select>
+        </label>
+        <Field label="Município" value={draft.municipio} onChange={(value) => setDraft({ ...draft, municipio: value })} />
+        <Field label="E-mail institucional principal" value={draft.email_principal} onChange={(value) => setDraft({ ...draft, email_principal: value })} />
+        <Field label="E-mails adicionais" value={draft.emails_adicionais} onChange={(value) => setDraft({ ...draft, emails_adicionais: value })} />
+        <Field label="Telefone" value={draft.telefone ?? ""} onChange={(value) => setDraft({ ...draft, telefone: value })} />
+        <Field label="Diretor(a)" value={draft.diretor_nome ?? ""} onChange={(value) => setDraft({ ...draft, diretor_nome: value })} />
+        <Field label="Coordenador(a) EP" value={draft.coordenador_ep_nome ?? ""} onChange={(value) => setDraft({ ...draft, coordenador_ep_nome: value })} />
+        <Field label="Senha inicial da gestão escolar" value={draft.senha_acesso ?? ""} onChange={(value) => setDraft({ ...draft, senha_acesso: value, alterar_senha_primeiro_login: true })} placeholder="Se vazio, o sistema usa o INEP" />
+      </div>
+      <div className="notice">
+        Regra recomendada: usuário da escola = <strong>código INEP</strong> e senha inicial = <strong>código INEP</strong>. No primeiro acesso, a gestão deverá alterar a senha.
+      </div>
+      <button className="primary" onClick={save}>Salvar escola</button>
+      <DataTable
+        headers={["INEP", "Escola", "Tipo", "Regional", "Município", "E-mail", "Status"]}
+        rows={schools.map((school) => [
+          school.codigo_inep,
+          school.nome_oficial,
+          school.tipo,
+          school.regional_codigo,
+          school.municipio,
+          school.email_principal,
+          school.status ?? "ativa",
+        ])}
+      />
+      {currentUser.role === "administrador" && (
+        <div className="reference-list">
+          <div className="section-heading compact">
+            <h4>Controle administrativo das escolas</h4>
+            <span className="count-chip">{schools.length}</span>
+          </div>
+          <div className="reference-grid">
+            {schools.map((school) => (
+              <article className="reference-card" key={school.codigo_inep}>
+                <div>
+                  <strong>{school.nome_oficial}</strong>
+                  <em>{school.codigo_inep} · {school.status ?? "ativa"}</em>
+                  <span>{school.email_principal}</span>
+                  <small>{school.regional_codigo}</small>
+                </div>
+                <button className="secondary small" onClick={() => editSchool(school)}>
+                  Editar
+                </button>
+                <button className="secondary small" onClick={() => toggleSchoolStatus(school)}>
+                  {(school.status ?? "ativa") === "ativa" ? "Inativar" : "Reativar"}
+                </button>
+                <button className="secondary small" onClick={() => resetSchoolPassword(school)}>
+                  Redefinir senha
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Teachers({
+  teachers,
+  allTeachers,
+  setTeachers,
+  schools,
+  setMessage,
+  currentUser,
+}: {
+  teachers: ProfessorDraft[];
+  allTeachers: ProfessorDraft[];
+  setTeachers: (teachers: ProfessorDraft[]) => void;
+  schools: EscolaDraft[];
+  setMessage: (message: string) => void;
+  currentUser: AuthUser;
+}) {
+  const [draft, setDraft] = useState<ProfessorDraft>({
+    matricula: "",
+    nome_completo: "",
+    cpf: "",
+    telefone: "",
+    email_institucional: "",
+    escola_inep: "",
+    curso_responsavel: "",
+    componentes_responsaveis: "",
+    perfil_acesso: "professor_tecnico",
+    status: "ativo",
+    senha_acesso: "",
+    alterar_senha_primeiro_login: true,
+  });
+  const forcedSchoolInep = currentUser.role === "gestao_escolar" ? currentUser.escola_inep : undefined;
+
+  async function save() {
+    if (!draft.matricula || !draft.nome_completo || !draft.email_institucional || !draft.curso_responsavel) {
+      setMessage("Preencha matrícula, nome, e-mail institucional e curso técnico de atuação.");
+      return;
+    }
+
+    const normalized: ProfessorDraft = {
+      ...draft,
+      escola_inep: forcedSchoolInep ?? draft.escola_inep,
+      status: draft.status ?? "ativo",
+      senha_acesso: draft.senha_acesso || draft.cpf || DEFAULT_TEACHER_CPF,
+      alterar_senha_primeiro_login: draft.alterar_senha_primeiro_login ?? true,
+    };
+
+    const result = await salvarProfessor(normalized);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+
+    setTeachers([...allTeachers.filter((teacher) => teacher.matricula !== normalized.matricula), normalized]);
+    setMessage(`Profissional salvo em modo ${result.modo}.`);
+    setDraft({
+      ...draft,
+      matricula: "",
+      nome_completo: "",
+      cpf: "",
+      telefone: "",
+      email_institucional: "",
+      curso_responsavel: "",
+      componentes_responsaveis: "",
+      senha_acesso: "",
+      alterar_senha_primeiro_login: true,
+    });
+  }
+
+  async function editTeacher(teacher: ProfessorDraft) {
+    setDraft({ ...teacher, status: teacher.status ?? "ativo" });
+    setMessage(`Editando cadastro de ${teacher.nome_completo}.`);
+  }
+
+  async function deactivateTeacher(teacher: ProfessorDraft) {
+    const updated: ProfessorDraft = { ...teacher, status: teacher.status === "inativo" ? "ativo" : "inativo" };
+    const result = await salvarProfessor(updated);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    setTeachers([...allTeachers.filter((item) => item.matricula !== updated.matricula), updated]);
+    setMessage(`${updated.nome_completo} marcado como ${updated.status}.`);
+  }
+
+  async function resetTeacherPassword(teacher: ProfessorDraft) {
+    const updated: ProfessorDraft = {
+      ...teacher,
+      senha_acesso: teacher.cpf || DEFAULT_TEACHER_CPF,
+      alterar_senha_primeiro_login: true,
+    };
+    const result = await salvarProfessor(updated);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    setTeachers([...allTeachers.filter((item) => item.matricula !== updated.matricula), updated]);
+    setMessage(`Senha de ${updated.nome_completo} redefinida para o CPF cadastrado.`);
+  }
+
+  return (
+    <section className="panel">
+      <h2>Cadastro de Profissionais Técnicos</h2>
+      <p>Matrícula funcional como identificador único, vinculada à escola, ao curso técnico e ao papel de atuação na EPT.</p>
+      <div className="form-grid">
+        <Field label="Matrícula" value={draft.matricula} onChange={(value) => setDraft({ ...draft, matricula: value })} />
+        <Field label="Nome completo" value={draft.nome_completo} onChange={(value) => setDraft({ ...draft, nome_completo: value })} />
+        <Field label="CPF" value={draft.cpf ?? ""} onChange={(value) => setDraft({ ...draft, cpf: value.replace(/\D/g, ""), senha_acesso: "" })} placeholder="Somente números" />
+        <Field label="Telefone" value={draft.telefone ?? ""} onChange={(value) => setDraft({ ...draft, telefone: value })} />
+        <Field label="E-mail institucional" value={draft.email_institucional} onChange={(value) => setDraft({ ...draft, email_institucional: value })} />
+        <label>
+          Escola de lotação
+          <select value={forcedSchoolInep ?? draft.escola_inep} disabled={currentUser.role === "gestao_escolar"} onChange={(event) => setDraft({ ...draft, escola_inep: event.target.value })}>
+            <option value="">Selecione</option>
+            {forcedSchoolInep && !schools.some((school) => school.codigo_inep === forcedSchoolInep) && (
+              <option value={forcedSchoolInep}>Escola vinculada à sessão · INEP {forcedSchoolInep}</option>
+            )}
+            {schools.map((school) => (
+              <option key={school.codigo_inep} value={school.codigo_inep}>{school.nome_oficial}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Perfil
+          <select value={draft.perfil_acesso} onChange={(event) => setDraft({ ...draft, perfil_acesso: event.target.value as PerfilAcesso })}>
+            {perfilOptions.map((perfil) => (
+              <option key={perfil.value} value={perfil.value}>{perfil.label}</option>
+            ))}
+          </select>
+        </label>
+        <Field label="Curso técnico de atuação" value={draft.curso_responsavel} onChange={(value) => setDraft({ ...draft, curso_responsavel: value })} />
+        <Field
+          label="Vínculo na EPT"
+          value={draft.componentes_responsaveis}
+          onChange={(value) => setDraft({ ...draft, componentes_responsaveis: value })}
+          placeholder="Ex.: Coordenação do curso; 1ª, 2ª e 3ª série; Laboratórios; Estágio; Projeto Integrador"
+        />
+        <Field label="Senha inicial do professor" value={draft.senha_acesso ?? ""} onChange={(value) => setDraft({ ...draft, senha_acesso: value, alterar_senha_primeiro_login: true })} placeholder="Se vazio, o sistema usa o CPF" />
+      </div>
+      <div className="method-note">
+        <strong>Como preencher o vínculo na EPT</strong>
+        <p>
+          Use este campo para registrar a atuação real do profissional no curso técnico: coordenação do curso, séries/turmas
+          acompanhadas, laboratórios, estágio supervisionado, projeto integrador, banco de itens ou revisão técnica.
+        </p>
+      </div>
+      <div className="notice">
+        Regra recomendada: usuário do professor = <strong>e-mail institucional</strong> e senha inicial = <strong>CPF</strong>. O professor deverá alterar a senha no primeiro acesso.
+      </div>
+      <button className="primary" onClick={save}>Salvar profissional</button>
+      <DataTable
+        headers={["Matrícula", "Nome", "Perfil", "E-mail", "Escola", "Curso", "Vínculo EPT", "Status"]}
+        rows={teachers.map((teacher) => [
+          teacher.matricula,
+          teacher.nome_completo,
+          perfilAcessoLabel(teacher.perfil_acesso),
+          teacher.email_institucional,
+          schools.find((school) => school.codigo_inep === teacher.escola_inep)?.nome_oficial ?? "",
+          teacher.curso_responsavel,
+          teacher.componentes_responsaveis,
+          teacher.status ?? "ativo",
+        ])}
+      />
+      <div className="reference-list">
+        <div className="section-heading compact">
+          <h4>Ações de usuário</h4>
+          <span className="count-chip">{teachers.length}</span>
+        </div>
+        <div className="reference-grid">
+          {teachers.map((teacher) => (
+            <article className="reference-card" key={teacher.matricula}>
+              <div>
+                <strong>{teacher.nome_completo}</strong>
+                <em>{perfilAcessoLabel(teacher.perfil_acesso)} · {teacher.status ?? "ativo"}</em>
+                <span>{teacher.email_institucional}</span>
+                <small>{teacher.curso_responsavel} · {teacher.componentes_responsaveis || "vínculo EPT não informado"}</small>
+              </div>
+              <button className="secondary small" onClick={() => editTeacher(teacher)}>Editar</button>
+              <button className="secondary small" onClick={() => deactivateTeacher(teacher)}>
+                {(teacher.status ?? "ativo") === "ativo" ? "Desativar" : "Reativar"}
+              </button>
+              {currentUser.role === "administrador" && (
+                <button className="secondary small" onClick={() => resetTeacherPassword(teacher)}>
+                  Redefinir senha
+                </button>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ItemBank({
+  competencias,
+  setCompetencias,
+  descritores,
+  setDescritores,
+  questoes,
+  setQuestoes,
+  setMessage,
+}: {
+  competencias: CompetenciaDraft[];
+  setCompetencias: (competencias: CompetenciaDraft[]) => void;
+  descritores: DescritorDraft[];
+  setDescritores: (descritores: DescritorDraft[]) => void;
+  questoes: QuestaoDraft[];
+  setQuestoes: (questoes: QuestaoDraft[]) => void;
+  setMessage: (message: string) => void;
+}) {
+  const [competenciaDraft, setCompetenciaDraft] = useState<CompetenciaDraft>({
+    codigo: "C02",
+    curso_tecnico: "Técnico em Informática",
+    descricao: "C02 - Desenvolver soluções computacionais por meio de raciocínio lógico, algoritmos, programação estruturada e orientação a objetos.",
+    fonte: "Matriz curricular 2025/2026 e arquitetura SIDEP-CE",
+  });
+  const [descritorDraft, setDescritorDraft] = useState<DescritorDraft>({
+    codigo: "D03",
+    competencia_codigo: "C02",
+    componente_curricular: "Lógica de Programação I (Python)",
+    descricao: "D03 - Interpretar variáveis, operadores, entrada, saída e conversões de dados em algoritmos e programas Python.",
+    nivel_esperado: "basico",
+  });
+  const [questaoDraft, setQuestaoDraft] = useState<QuestaoDraft>({
+    codigo: "Q-INF-0001",
+    descritor_codigo: "D03",
+    componente_curricular: "Lógica de Programação I (Python)",
+    enunciado: "",
+    alternativa_a: "",
+    alternativa_b: "",
+    alternativa_c: "",
+    alternativa_d: "",
+    alternativa_e: "",
+    gabarito: "A",
+    justificativa: "",
+    dificuldade_inicial: 1,
+    status: "rascunho",
+  });
+  const [activeTab, setActiveTab] = useState<ItemBankTab>("competencias");
+  const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
+  const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
+
+  function saveCompetencia() {
+    if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
+      setMessage("Preencha código, curso técnico e descrição da competência.");
+      return;
+    }
+
+    const normalized = { ...competenciaDraft, codigo: competenciaDraft.codigo.toUpperCase() };
+    const result = salvarCompetenciaLocal(normalized);
+    setCompetencias([...competencias.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    setDescritorDraft({ ...descritorDraft, competencia_codigo: normalized.codigo });
+    setMessage(`Competência salva em modo ${result.modo}.`);
+  }
+
+  function saveDescritor() {
+    if (!descritorDraft.codigo || !descritorDraft.competencia_codigo || !descritorDraft.descricao) {
+      setMessage("Preencha código, competência vinculada e descrição do descritor.");
+      return;
+    }
+    if (!competencias.some((item) => item.codigo === descritorDraft.competencia_codigo)) {
+      setMessage("O descritor precisa estar vinculado a uma competência cadastrada.");
+      return;
+    }
+
+    const normalized = { ...descritorDraft, codigo: descritorDraft.codigo.toUpperCase() };
+    const result = salvarDescritorLocal(normalized);
+    setDescritores([...descritores.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: normalized.codigo,
+      componente_curricular: normalized.componente_curricular,
+    });
+    setMessage(`Descritor salvo em modo ${result.modo}.`);
+  }
+
+  function saveQuestao() {
+    const alternativas = [
+      questaoDraft.alternativa_a,
+      questaoDraft.alternativa_b,
+      questaoDraft.alternativa_c,
+      questaoDraft.alternativa_d,
+      questaoDraft.alternativa_e,
+    ];
+    if (!questaoDraft.codigo || !questaoDraft.descritor_codigo || !questaoDraft.enunciado || alternativas.some((item) => !item)) {
+      setMessage("Preencha código, descritor, enunciado e todas as alternativas da questão.");
+      return;
+    }
+    if (!descritores.some((item) => item.codigo === questaoDraft.descritor_codigo)) {
+      setMessage("A questão precisa estar vinculada a um descritor cadastrado.");
+      return;
+    }
+    if (questaoDraft.dificuldade_inicial < 0.1 || questaoDraft.dificuldade_inicial > 5) {
+      setMessage("A dificuldade inicial pré-TRI deve ficar entre 0.1 e 5.");
+      return;
+    }
+
+    const normalized = { ...questaoDraft, codigo: questaoDraft.codigo.toUpperCase() };
+    const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
+    const normalizedFingerprint = questionFingerprint(normalized);
+    const duplicate = questoes.find((questao) => {
+      if (questao.codigo.toUpperCase() === normalized.codigo) return false;
+
+      return normalizeQuestionText(questao.enunciado) === normalizedEnunciado || questionFingerprint(questao) === normalizedFingerprint;
+    });
+
+    if (duplicate) {
+      setMessage(
+        `Duplicidade bloqueada: esta questão parece igual à ${duplicate.codigo}. Revise o enunciado/alternativas antes de salvar.`,
+      );
+      return;
+    }
+
+    const result = salvarQuestaoLocal(normalized);
+    setQuestoes([...questoes.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    setMessage(`Questão salva em modo ${result.modo}. Ela já pode compor avaliações futuras.`);
+  }
+
+  function importNorteadores() {
+    const banco = montarBancoNorteadorAtualizado(competencias, descritores, questoes);
+
+    substituirBancoItensLocal(banco);
+    setCompetencias(banco.competencias);
+    setDescritores(banco.descritores);
+    setQuestoes(banco.questoes);
+    setMessage("Banco v0.3 importado: descritores-base de Informática com meta de 20 questões e itens novos em revisão docente.");
+  }
+
+  function alterarStatusQuestao(codigo: string, status: QuestaoDraft["status"]) {
+    const questao = questoes.find((item) => item.codigo === codigo);
+    if (!questao) {
+      setMessage("Questão não encontrada no banco de itens.");
+      return;
+    }
+
+    const atualizada = { ...questao, status };
+    salvarQuestaoLocal(atualizada);
+    setQuestoes(questoes.map((item) => (item.codigo === codigo ? atualizada : item)));
+    setMessage(`${codigo} alterada para ${questaoStatusLabel(status)}. ${questaoStatusHint(status)}`);
+  }
+
+  const questoesValidadas = questoes.filter((questao) => questao.status === "validada").length;
+  const questoesEmRevisao = questoes.filter((questao) => questao.status === "em_revisao").length;
+  const questoesRascunho = questoes.filter((questao) => questao.status === "rascunho").length;
+  const questoesFiltradas = questoes
+    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
+    .slice(0, 80);
+  const coberturaCompetencias = competencias.map((competencia) => {
+    const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
+    const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
+    const questoesDaCompetencia = questoes.filter((questao) => codigosDescritores.has(questao.descritor_codigo));
+
+    return {
+      competencia,
+      descritores: descritoresDaCompetencia.length,
+      total: questoesDaCompetencia.length,
+      validadas: questoesDaCompetencia.filter((questao) => questao.status === "validada").length,
+      emRevisao: questoesDaCompetencia.filter((questao) => questao.status === "em_revisao").length,
+      rascunhos: questoesDaCompetencia.filter((questao) => questao.status === "rascunho").length,
+    };
+  });
+  const coberturaDescritores = descritores.map((descritor) => {
+    const questoesDoDescritor = questoes.filter((questao) => questao.descritor_codigo === descritor.codigo);
+
+    return {
+      descritor,
+      total: questoesDoDescritor.length,
+      validadas: questoesDoDescritor.filter((questao) => questao.status === "validada").length,
+      emRevisao: questoesDoDescritor.filter((questao) => questao.status === "em_revisao").length,
+      rascunhos: questoesDoDescritor.filter((questao) => questao.status === "rascunho").length,
+    };
+  });
+  const competenciaSelecionada = competencias.find((item) => item.codigo === descritorDraft.competencia_codigo);
+  const descritorSelecionado = descritores.find((item) => item.codigo === questaoDraft.descritor_codigo);
+  const competenciaDaQuestao = descritorSelecionado
+    ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
+    : undefined;
+
+  function useCompetenciaInDescritor(competencia: CompetenciaDraft) {
+    setDescritorDraft({ ...descritorDraft, competencia_codigo: competencia.codigo });
+    setActiveTab("descritores");
+  }
+
+  function useDescritorInQuestao(descritor: DescritorDraft) {
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: descritor.codigo,
+      componente_curricular: descritor.componente_curricular,
+    });
+    setActiveTab("questoes");
+  }
+
+  return (
+    <section className="panel">
+      <h2>Banco de Itens</h2>
+      <p>
+        Cadastre competências, descritores e questões alinhadas às matrizes dos cursos técnicos. Esta camada prepara
+        a geração de provas e a futura calibração TRI.
+      </p>
+      <button className="secondary" onClick={importNorteadores}>Importar matriz piloto dos norteadores</button>
+      <div className="kpis">
+        <article className="kpi"><span>Competências</span><strong>{competencias.length}</strong></article>
+        <article className="kpi"><span>Descritores</span><strong>{descritores.length}</strong></article>
+        <article className="kpi"><span>Questões</span><strong>{questoes.length}</strong></article>
+        <article className="kpi"><span>Validadas</span><strong>{questoesValidadas}</strong></article>
+        <article className="kpi"><span>Em revisão</span><strong>{questoesEmRevisao}</strong></article>
+        <article className="kpi"><span>Rascunhos</span><strong>{questoesRascunho}</strong></article>
+      </div>
+
+      <div className="dependency-flow">
+        <div>
+          <strong>1. Competência</strong>
+          <span>Define o saber profissional esperado.</span>
+        </div>
+        <div>
+          <strong>2. Descritor</strong>
+          <span>Transforma a competência em evidência avaliável.</span>
+        </div>
+        <div>
+          <strong>3. Questão</strong>
+          <span>Mede um descritor e alimenta o diagnóstico pré-TRI.</span>
+        </div>
+      </div>
+
+      <div className="method-note">
+        <strong>Como ler esta matriz avaliativa</strong>
+        <p>
+          <b>Competência</b> é uma capacidade ampla do curso técnico, como desenvolver software ou realizar suporte e manutenção.
+          <b> Descritor</b> é a evidência observável dessa competência, escrita de forma específica para virar questão, rubrica e relatório.
+          Na lógica pré-TRI/TRI, a questão mede o descritor; depois os resultados dos descritores são agrupados para interpretar a competência.
+        </p>
+        <p>
+          Códigos <b>C01, C02, C03...</b> identificam competências amplas. Códigos <b>D01, D02, D03...</b> identificam
+          descritores avaliáveis vinculados a uma competência. Esses códigos serão usados nos relatórios, gráficos e trilhas
+          de recomposição.
+        </p>
+        <p>
+          A base exibida agora é uma matriz piloto saneada. A próxima etapa metodológica é construir uma nova matriz oficial:
+          primeiro a partir dos componentes e objetivos da matriz curricular do curso, depois desdobrando cada competência em
+          descritores observáveis e, por fim, vinculando itens e rubricas.
+        </p>
+      </div>
+
+      <div className="item-bank-tabs" role="tablist" aria-label="Subtelas do banco de itens">
+        <button className={activeTab === "competencias" ? "active" : ""} onClick={() => setActiveTab("competencias")}>
+          Competências
+        </button>
+        <button className={activeTab === "descritores" ? "active" : ""} onClick={() => setActiveTab("descritores")}>
+          Descritores
+        </button>
+        <button className={activeTab === "questoes" ? "active" : ""} onClick={() => setActiveTab("questoes")}>
+          Questões
+        </button>
+      </div>
+
+      {activeTab === "competencias" && (
+        <section className="subpanel">
+          <div className="section-heading">
+            <div>
+              <h3>Cadastro de Competências</h3>
+              <p>Comece por aqui. A competência é o agrupador maior do banco e será usada pelos descritores.</p>
+            </div>
+            <span className="count-chip">{competencias.length} cadastradas</span>
+          </div>
+          <div className="form-grid single">
+            <Field label="Código" value={competenciaDraft.codigo} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, codigo: value.toUpperCase() })} />
+            <Field label="Curso técnico" value={competenciaDraft.curso_tecnico} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, curso_tecnico: value })} />
+            <TextArea label="Descrição da competência" value={competenciaDraft.descricao} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, descricao: value })} />
+            <Field label="Fonte normativa/matriz" value={competenciaDraft.fonte} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, fonte: value })} />
+          </div>
+          <button className="primary" onClick={saveCompetencia}>Salvar competência</button>
+
+          <ReferenceList
+            title="Códigos de competências"
+            empty="Nenhuma competência cadastrada ainda. Importe os norteadores ou salve a primeira competência."
+            kind="competencia"
+            items={competencias.map((competencia) => ({
+              code: competencia.codigo,
+              title: competencia.curso_tecnico,
+              description: competencia.descricao,
+              meta: competencia.fonte,
+              actionLabel: "Usar no descritor",
+              onAction: () => useCompetenciaInDescritor(competencia),
+            }))}
+          />
+        </section>
+      )}
+
+      {activeTab === "descritores" && (
+        <section className="subpanel">
+          <div className="section-heading">
+            <div>
+              <h3>Cadastro de Descritores</h3>
+              <p>O descritor sempre depende de uma competência. Ele diz exatamente o que será observado na avaliação.</p>
+            </div>
+            <span className="count-chip">{descritores.length} cadastrados</span>
+          </div>
+          <div className="link-context">
+            <strong>Competência selecionada</strong>
+            <span>{competenciaSelecionada ? `${competenciaSelecionada.codigo} · ${competenciaSelecionada.descricao}` : "Selecione uma competência cadastrada para vincular o descritor."}</span>
+          </div>
+          <div className="form-grid single">
+            <Field label="Código" value={descritorDraft.codigo} onChange={(value) => setDescritorDraft({ ...descritorDraft, codigo: value.toUpperCase() })} />
+            <label>
+              Competência vinculada
+              <select value={descritorDraft.competencia_codigo} onChange={(event) => setDescritorDraft({ ...descritorDraft, competencia_codigo: event.target.value })}>
+                <option value="">Selecione</option>
+                {competencias.map((competencia) => (
+                  <option key={competencia.codigo} value={competencia.codigo}>{competencia.codigo} · {competencia.descricao}</option>
+                ))}
+              </select>
+            </label>
+            <Field label="Componente curricular" value={descritorDraft.componente_curricular} onChange={(value) => setDescritorDraft({ ...descritorDraft, componente_curricular: value })} />
+            <label>
+              Nível esperado
+              <select value={descritorDraft.nivel_esperado} onChange={(event) => setDescritorDraft({ ...descritorDraft, nivel_esperado: event.target.value as DescritorDraft["nivel_esperado"] })}>
+                <option value="basico">Básico</option>
+                <option value="intermediario">Intermediário</option>
+                <option value="avancado">Avançado</option>
+              </select>
+            </label>
+            <TextArea label="Descrição avaliável" value={descritorDraft.descricao} onChange={(value) => setDescritorDraft({ ...descritorDraft, descricao: value })} />
+          </div>
+          <button className="primary" onClick={saveDescritor}>Salvar descritor</button>
+
+          <ReferenceList
+            title="Códigos de descritores"
+            empty="Nenhum descritor cadastrado ainda. Cadastre um descritor depois de criar/importar competências."
+            kind="descritor"
+            items={descritores.map((descritor) => {
+              const competencia = competencias.find((item) => item.codigo === descritor.competencia_codigo);
+              return {
+                code: descritor.codigo,
+                title: descritor.componente_curricular,
+                description: descritor.descricao,
+                meta: `Competência: ${descritor.competencia_codigo}${competencia ? ` · ${competencia.descricao}` : ""}`,
+                actionLabel: "Usar na questão",
+                onAction: () => useDescritorInQuestao(descritor),
+              };
+            })}
+          />
+        </section>
+      )}
+
+      {activeTab === "questoes" && (
+      <section className="subpanel wide">
+        <div className="section-heading">
+          <div>
+            <h3>Cadastro de Questões</h3>
+            <p>A questão deve nascer ligada a um descritor. O sistema puxa o componente curricular e mostra a competência associada.</p>
+          </div>
+          <span className="count-chip">{questoes.length} cadastradas</span>
+        </div>
+        <div className="link-context">
+          <strong>Caminho da questão</strong>
+          <span>
+            {descritorSelecionado
+              ? `${questaoDraft.codigo} → ${descritorSelecionado.codigo} · ${descritorSelecionado.descricao} → ${competenciaDaQuestao?.codigo ?? "competência não encontrada"}`
+              : "Selecione um descritor para vincular a questão ao mapa de competências."}
+          </span>
+        </div>
+        <div className="form-grid">
+          <Field label="Código da questão" value={questaoDraft.codigo} onChange={(value) => setQuestaoDraft({ ...questaoDraft, codigo: value.toUpperCase() })} />
+          <label>
+            Descritor vinculado
+            <select value={questaoDraft.descritor_codigo} onChange={(event) => {
+              const descritor = descritores.find((item) => item.codigo === event.target.value);
+              setQuestaoDraft({
+                ...questaoDraft,
+                descritor_codigo: event.target.value,
+                componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
+              });
+            }}>
+              <option value="">Selecione</option>
+              {descritores.map((descritor) => (
+                <option key={descritor.codigo} value={descritor.codigo}>{descritor.codigo} · {descritor.componente_curricular} · {descritor.descricao}</option>
+              ))}
+            </select>
+          </label>
+          <Field label="Componente curricular" value={questaoDraft.componente_curricular} onChange={(value) => setQuestaoDraft({ ...questaoDraft, componente_curricular: value })} />
+          <label>
+            Status
+            <select value={questaoDraft.status} onChange={(event) => setQuestaoDraft({ ...questaoDraft, status: event.target.value as QuestaoDraft["status"] })}>
+              <option value="rascunho">Rascunho</option>
+              <option value="em_revisao">Em revisão</option>
+              <option value="validada">Validada</option>
+            </select>
+          </label>
+          <TextArea label="Enunciado" value={questaoDraft.enunciado} onChange={(value) => setQuestaoDraft({ ...questaoDraft, enunciado: value })} />
+          <TextArea label="Justificativa pedagógica" value={questaoDraft.justificativa} onChange={(value) => setQuestaoDraft({ ...questaoDraft, justificativa: value })} />
+          <Field label="Alternativa A" value={questaoDraft.alternativa_a} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_a: value })} />
+          <Field label="Alternativa B" value={questaoDraft.alternativa_b} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_b: value })} />
+          <Field label="Alternativa C" value={questaoDraft.alternativa_c} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_c: value })} />
+          <Field label="Alternativa D" value={questaoDraft.alternativa_d} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_d: value })} />
+          <Field label="Alternativa E" value={questaoDraft.alternativa_e} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_e: value })} />
+          <label>
+            Gabarito
+            <select value={questaoDraft.gabarito} onChange={(event) => setQuestaoDraft({ ...questaoDraft, gabarito: event.target.value as AlternativaKey })}>
+              {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Dificuldade inicial pré-TRI
+            <input
+              type="number"
+              min={0.1}
+              max={5}
+              step={0.1}
+              value={questaoDraft.dificuldade_inicial}
+              onChange={(event) => setQuestaoDraft({ ...questaoDraft, dificuldade_inicial: Number(event.target.value) })}
+            />
+          </label>
+        </div>
+        <button className="primary" onClick={saveQuestao}>Salvar questão</button>
+
+        <section className="review-panel" aria-label="Validação docente das questões">
+          <div className="section-heading">
+            <div>
+              <h3>Validação docente das questões</h3>
+              <p>
+                Esta área é exclusiva do professor, coordenação e gestão. Questões em revisão ou rascunho ficam fora das
+                avaliações dos estudantes; apenas itens validados entram no criador de avaliações.
+              </p>
+            </div>
+            <label className="inline-filter">
+              Situação
+              <select value={questaoStatusFiltro} onChange={(event) => setQuestaoStatusFiltro(event.target.value as QuestaoStatusFiltro)}>
+                <option value="em_revisao">Em revisão</option>
+                <option value="validada">Validadas</option>
+                <option value="rascunho">Rascunhos</option>
+                <option value="todas">Todas</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="status-legend">
+            {(["rascunho", "em_revisao", "validada"] as QuestaoDraft["status"][]).map((status) => (
+              <div key={status}>
+                <strong>{questaoStatusLabel(status)}</strong>
+                <span>{questaoStatusHint(status)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="review-list">
+            {!questoesFiltradas.length && <p className="empty">Nenhuma questão encontrada para este filtro.</p>}
+            {questoesFiltradas.map((questao) => {
+              const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+              const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+
+              return (
+                <article className="review-card" key={questao.codigo}>
+                  <div className="review-card-main">
+                    <div className="review-card-title">
+                      <strong>{questao.codigo}</strong>
+                      <span className={`status-badge ${questao.status}`}>{questaoStatusLabel(questao.status)}</span>
+                    </div>
+                    <p>{questao.enunciado}</p>
+                    <small>
+                      {questao.descritor_codigo} · {descritor?.descricao ?? "Descritor não encontrado"} · {competencia?.codigo ?? "sem competência"}
+                    </small>
+                    <small>
+                      {questao.componente_curricular} · Gabarito {questao.gabarito} · dificuldade pré-TRI {questao.dificuldade_inicial}
+                    </small>
+                  </div>
+                  <div className="review-actions" aria-label={`Alterar situação da questão ${questao.codigo}`}>
+                    <button className="secondary small" onClick={() => setQuestaoEmLeitura(questao)}>
+                      Ver questão
+                    </button>
+                    <button className="secondary small" disabled={questao.status === "validada"} onClick={() => alterarStatusQuestao(questao.codigo, "validada")}>
+                      Validar
+                    </button>
+                    <button className="secondary small" disabled={questao.status === "em_revisao"} onClick={() => alterarStatusQuestao(questao.codigo, "em_revisao")}>
+                      Voltar para revisão
+                    </button>
+                    <button className="secondary small" disabled={questao.status === "rascunho"} onClick={() => alterarStatusQuestao(questao.codigo, "rascunho")}>
+                      Marcar rascunho
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          {questoesFiltradas.length < questoes.filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro).length && (
+            <p className="helper">Mostrando as primeiras 80 questões do filtro para manter a tela leve.</p>
+          )}
+        </section>
+
+        <section className="coverage-panel" aria-label="Cobertura do banco de itens por competência e descritor">
+          <div className="section-heading">
+            <div>
+              <h3>Cobertura do banco de itens</h3>
+              <p>
+                Use esta leitura para saber quantas questões existem no total, quantas já foram validadas e quantas ainda
+                estão em revisão ou rascunho por competência e por descritor.
+              </p>
+            </div>
+          </div>
+
+          <div className="coverage-grid">
+            <div>
+              <h4>Por competência</h4>
+              <DataTable
+                headers={["Competência", "Descritores", "Total", "Validadas", "Em revisão", "Rascunhos"]}
+                rows={coberturaCompetencias.map((item) => [
+                  `${item.competencia.codigo} · ${item.competencia.descricao}`,
+                  String(item.descritores),
+                  String(item.total),
+                  String(item.validadas),
+                  String(item.emRevisao),
+                  String(item.rascunhos),
+                ])}
+              />
+            </div>
+
+            <div>
+              <h4>Por descritor</h4>
+              <DataTable
+                headers={["Descritor", "Componente", "Total", "Validadas", "Em revisão", "Rascunhos"]}
+                rows={coberturaDescritores.map((item) => [
+                  `${item.descritor.codigo} · ${item.descritor.descricao}`,
+                  item.descritor.componente_curricular,
+                  String(item.total),
+                  String(item.validadas),
+                  String(item.emRevisao),
+                  String(item.rascunhos),
+                ])}
+              />
+            </div>
+          </div>
+        </section>
+
+        <DataTable
+          headers={["Código", "Descritor", "Competência", "Componente", "Gabarito", "Dificuldade", "Status"]}
+          rows={questoesFiltradas.map((questao) => {
+            const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+            return [
+              questao.codigo,
+              questao.descritor_codigo,
+              descritor?.competencia_codigo ?? "",
+              questao.componente_curricular,
+              questao.gabarito,
+              String(questao.dificuldade_inicial),
+              questaoStatusLabel(questao.status),
+            ];
+          })}
+        />
+      </section>
+      )}
+
+      {questaoEmLeitura && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setQuestaoEmLeitura(null)}>
+          <section className="question-modal" role="dialog" aria-modal="true" aria-labelledby="question-modal-title" onClick={(event) => event.stopPropagation()}>
+            {(() => {
+              const descritor = descritores.find((item) => item.codigo === questaoEmLeitura.descritor_codigo);
+              const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+              const alternativas: Array<[AlternativaKey, string]> = [
+                ["A", questaoEmLeitura.alternativa_a],
+                ["B", questaoEmLeitura.alternativa_b],
+                ["C", questaoEmLeitura.alternativa_c],
+                ["D", questaoEmLeitura.alternativa_d],
+                ["E", questaoEmLeitura.alternativa_e],
+              ];
+
+              return (
+                <>
+                  <div className="modal-header">
+                    <div>
+                      <span className={`status-badge ${questaoEmLeitura.status}`}>{questaoStatusLabel(questaoEmLeitura.status)}</span>
+                      <h3 id="question-modal-title">{questaoEmLeitura.codigo}</h3>
+                      <p>{questaoEmLeitura.componente_curricular}</p>
+                    </div>
+                    <button className="icon-close" type="button" onClick={() => setQuestaoEmLeitura(null)} aria-label="Fechar leitura da questão">
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="modal-context">
+                    <div>
+                      <strong>Competência</strong>
+                      <span>{competencia ? `${competencia.codigo} · ${competencia.descricao}` : "Competência não encontrada"}</span>
+                    </div>
+                    <div>
+                      <strong>Descritor</strong>
+                      <span>{descritor ? `${descritor.codigo} · ${descritor.descricao}` : questaoEmLeitura.descritor_codigo}</span>
+                    </div>
+                    <div>
+                      <strong>Dificuldade pré-TRI</strong>
+                      <span>{questaoEmLeitura.dificuldade_inicial}</span>
+                    </div>
+                  </div>
+
+                  <div className="question-reading">
+                    <strong>Enunciado</strong>
+                    <p>{questaoEmLeitura.enunciado}</p>
+                  </div>
+
+                  <div className="alternatives-list">
+                    {alternativas.map(([letra, texto]) => (
+                      <div className={letra === questaoEmLeitura.gabarito ? "correct" : ""} key={letra}>
+                        <strong>{letra}</strong>
+                        <span>{texto}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="question-reading">
+                    <strong>Justificativa pedagógica</strong>
+                    <p>{questaoEmLeitura.justificativa || "Sem justificativa cadastrada."}</p>
+                  </div>
+
+                  <div className="modal-actions">
+                    <button className="secondary" type="button" onClick={() => setQuestaoEmLeitura(null)}>Fechar</button>
+                    <button className="secondary" type="button" disabled={questaoEmLeitura.status === "rascunho"} onClick={() => {
+                      alterarStatusQuestao(questaoEmLeitura.codigo, "rascunho");
+                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "rascunho" });
+                    }}>
+                      Marcar rascunho
+                    </button>
+                    <button className="secondary" type="button" disabled={questaoEmLeitura.status === "em_revisao"} onClick={() => {
+                      alterarStatusQuestao(questaoEmLeitura.codigo, "em_revisao");
+                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "em_revisao" });
+                    }}>
+                      Voltar para revisão
+                    </button>
+                    <button className="primary" type="button" disabled={questaoEmLeitura.status === "validada"} onClick={() => {
+                      alterarStatusQuestao(questaoEmLeitura.codigo, "validada");
+                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "validada" });
+                    }}>
+                      Validar questão
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </section>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Assessments({
+  assessments,
+  setAssessments,
+  setMessage,
+}: {
+  assessments: AvaliacaoDraft[];
+  setAssessments: (assessments: AvaliacaoDraft[]) => void;
+  setMessage: (message: string) => void;
+}) {
+  const [draft, setDraft] = useState<AvaliacaoDraft>({
+    titulo: "Diagnóstico Técnico em Informática",
+    codigo_acesso: "TECINF-26-01",
+    curso_tecnico: "Técnico em Informática",
+    componentes: "Programação; Banco de Dados; Redes",
+    quantidade_questoes: 20,
+    turma_codigo: "2ª TEC. INF.",
+    etapa: "diagnostica",
+  });
+
+  function save() {
+    if (!draft.titulo || !draft.codigo_acesso || !draft.curso_tecnico || !draft.componentes) {
+      setMessage("Preencha título, código, curso técnico e componentes avaliados.");
+      return;
+    }
+    if (draft.quantidade_questoes < 20 || draft.quantidade_questoes > 40) {
+      setMessage("A avaliação precisa ter no mínimo 20 e no máximo 40 questões.");
+      return;
+    }
+
+    const result = salvarAvaliacaoLocal(draft);
+    setAssessments([...assessments.filter((item) => item.codigo_acesso !== draft.codigo_acesso), draft]);
+    setMessage(`Avaliação criada em modo ${result.modo}; próxima fase: vincular itens do banco e descritores.`);
+  }
+
+  return (
+    <section className="panel">
+      <h2>Criador de Avaliações</h2>
+      <p>A avaliação pode integrar uma ou mais disciplinas, sempre vinculada à matriz, competências e descritores.</p>
+      <div className="form-grid">
+        <Field label="Título" value={draft.titulo} onChange={(value) => setDraft({ ...draft, titulo: value })} />
+        <Field label="Código para estudantes" value={draft.codigo_acesso} onChange={(value) => setDraft({ ...draft, codigo_acesso: value.toUpperCase() })} />
+        <Field label="Curso técnico" value={draft.curso_tecnico} onChange={(value) => setDraft({ ...draft, curso_tecnico: value })} />
+        <Field label="Componentes avaliados" value={draft.componentes} onChange={(value) => setDraft({ ...draft, componentes: value })} />
+        <Field label="Turma" value={draft.turma_codigo} onChange={(value) => setDraft({ ...draft, turma_codigo: value })} />
+        <label>
+          Etapa
+          <select value={draft.etapa} onChange={(event) => setDraft({ ...draft, etapa: event.target.value as AvaliacaoDraft["etapa"] })}>
+            <option value="diagnostica">Diagnóstica</option>
+            <option value="formativa">Formativa</option>
+            <option value="final">Final</option>
+          </select>
+        </label>
+        <label>
+          Quantidade de questões
+          <input
+            type="number"
+            min={20}
+            max={40}
+            value={draft.quantidade_questoes}
+            onChange={(event) => setDraft({ ...draft, quantidade_questoes: Number(event.target.value) })}
+          />
+        </label>
+      </div>
+      <button className="primary" onClick={save}>Criar avaliação</button>
+      <DataTable
+        headers={["Código", "Título", "Curso", "Turma", "Questões", "Etapa"]}
+        rows={assessments.map((assessment) => [
+          assessment.codigo_acesso,
+          assessment.titulo,
+          assessment.curso_tecnico,
+          assessment.turma_codigo,
+          String(assessment.quantidade_questoes),
+          assessment.etapa,
+        ])}
+      />
+    </section>
+  );
+}
+
+function AssessmentsV2({
+  assessments,
+  setAssessments,
+  currentUser,
+  competencias,
+  descritores,
+  questoes,
+  respostas,
+  setRespostas,
+  setMessage,
+}: {
+  assessments: AvaliacaoDraft[];
+  setAssessments: (assessments: AvaliacaoDraft[]) => void;
+  currentUser: AuthUser;
+  competencias: CompetenciaDraft[];
+  descritores: DescritorDraft[];
+  questoes: QuestaoDraft[];
+  respostas: RespostaAvaliacaoDraft[];
+  setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
+  setMessage: (message: string) => void;
+}) {
+  const [blockedAssessmentCodes, setBlockedAssessmentCodes] = useState<string[]>(() => carregarCodigosAvaliacaoBloqueados());
+  const [draft, setDraft] = useState<AvaliacaoDraft>(() => ({
+    titulo: "Diagnóstico Técnico em Informática",
+    codigo_acesso: generateAssessmentAccessCode(assessments, "Técnico em Informática", "diagnostica", blockedAssessmentCodes),
+    curso_tecnico: "Técnico em Informática",
+    componentes: "",
+    quantidade_questoes: 20,
+    turma_codigo: "2ª TEC. INF.",
+    etapa: "diagnostica",
+    questoes_por_componente: {},
+    descritores_selecionados: [],
+    questoes_codigos: [],
+    status: "rascunho",
+  }));
+  const [previewAssessment, setPreviewAssessment] = useState<AvaliacaoDraft | null>(null);
+
+  useEffect(() => {
+    carregarCodigosAvaliacaoBloqueadosOnline()
+      .then(setBlockedAssessmentCodes)
+      .catch((error) => {
+        setMessage(error instanceof Error ? error.message : "Não foi possível carregar códigos bloqueados.");
+      });
+  }, [setMessage]);
+
+  const descritorPorCodigo = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
+  const competenciaPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
+  const questoesPorComponente = draft.questoes_por_componente ?? {};
+  const componentesSelecionados = Object.entries(questoesPorComponente)
+    .filter(([, quantidade]) => quantidade > 0)
+    .map(([componente]) => componente);
+  const componentesTexto = componentesSelecionados.join("; ");
+  const descritoresSelecionados = draft.descritores_selecionados ?? [];
+  const totalPlanejado = componentesSelecionados.reduce((total, componente) => total + (questoesPorComponente[componente] ?? 0), 0);
+
+  function isQuestaoValidadaDoCurso(questao: QuestaoDraft) {
+    const descritor = descritorPorCodigo.get(questao.descritor_codigo);
+    if (questao.status !== "validada" || !descritor) return false;
+    const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
+    return !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+  }
+
+  const componentesDisponiveis = Array.from(
+    new Set(questoes.filter(isQuestaoValidadaDoCurso).map((questao) => questao.componente_curricular)),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const descritoresElegiveis = descritores.filter((descritor) => {
+    if (!componentesSelecionados.length) return false;
+    const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
+    const mesmoCurso = !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+    const mesmoComponente =
+      componentesSelecionados.length === 0 ||
+      componentesSelecionados.some((componente) => normalizeKey(componente) === normalizeKey(descritor.componente_curricular));
+    return mesmoCurso && mesmoComponente;
+  });
+
+  function isQuestaoElegivel(questao: QuestaoDraft) {
+    if (!componentesSelecionados.length) return false;
+    const descritor = descritorPorCodigo.get(questao.descritor_codigo);
+    if (questao.status !== "validada") return false;
+    if (!descritor) return false;
+    if (descritoresSelecionados.length > 0 && !descritoresSelecionados.includes(questao.descritor_codigo)) return false;
+
+    const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
+    const mesmoCurso = !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+    const mesmoComponente =
+      componentesSelecionados.length === 0 ||
+      componentesSelecionados.some((componente) => normalizeKey(componente) === normalizeKey(questao.componente_curricular));
+    return mesmoCurso && mesmoComponente;
+  }
+
+  const questoesElegiveis = questoes.filter(isQuestaoElegivel);
+  const componentesComEstoque = componentesDisponiveis.map((componente) => ({
+    componente,
+    disponiveis: questoes.filter((questao) => {
+      if (!isQuestaoValidadaDoCurso(questao)) return false;
+      if (descritoresSelecionados.length > 0 && !descritoresSelecionados.includes(questao.descritor_codigo)) return false;
+      return normalizeKey(questao.componente_curricular) === normalizeKey(componente);
+    }).length,
+    solicitadas: questoesPorComponente[componente] ?? 0,
+  }));
+
+  const questoesSelecionadas = componentesSelecionados.flatMap((componente) => {
+    const quantidade = questoesPorComponente[componente] ?? 0;
+    return questoesElegiveis
+      .filter((questao) => normalizeKey(questao.componente_curricular) === normalizeKey(componente))
+      .slice()
+      .sort((a, b) => a.dificuldade_inicial - b.dificuldade_inicial || a.codigo.localeCompare(b.codigo))
+      .slice(0, quantidade);
+  });
+  const componentesInsuficientes = componentesComEstoque.filter((item) => item.solicitadas > item.disponiveis);
+  const questoesSelecionadasDuplicadas = questoesSelecionadas.filter((questao, index, lista) => {
+    const currentEnunciado = normalizeQuestionText(questao.enunciado);
+    const currentFingerprint = questionFingerprint(questao);
+    return lista.findIndex((item) => (
+      normalizeQuestionText(item.enunciado) === currentEnunciado || questionFingerprint(item) === currentFingerprint
+    )) !== index;
+  });
+  const quantidadeValida = totalPlanejado >= 20 && totalPlanejado <= 80;
+  const podePublicar =
+    quantidadeValida &&
+    totalPlanejado > 0 &&
+    !componentesInsuficientes.length &&
+    !questoesSelecionadasDuplicadas.length &&
+    questoesSelecionadas.length === totalPlanejado;
+
+  function toggleDescritor(codigo: string) {
+    const selected = new Set(draft.descritores_selecionados ?? []);
+    if (selected.has(codigo)) selected.delete(codigo);
+    else selected.add(codigo);
+    setDraft({ ...draft, descritores_selecionados: Array.from(selected) });
+  }
+
+  function toggleComponente(componente: string) {
+    const next = { ...questoesPorComponente };
+    if (next[componente]) delete next[componente];
+    else next[componente] = 2;
+    const selected = Object.entries(next).filter(([, quantidade]) => quantidade > 0).map(([item]) => item);
+    setDraft({
+      ...draft,
+      componentes: selected.join("; "),
+      quantidade_questoes: selected.reduce((total, item) => total + (next[item] ?? 0), 0),
+      questoes_por_componente: next,
+      descritores_selecionados: [],
+    });
+  }
+
+  function setQuantidadeComponente(componente: string, quantidade: number) {
+    const next = { ...questoesPorComponente, [componente]: quantidade };
+    const selected = Object.entries(next).filter(([, value]) => value > 0).map(([item]) => item);
+    setDraft({
+      ...draft,
+      componentes: selected.join("; "),
+      quantidade_questoes: selected.reduce((total, item) => total + (next[item] ?? 0), 0),
+      questoes_por_componente: next,
+    });
+  }
+
+  function regenerateAccessCode() {
+    setDraft({
+      ...draft,
+      codigo_acesso: generateAssessmentAccessCode(assessments, draft.curso_tecnico, draft.etapa, blockedAssessmentCodes),
+    });
+  }
+
+  async function save() {
+    if (!draft.titulo || !draft.curso_tecnico) {
+      setMessage("Preencha título e curso técnico.");
+      return;
+    }
+    if (!componentesSelecionados.length) {
+      setMessage("Selecione pelo menos um componente curricular para montar a avaliação.");
+      return;
+    }
+    if (!quantidadeValida) {
+      setMessage("A avaliação precisa ter no mínimo 20 e no máximo 80 questões no total.");
+      return;
+    }
+    if (!podePublicar) {
+      if (questoesSelecionadasDuplicadas.length > 0) {
+        setMessage(
+          `Duplicidade bloqueada na avaliação: revise os itens ${questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.`,
+        );
+        return;
+      }
+      setMessage(
+        `Banco insuficiente: ${questoesSelecionadas.length} questões validadas selecionáveis para ${totalPlanejado} necessárias.`,
+      );
+      return;
+    }
+
+    const codigoAcesso = draft.codigo_acesso.toUpperCase();
+    if (
+      assessments.some((item) => item.codigo_acesso.toUpperCase() === codigoAcesso) ||
+      blockedAssessmentCodes.some((codigo) => codigo.toUpperCase() === codigoAcesso)
+    ) {
+      setMessage("Código já vinculado a uma avaliação criada. Gere um novo código antes de abrir outra aplicação.");
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+
+    const avaliacao: AvaliacaoDraft = {
+      ...draft,
+      codigo_acesso: codigoAcesso,
+      componentes: componentesTexto,
+      quantidade_questoes: totalPlanejado,
+      questoes_por_componente: questoesPorComponente,
+      questoes_codigos: questoesSelecionadas.map((questao) => questao.codigo),
+      status: "aberta",
+      inicio_em: createdAt,
+      codigo_bloqueado_em: createdAt,
+      professor_matricula: currentUser.professor_matricula,
+      escola_inep: currentUser.escola_inep,
+    };
+    const result = await salvarAvaliacao(avaliacao);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    const blockResult = await bloquearCodigoAvaliacao(avaliacao.codigo_acesso, {
+      motivo: "avaliacao_aberta",
+      avaliacao_codigo: avaliacao.codigo_acesso,
+      escola_inep: avaliacao.escola_inep,
+      professor_matricula: avaliacao.professor_matricula,
+    });
+    if ("erro" in blockResult && blockResult.erro) {
+      setMessage(blockResult.erro);
+      return;
+    }
+    const nextBlockedCodes = Array.from(new Set([...blockedAssessmentCodes, avaliacao.codigo_acesso]));
+    const nextAssessments = [...assessments.filter((item) => item.codigo_acesso !== avaliacao.codigo_acesso), avaliacao];
+    setBlockedAssessmentCodes(nextBlockedCodes);
+    setAssessments(nextAssessments);
+    setDraft({
+      ...draft,
+      codigo_acesso: generateAssessmentAccessCode(nextAssessments, draft.curso_tecnico, draft.etapa, nextBlockedCodes),
+      status: "rascunho",
+    });
+    setMessage(`Avaliação ${avaliacao.codigo_acesso} aberta em modo ${result.modo} com ${questoesSelecionadas.length} questões validadas.`);
+  }
+
+  async function alterarStatusAvaliacao(assessment: AvaliacaoDraft, status: NonNullable<AvaliacaoDraft["status"]>) {
+    const updated: AvaliacaoDraft = {
+      ...assessment,
+      status,
+      inicio_em: status === "aberta" && !assessment.inicio_em ? new Date().toISOString() : assessment.inicio_em,
+      fim_em: status === "encerrada" || status === "corrigida" ? new Date().toISOString() : assessment.fim_em,
+    };
+    const result = await salvarAvaliacao(updated);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    setAssessments([...assessments.filter((item) => item.codigo_acesso !== updated.codigo_acesso), updated]);
+    setMessage(`Status da avaliação ${updated.codigo_acesso} alterado para ${status} em modo ${result.modo}.`);
+  }
+
+  async function excluirAvaliacao(assessment: AvaliacaoDraft) {
+    const respostasDaAvaliacao = respostas.filter((resposta) => resposta.avaliacao_codigo === assessment.codigo_acesso);
+    if (respostasDaAvaliacao.length > 0) {
+      setMessage(`Exclusão bloqueada: a avaliação ${assessment.codigo_acesso} já possui ${respostasDaAvaliacao.length} resposta(s). Encerre a aplicação para preservar relatórios e auditoria.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Excluir a avaliação ${assessment.codigo_acesso}? O código será bloqueado definitivamente e não poderá ser reaproveitado.`,
+    );
+    if (!confirmed) return;
+
+    const result = await excluirAvaliacaoPersistida(assessment.codigo_acesso);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    const nextAssessments = assessments.filter((item) => item.codigo_acesso !== assessment.codigo_acesso);
+    const nextBlockedCodes = Array.from(new Set([...blockedAssessmentCodes, assessment.codigo_acesso.toUpperCase()]));
+    setAssessments(nextAssessments);
+    setBlockedAssessmentCodes(nextBlockedCodes);
+    setDraft({
+      ...draft,
+      codigo_acesso: generateAssessmentAccessCode(nextAssessments, draft.curso_tecnico, draft.etapa, nextBlockedCodes),
+    });
+    setMessage(`Avaliação ${assessment.codigo_acesso} excluída em modo ${result.modo}. O código foi bloqueado e não será reutilizado.`);
+  }
+
+  if (previewAssessment) {
+    return (
+      <section className="panel">
+        <button className="secondary" onClick={() => setPreviewAssessment(null)}>Voltar ao criador</button>
+        <StudentAssessmentRunner
+          assessment={previewAssessment}
+          questoes={questoes}
+          studentName="Pré-visualização do professor"
+          respostas={respostas}
+          setRespostas={setRespostas}
+          previewMode
+          onBack={() => setPreviewAssessment(null)}
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel">
+      <h2>Criador de Avaliações</h2>
+      <p>A avaliação agora é gerada a partir de questões validadas do Banco de Itens, com vínculo por curso, componente e descritor.</p>
+      <div className="form-grid">
+        <Field label="Título" value={draft.titulo} onChange={(value) => setDraft({ ...draft, titulo: value })} />
+        <label>
+          Código para estudantes
+          <div className="code-generator">
+            <input value={draft.codigo_acesso} readOnly aria-label="Código gerado automaticamente para estudantes" />
+            <button className="secondary" type="button" onClick={regenerateAccessCode}>Gerar novo</button>
+          </div>
+          <small>O código é gerado pelo sistema. Depois que a avaliação for aberta, ele fica bloqueado para investigação, auditoria e relatórios.</small>
+        </label>
+        <Field
+          label="Curso técnico"
+          value={draft.curso_tecnico}
+          onChange={(value) => setDraft({
+            ...draft,
+            curso_tecnico: value,
+            codigo_acesso: generateAssessmentAccessCode(assessments, value, draft.etapa, blockedAssessmentCodes),
+          })}
+        />
+        <Field label="Turma" value={draft.turma_codigo} onChange={(value) => setDraft({ ...draft, turma_codigo: value })} />
+        <label>
+          Etapa
+          <select
+            value={draft.etapa}
+            onChange={(event) => {
+              const etapa = event.target.value as AvaliacaoDraft["etapa"];
+              setDraft({
+                ...draft,
+                etapa,
+                codigo_acesso: generateAssessmentAccessCode(assessments, draft.curso_tecnico, etapa, blockedAssessmentCodes),
+              });
+            }}
+          >
+            <option value="diagnostica">Diagnóstica</option>
+            <option value="formativa">Formativa</option>
+            <option value="final">Final</option>
+          </select>
+        </label>
+        <label>
+          Total planejado
+          <input
+            type="number"
+            min={20}
+            max={80}
+            value={totalPlanejado}
+            readOnly
+          />
+        </label>
+      </div>
+
+      <section className="subpanel wide">
+        <div className="section-heading">
+          <div>
+            <h3>Componentes da avaliação</h3>
+            <p>Selecione os componentes disponíveis no Banco de Itens e defina quantas questões entrarão de cada um.</p>
+          </div>
+          <span className={quantidadeValida ? "count-chip" : "count-chip warning"}>{totalPlanejado}/80 questões</span>
+        </div>
+        <div className="component-builder">
+          {componentesDisponiveis.map((componente) => {
+            const estoque = componentesComEstoque.find((item) => item.componente === componente)?.disponiveis ?? 0;
+            const selected = (questoesPorComponente[componente] ?? 0) > 0;
+            return (
+              <article className={selected ? "component-card selected" : "component-card"} key={componente}>
+                <label className="check-row compact">
+                  <input type="checkbox" checked={selected} onChange={() => toggleComponente(componente)} />
+                  <span>{componente}</span>
+                </label>
+                <small>{estoque} questões validadas no banco</small>
+                <label>
+                  Questões deste componente
+                  <select
+                    value={questoesPorComponente[componente] ?? 0}
+                    disabled={!selected}
+                    onChange={(event) => setQuantidadeComponente(componente, Number(event.target.value))}
+                  >
+                    <option value={0}>Não usar</option>
+                    {quantidadePorComponenteOptions.map((quantidade) => (
+                      <option key={quantidade} value={quantidade}>{quantidade}</option>
+                    ))}
+                  </select>
+                </label>
+              </article>
+            );
+          })}
+        </div>
+        {!componentesDisponiveis.length && <p className="empty">Nenhum componente com questões validadas foi encontrado para este curso.</p>}
+        <div className="notice">
+          Regra da avaliação: mínimo de <strong>20</strong> e máximo de <strong>80</strong> questões no total. Opções por componente:
+          <strong> 2, 5, 10 ou 20</strong>.
+        </div>
+      </section>
+
+      <section className="subpanel wide">
+        <h3>Descritores elegíveis</h3>
+        <p className="helper">Selecione descritores específicos ou deixe todos desmarcados para usar todos os descritores elegíveis dos componentes escolhidos.</p>
+        <div className="check-grid">
+          {descritoresElegiveis.map((descritor) => (
+            <label className="check-row" key={descritor.codigo}>
+              <input
+                type="checkbox"
+                checked={descritoresSelecionados.includes(descritor.codigo)}
+                onChange={() => toggleDescritor(descritor.codigo)}
+              />
+              <span>{descritor.codigo} - {descritor.componente_curricular}</span>
+            </label>
+          ))}
+        </div>
+        {!descritoresElegiveis.length && <p className="empty">Nenhum descritor elegível para o curso e componentes selecionados.</p>}
+      </section>
+
+      <div className={podePublicar ? "notice" : "notice warning"}>
+        Questões validadas elegíveis: <strong>{questoesElegiveis.length}</strong>. Questões que entrarão na avaliação:
+        <strong> {questoesSelecionadas.length}</strong> de <strong>{totalPlanejado}</strong>.
+        {componentesInsuficientes.length > 0 && (
+          <span> Componentes insuficientes: {componentesInsuficientes.map((item) => `${item.componente} (${item.disponiveis}/${item.solicitadas})`).join(", ")}.</span>
+        )}
+        {questoesSelecionadasDuplicadas.length > 0 && (
+          <span> Duplicidade detectada: {questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.</span>
+        )}
+      </div>
+
+      <button className="primary" onClick={save} disabled={!podePublicar}>Abrir avaliação</button>
+      <DataTable
+        headers={["Código", "Título", "Curso", "Turma", "Questões", "Status"]}
+        rows={assessments.map((assessment) => [
+          assessment.codigo_acesso,
+          assessment.titulo,
+          assessment.curso_tecnico,
+          assessment.turma_codigo,
+          String(assessment.questoes_codigos?.length ?? assessment.quantidade_questoes),
+          assessment.status ?? "rascunho",
+        ])}
+      />
+      <section className="subpanel wide">
+        <div className="section-heading">
+          <div>
+            <h3>Aplicações criadas</h3>
+            <p>Controle o ciclo da aplicação e visualize a prova sem gravar resposta de aluno.</p>
+          </div>
+        </div>
+        <div className="reference-grid">
+          {assessments.map((assessment) => (
+            <article className="reference-card" key={assessment.codigo_acesso}>
+              <div>
+                <strong>{assessment.codigo_acesso} - {assessment.titulo}</strong>
+                <em>{assessment.turma_codigo} - {assessment.status ?? "rascunho"} - {assessment.questoes_codigos?.length ?? assessment.quantidade_questoes} questões</em>
+                <span>{assessment.componentes}</span>
+                <small>Código bloqueado para relatórios e rastreabilidade da aplicação.</small>
+              </div>
+              <button className="secondary small" onClick={() => setPreviewAssessment(assessment)}>Pré-visualizar como aluno</button>
+              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "agendada")}>Agendar</button>
+              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "aberta")}>Abrir</button>
+              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "encerrada")}>Encerrar</button>
+              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "corrigida")}>Marcar corrigida</button>
+              <button className="secondary danger small" onClick={() => excluirAvaliacao(assessment)}>Excluir avaliação</button>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function Reports({
+  schools,
+  teachers,
+  assessments,
+  questoes,
+  respostas,
+  competencias,
+  descritores,
+  currentUser,
+}: {
+  schools: EscolaDraft[];
+  teachers: ProfessorDraft[];
+  assessments: AvaliacaoDraft[];
+  questoes: QuestaoDraft[];
+  respostas: RespostaAvaliacaoDraft[];
+  competencias: CompetenciaDraft[];
+  descritores: DescritorDraft[];
+  currentUser: AuthUser;
+}) {
+  const assessmentCodes = new Set(assessments.map((assessment) => assessment.codigo_acesso));
+  const respostasEscopo = respostas.filter((resposta) => assessmentCodes.has(resposta.avaliacao_codigo));
+  const mediaGeral = respostasEscopo.length
+    ? Math.round((respostasEscopo.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasEscopo.length) * 100) / 100
+    : 0;
+  const questaoPorCodigo = new Map(questoes.map((questao) => [questao.codigo, questao]));
+  const descritorPorCodigo = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
+  const competenciaPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
+
+  const linhasAlunos = respostasEscopo
+    .slice()
+    .sort((a, b) => b.enviado_em.localeCompare(a.enviado_em))
+    .map((resposta) => [
+      resposta.estudante_nome,
+      resposta.avaliacao_codigo,
+      resposta.turma_codigo,
+      `${resposta.acertos}/${resposta.total_questoes}`,
+      `${resposta.percentual_bruto}%`,
+      new Date(resposta.enviado_em).toLocaleString("pt-BR"),
+    ]);
+
+  const linhasTurmas = assessments.map((assessment) => {
+    const respostasDaAvaliacao = respostasEscopo.filter((resposta) => resposta.avaliacao_codigo === assessment.codigo_acesso);
+    const media = respostasDaAvaliacao.length
+      ? Math.round((respostasDaAvaliacao.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasDaAvaliacao.length) * 100) / 100
+      : 0;
+    return [
+      assessment.codigo_acesso,
+      assessment.turma_codigo,
+      assessment.status ?? "rascunho",
+      String(respostasDaAvaliacao.length),
+      `${media}%`,
+    ];
+  });
+
+  const descritorResumo = new Map<string, { acertos: number; total: number }>();
+  const componenteResumo = new Map<string, { acertos: number; total: number }>();
+  const competenciaResumo = new Map<string, { acertos: number; total: number }>();
+
+  respostasEscopo.forEach((resposta) => {
+    resposta.ordem_questoes.forEach((codigoQuestao) => {
+      const questao = questaoPorCodigo.get(codigoQuestao);
+      if (!questao) return;
+      const correta = resposta.respostas[codigoQuestao] === questao.gabarito;
+
+      const descritor = descritorResumo.get(questao.descritor_codigo) ?? { acertos: 0, total: 0 };
+      descritor.total += 1;
+      if (correta) descritor.acertos += 1;
+      descritorResumo.set(questao.descritor_codigo, descritor);
+
+      const componente = componenteResumo.get(questao.componente_curricular) ?? { acertos: 0, total: 0 };
+      componente.total += 1;
+      if (correta) componente.acertos += 1;
+      componenteResumo.set(questao.componente_curricular, componente);
+
+      const competenciaCodigo = descritorPorCodigo.get(questao.descritor_codigo)?.competencia_codigo;
+      if (competenciaCodigo) {
+        const competencia = competenciaResumo.get(competenciaCodigo) ?? { acertos: 0, total: 0 };
+        competencia.total += 1;
+        if (correta) competencia.acertos += 1;
+        competenciaResumo.set(competenciaCodigo, competencia);
+      }
+    });
+  });
+
+  function percent(item: { acertos: number; total: number }) {
+    return item.total ? `${Math.round((item.acertos / item.total) * 10000) / 100}%` : "0%";
+  }
+
+  function exportarBackupSemanal() {
+    const geradoEm = new Date();
+    const payload = {
+      tipo: "backup_semanal_sidep_ce",
+      versao: "mvp-online-json-por-aluno",
+      gerado_em: geradoEm.toISOString(),
+      escopo: {
+        perfil: currentUser.role,
+        regional_codigo: currentUser.regional_codigo ?? null,
+        escola_inep: currentUser.escola_inep ?? null,
+        professor_matricula: currentUser.professor_matricula ?? null,
+      },
+      regra_tecnica: {
+        respostas: "uma linha/objeto por aluno e avaliacao, com alternativas em JSON",
+        relatorios: "calculados sob demanda a partir das respostas consolidadas",
+      },
+      totais: {
+        escolas: schools.length,
+        professores: teachers.length,
+        avaliacoes: assessments.length,
+        respostas: respostasEscopo.length,
+        questoes: questoes.length,
+      },
+      dados: {
+        escolas: schools,
+        professores: teachers,
+        avaliacoes: assessments,
+        respostas: respostasEscopo,
+        competencias,
+        descritores,
+        questoes,
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const datePart = geradoEm.toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `backup-sidep-ce-${datePart}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <section className="panel">
+      <h2>Relatórios e Learning Analytics</h2>
+      <p>Área exclusiva de professor e gestão para diagnóstico individual, turma, escola, CREDE/SEFOR e rede.</p>
+      <div className="notice">
+        Escopo da sessão: <strong>{authRoleLabel(currentUser.role)}</strong>
+        {currentUser.regional_codigo && <span> · {currentUser.regional_codigo}</span>}
+        {currentUser.escola_inep && <span> · INEP {currentUser.escola_inep}</span>}.
+        Os números abaixo já respeitam esse recorte de acesso.
+      </div>
+      <div className="notice">
+        <strong>Estratégia gratuita do piloto:</strong> respostas consolidadas em JSON por aluno/prova,
+        relatórios calculados sob demanda e backup semanal exportável.
+        <button className="secondary small inline-action" type="button" onClick={exportarBackupSemanal}>
+          Baixar backup semanal JSON
+        </button>
+      </div>
+      <div className="kpis">
+        <article className="kpi"><span>Escolas cadastradas</span><strong>{schools.length}</strong></article>
+        <article className="kpi"><span>Professores cadastrados</span><strong>{teachers.length}</strong></article>
+        <article className="kpi"><span>Avaliações criadas</span><strong>{assessments.length}</strong></article>
+        <article className="kpi"><span>Respostas recebidas</span><strong>{respostasEscopo.length}</strong></article>
+        <article className="kpi"><span>Média geral</span><strong>{mediaGeral}%</strong></article>
+      </div>
+      <DataTable headers={["Aluno", "Avaliação", "Turma", "Acertos", "Resultado", "Envio"]} rows={linhasAlunos} />
+      <DataTable headers={["Avaliação", "Turma", "Status", "Respostas", "Média"]} rows={linhasTurmas} />
+      <DataTable
+        headers={["Descritor", "Descrição", "Acertos", "Resultado"]}
+        rows={Array.from(descritorResumo.entries()).map(([codigo, resumo]) => [
+          codigo,
+          descritorPorCodigo.get(codigo)?.descricao ?? "",
+          `${resumo.acertos}/${resumo.total}`,
+          percent(resumo),
+        ])}
+      />
+      <DataTable
+        headers={["Componente", "Acertos", "Resultado"]}
+        rows={Array.from(componenteResumo.entries()).map(([componente, resumo]) => [
+          componente,
+          `${resumo.acertos}/${resumo.total}`,
+          percent(resumo),
+        ])}
+      />
+      <DataTable
+        headers={["Competência", "Descrição", "Acertos", "Resultado"]}
+        rows={Array.from(competenciaResumo.entries()).map(([codigo, resumo]) => [
+          codigo,
+          competenciaPorCodigo.get(codigo)?.descricao ?? "",
+          `${resumo.acertos}/${resumo.total}`,
+          percent(resumo),
+        ])}
+      />
+    </section>
+  );
+}
+
+function ReferenceList({
+  title,
+  empty,
+  kind,
+  items,
+}: {
+  title: string;
+  empty: string;
+  kind: "competencia" | "descritor";
+  items: Array<{
+    code: string;
+    title: string;
+    description: string;
+    meta: string;
+    actionLabel: string;
+    onAction: () => void;
+  }>;
+}) {
+  return (
+    <div className="reference-list">
+      <div className="section-heading compact">
+        <h4>{title}</h4>
+        <span className="count-chip">{items.length}</span>
+      </div>
+      {!items.length && <p className="empty">{empty}</p>}
+      <div className="reference-grid">
+        {items.map((item) => (
+          <article className="reference-card" key={item.code}>
+            <div>
+              <strong>{item.code}</strong>
+              <em>{kind === "competencia" ? "Competência ampla" : "Descritor avaliável"}</em>
+              <span>{item.title}</span>
+            </div>
+            <p>{item.description}</p>
+            <small>{item.meta}</small>
+            <button className="secondary small" onClick={item.onAction}>{item.actionLabel}</button>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label>
+      {label}
+      <input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      {label}
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} />
+    </label>
+  );
+}
+
+function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  if (!rows.length) return <p className="empty">Nenhum registro salvo ainda.</p>;
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+

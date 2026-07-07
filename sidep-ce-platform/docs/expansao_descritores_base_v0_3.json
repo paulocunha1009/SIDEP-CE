@@ -1,0 +1,24 @@
+{
+  "questoes_anteriores": 225,
+  "questoes_novas": 216,
+  "questoes_total": 441,
+  "descritores_priorizados": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "D15",
+    "D16",
+    "D32",
+    "D33",
+    "D34"
+  ],
+  "meta_por_descritor": 20,
+  "status_itens_novos": "em_revisao"
+}

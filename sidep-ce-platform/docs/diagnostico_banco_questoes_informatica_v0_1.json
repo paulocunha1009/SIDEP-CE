@@ -1,0 +1,330 @@
+{
+  "totais": {
+    "competencias": 10,
+    "descritores": 40,
+    "questoes": 441,
+    "componentes_previstos": 22,
+    "componentes_com_questoes": 22
+  },
+  "tri": {
+    "fase": "PRE_TRI",
+    "tem_dificuldade_inicial": true,
+    "dificuldade_minima": 1,
+    "dificuldade_maxima": 2.07,
+    "observacao": "O banco possui dificuldade inicial estimada, mas nao possui parametros TRI calibrados por respostas."
+  },
+  "por_competencia": {
+    "C01": {
+      "quantidade": 80,
+      "descricao": "C01 - Operar recursos computacionais, sistemas operacionais e práticas de segurança digital para uso responsável da tecnologia."
+    },
+    "C02": {
+      "quantidade": 106,
+      "descricao": "C02 - Resolver problemas computacionais por meio de lógica de programação, algoritmos, programação estruturada e orientação a objetos."
+    },
+    "C03": {
+      "quantidade": 50,
+      "descricao": "C03 - Realizar diagnóstico, montagem, configuração, manutenção e suporte em computadores, periféricos e ambientes de hardware."
+    },
+    "C04": {
+      "quantidade": 55,
+      "descricao": "C04 - Desenvolver interfaces, páginas e aplicações web com estrutura semântica, estilo, interação, usabilidade e integração com dados."
+    },
+    "C05": {
+      "quantidade": 20,
+      "descricao": "C05 - Modelar, implementar e consultar bancos de dados, aplicando organização, persistência, integridade e recuperação de informações."
+    },
+    "C06": {
+      "quantidade": 20,
+      "descricao": "C06 - Compreender, configurar e diagnosticar redes de computadores, serviços de conectividade, endereçamento e compartilhamento de recursos."
+    },
+    "C07": {
+      "quantidade": 20,
+      "descricao": "C07 - Aplicar tecnologias emergentes, robótica e inteligência artificial em soluções técnicas contextualizadas e eticamente orientadas."
+    },
+    "C08": {
+      "quantidade": 60,
+      "descricao": "C08 - Produzir artefatos digitais, interfaces e conteúdos visuais com princípios de design, composição, acessibilidade e comunicação."
+    },
+    "C09": {
+      "quantidade": 15,
+      "descricao": "C09 - Integrar conhecimentos técnicos em laboratórios, projetos integradores e práticas profissionais, documentando soluções e resultados."
+    },
+    "C10": {
+      "quantidade": 15,
+      "descricao": "C10 - Planejar carreira, estágio, organização do trabalho, empreendedorismo e inovação em contextos produtivos e sociais da informática."
+    }
+  },
+  "por_componente": {
+    "Arquitetura e Manutenção de Computadores": 40,
+    "Banco de Dados": 20,
+    "Design Gráfico": 60,
+    "Gerenciador de Conteúdo": 5,
+    "Gestão de Startup": 5,
+    "HTML/CSS": 40,
+    "Informática Básica": 60,
+    "Inteligência Artificial Aplicada": 5,
+    "Introdução à Inteligência Artificial": 5,
+    "Laboratório de Hardware": 15,
+    "Laboratório de Software": 5,
+    "Lógica de Programação": 5,
+    "Lógica de Programação I (Python)": 41,
+    "Lógica de Programação II": 20,
+    "Noções de Robótica": 10,
+    "Organização do Trabalho e Técnicas Produtivas": 5,
+    "Planejamento de Carreira": 5,
+    "Programação Orientada a Objetos": 40,
+    "Programação Web": 10,
+    "Projeto Integrador": 5,
+    "Rede de Computadores": 20,
+    "Sistemas Operacionais": 20
+  },
+  "por_descritor": {
+    "D01": {
+      "quantidade": 20,
+      "competencia": "C01",
+      "componente": "Informática Básica",
+      "descricao": "D01 - Utilizar recursos básicos de computadores, aplicativos, internet e ferramentas de produtividade em situações escolares, profissionais e comunitárias."
+    },
+    "D02": {
+      "quantidade": 20,
+      "competencia": "C01",
+      "componente": "Informática Básica",
+      "descricao": "D02 - Distinguir hardware, software, periféricos, arquivos, pastas e recursos de armazenamento local ou em nuvem."
+    },
+    "D03": {
+      "quantidade": 20,
+      "competencia": "C01",
+      "componente": "Informática Básica",
+      "descricao": "D03 - Aplicar práticas de segurança da informação, cidadania digital, proteção de dados, senhas e uso responsável da internet."
+    },
+    "D04": {
+      "quantidade": 20,
+      "competencia": "C01",
+      "componente": "Sistemas Operacionais",
+      "descricao": "D04 - Reconhecer funções de sistemas operacionais, gerenciamento de arquivos, usuários, permissões, processos e recursos do sistema."
+    },
+    "D05": {
+      "quantidade": 5,
+      "competencia": "C02",
+      "componente": "Lógica de Programação",
+      "descricao": "D05 - Decompor problemas em etapas, identificar entradas, processamentos e saídas e representar soluções por algoritmos ou pseudocódigo."
+    },
+    "D06": {
+      "quantidade": 21,
+      "competencia": "C02",
+      "componente": "Lógica de Programação I (Python)",
+      "descricao": "D06 - Interpretar variáveis, tipos de dados, operadores, entrada, saída e conversões em programas simples."
+    },
+    "D07": {
+      "quantidade": 20,
+      "competencia": "C02",
+      "componente": "Lógica de Programação I (Python)",
+      "descricao": "D07 - Analisar estruturas condicionais, estruturas de repetição e fluxo de execução em algoritmos e programas."
+    },
+    "D08": {
+      "quantidade": 20,
+      "competencia": "C02",
+      "componente": "Lógica de Programação II",
+      "descricao": "D08 - Aplicar listas, funções, modularização, validação de dados e combinação de estruturas na solução de problemas."
+    },
+    "D09": {
+      "quantidade": 20,
+      "competencia": "C02",
+      "componente": "Programação Orientada a Objetos",
+      "descricao": "D09 - Reconhecer classes, objetos, atributos, métodos, encapsulamento e relações básicas da programação orientada a objetos."
+    },
+    "D10": {
+      "quantidade": 20,
+      "competencia": "C02",
+      "componente": "Programação Orientada a Objetos",
+      "descricao": "D10 - Depurar erros, prever saídas, testar comportamentos e justificar decisões em programas estruturados ou orientados a objetos."
+    },
+    "D11": {
+      "quantidade": 20,
+      "competencia": "C03",
+      "componente": "Arquitetura e Manutenção de Computadores",
+      "descricao": "D11 - Identificar componentes internos, periféricos, funções de hardware e relações entre peças do computador."
+    },
+    "D12": {
+      "quantidade": 20,
+      "competencia": "C03",
+      "componente": "Arquitetura e Manutenção de Computadores",
+      "descricao": "D12 - Executar procedimentos de montagem, configuração inicial, instalação e verificação de equipamentos computacionais."
+    },
+    "D13": {
+      "quantidade": 5,
+      "competencia": "C03",
+      "componente": "Laboratório de Hardware",
+      "descricao": "D13 - Diagnosticar sintomas de falhas, lentidão, superaquecimento e propor manutenção preventiva ou corretiva."
+    },
+    "D14": {
+      "quantidade": 5,
+      "competencia": "C03",
+      "componente": "Laboratório de Hardware",
+      "descricao": "D14 - Aplicar normas de segurança, organização de bancada, registro técnico e qualidade em atividades práticas de hardware."
+    },
+    "D15": {
+      "quantidade": 20,
+      "competencia": "C04",
+      "componente": "HTML/CSS",
+      "descricao": "D15 - Reconhecer estrutura semântica de páginas HTML, elementos, atributos, links, imagens e organização do conteúdo."
+    },
+    "D16": {
+      "quantidade": 20,
+      "competencia": "C04",
+      "componente": "HTML/CSS",
+      "descricao": "D16 - Aplicar seletores, propriedades CSS, cores, responsividade, layout e estilização visual de interfaces web."
+    },
+    "D17": {
+      "quantidade": 5,
+      "competencia": "C04",
+      "componente": "Programação Web",
+      "descricao": "D17 - Implementar interações, validações e comportamentos básicos em páginas e aplicações web."
+    },
+    "D18": {
+      "quantidade": 5,
+      "competencia": "C04",
+      "componente": "Gerenciador de Conteúdo",
+      "descricao": "D18 - Organizar, publicar e manter conteúdos em plataformas digitais, sites, blogs ou sistemas de gerenciamento de conteúdo."
+    },
+    "D19": {
+      "quantidade": 5,
+      "competencia": "C04",
+      "componente": "Programação Web",
+      "descricao": "D19 - Integrar interface web, lógica de aplicação e persistência de dados em soluções simples voltadas a demandas reais."
+    },
+    "D20": {
+      "quantidade": 5,
+      "competencia": "C05",
+      "componente": "Banco de Dados",
+      "descricao": "D20 - Modelar entidades, atributos, relacionamentos e cardinalidades para representar problemas contextualizados."
+    },
+    "D21": {
+      "quantidade": 5,
+      "competencia": "C05",
+      "componente": "Banco de Dados",
+      "descricao": "D21 - Definir tabelas, campos, chaves primárias, chaves estrangeiras e regras básicas de integridade."
+    },
+    "D22": {
+      "quantidade": 5,
+      "competencia": "C05",
+      "componente": "Banco de Dados",
+      "descricao": "D22 - Interpretar e escrever comandos SQL básicos para inserir, consultar, atualizar e excluir dados."
+    },
+    "D23": {
+      "quantidade": 5,
+      "competencia": "C05",
+      "componente": "Banco de Dados",
+      "descricao": "D23 - Aplicar práticas de organização, backup, segurança, consistência e recuperação de informações em bancos de dados."
+    },
+    "D24": {
+      "quantidade": 5,
+      "competencia": "C06",
+      "componente": "Rede de Computadores",
+      "descricao": "D24 - Identificar topologias, equipamentos, meios de transmissão e funções básicas em redes de computadores."
+    },
+    "D25": {
+      "quantidade": 5,
+      "competencia": "C06",
+      "componente": "Rede de Computadores",
+      "descricao": "D25 - Configurar endereçamento, conectividade, compartilhamento de recursos e serviços básicos de rede."
+    },
+    "D26": {
+      "quantidade": 5,
+      "competencia": "C06",
+      "componente": "Rede de Computadores",
+      "descricao": "D26 - Diagnosticar problemas de conectividade, desempenho, acesso e segurança em ambientes de rede."
+    },
+    "D27": {
+      "quantidade": 5,
+      "competencia": "C06",
+      "componente": "Rede de Computadores",
+      "descricao": "D27 - Planejar soluções simples de rede para escola, comunidade, associação, cooperativa ou pequeno empreendimento."
+    },
+    "D28": {
+      "quantidade": 5,
+      "competencia": "C07",
+      "componente": "Noções de Robótica",
+      "descricao": "D28 - Reconhecer sensores, atuadores, placas, comandos e princípios de automação aplicados a protótipos."
+    },
+    "D29": {
+      "quantidade": 5,
+      "competencia": "C07",
+      "componente": "Noções de Robótica",
+      "descricao": "D29 - Aplicar lógica de programação em protótipos de robótica, automação ou monitoramento de situações do território."
+    },
+    "D30": {
+      "quantidade": 5,
+      "competencia": "C07",
+      "componente": "Introdução à Inteligência Artificial",
+      "descricao": "D30 - Compreender conceitos básicos de inteligência artificial, dados, automação, aprendizagem de máquina e IA generativa."
+    },
+    "D31": {
+      "quantidade": 5,
+      "competencia": "C07",
+      "componente": "Inteligência Artificial Aplicada",
+      "descricao": "D31 - Avaliar usos éticos, limites, riscos e possibilidades da IA em projetos técnicos, educacionais, produtivos e comunitários."
+    },
+    "D32": {
+      "quantidade": 20,
+      "competencia": "C08",
+      "componente": "Design Gráfico",
+      "descricao": "D32 - Aplicar princípios de composição visual, cor, tipografia, alinhamento, contraste e hierarquia da informação."
+    },
+    "D33": {
+      "quantidade": 20,
+      "competencia": "C08",
+      "componente": "Design Gráfico",
+      "descricao": "D33 - Selecionar formatos, ferramentas e procedimentos adequados para produção, edição e exportação de artefatos digitais."
+    },
+    "D34": {
+      "quantidade": 20,
+      "competencia": "C08",
+      "componente": "Design Gráfico",
+      "descricao": "D34 - Produzir materiais digitais acessíveis e comunicativos para escola, comunidade, movimentos, redes sociais ou projetos."
+    },
+    "D35": {
+      "quantidade": 5,
+      "competencia": "C09",
+      "componente": "Projeto Integrador",
+      "descricao": "D35 - Levantar necessidades reais, definir requisitos e propor soluções tecnológicas contextualizadas para escola ou comunidade."
+    },
+    "D36": {
+      "quantidade": 5,
+      "competencia": "C09",
+      "componente": "Laboratório de Software",
+      "descricao": "D36 - Planejar, prototipar, testar, documentar e apresentar soluções de software em projetos integradores."
+    },
+    "D37": {
+      "quantidade": 5,
+      "competencia": "C09",
+      "componente": "Laboratório de Hardware",
+      "descricao": "D37 - Executar práticas laboratoriais de hardware ou infraestrutura com registro técnico, segurança, colaboração e qualidade."
+    },
+    "D38": {
+      "quantidade": 5,
+      "competencia": "C10",
+      "componente": "Organização do Trabalho e Técnicas Produtivas",
+      "descricao": "D38 - Relacionar organização do trabalho, técnicas produtivas, colaboração, responsabilidade e comunicação profissional."
+    },
+    "D39": {
+      "quantidade": 5,
+      "competencia": "C10",
+      "componente": "Planejamento de Carreira",
+      "descricao": "D39 - Planejar carreira, estágio, portfólio, postura profissional e estratégias de inserção no mundo do trabalho."
+    },
+    "D40": {
+      "quantidade": 5,
+      "competencia": "C10",
+      "componente": "Gestão de Startup",
+      "descricao": "D40 - Elaborar propostas de inovação, empreendedorismo, gestão de startup e soluções digitais com impacto social ou produtivo."
+    }
+  },
+  "lacunas": {
+    "descritores_sem_questoes": [],
+    "descritores_com_menos_de_5_questoes": [],
+    "componentes_sem_questoes": [],
+    "questoes_sem_descritor_valido": []
+  }
+}

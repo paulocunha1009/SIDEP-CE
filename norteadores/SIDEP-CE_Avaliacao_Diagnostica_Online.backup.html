@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIDEP-CE — Avaliação Diagnóstica Online</title>
+<style>
+  :root {
+    --azul: #0c447c;
+    --azul-escuro: #042c53;
+    --azul-claro: #e6f1fb;
+    --verde: #27500a;
+    --verde-bg: #eaf3de;
+    --amarelo: #854f0b;
+    --amarelo-bg: #faeeda;
+    --vermelho: #791f1f;
+    --vermelho-bg: #fcebeb;
+    --texto: #2c2c2a;
+    --texto-suave: #5f5e5a;
+    --borda: #d3d1c7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    background: #f1efe8;
+    color: var(--texto);
+    line-height: 1.55;
+  }
+  header.topbar {
+    background: var(--azul-escuro);
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 12px;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  header.brand {
+    background: var(--azul);
+    color: #fff;
+    padding: 22px 20px;
+    text-align: center;
+  }
+  header.brand h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  header.brand p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 100px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  h2.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--azul-escuro);
+    margin: 0 0 12px;
+  }
+  .aviso {
+    background: var(--azul-claro);
+    border-left: 4px solid var(--azul);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .ano-opcoes {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .ano-btn {
+    flex: 1 1 260px;
+    border: 2px solid var(--borda);
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--texto);
+    transition: border-color 0.15s;
+  }
+  .ano-btn:hover { border-color: var(--azul); }
+  .ano-btn strong { display: block; font-size: 16px; color: var(--azul-escuro); margin-bottom: 6px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--texto-suave); margin: 14px 0 6px; }
+  input[type=text] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  button.primario {
+    background: var(--azul);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  button.primario:hover { background: var(--azul-escuro); }
+  button.secundario {
+    background: #fff;
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .bloco-titulo {
+    background: var(--azul-escuro);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 26px 0 14px;
+  }
+  .item { border-bottom: 1px solid var(--borda); padding: 16px 0; }
+  .item:last-child { border-bottom: none; }
+  .item-enunciado { font-size: 15px; margin-bottom: 10px; white-space: pre-wrap; }
+  .item-enunciado pre {
+    background: #f1efe8;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+  .opcao {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .opcao:hover { background: #f1efe8; }
+  .opcao input { margin-top: 3px; }
+  .barra-progresso-wrap {
+    position: sticky;
+    top: 0;
+    background: #f1efe8;
+    padding: 10px 16px;
+    z-index: 5;
+    border-bottom: 1px solid var(--borda);
+  }
+  .barra-progresso-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .barra-fundo {
+    flex: 1;
+    height: 8px;
+    background: var(--borda);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .barra-cheia { height: 100%; background: var(--azul); width: 0%; }
+  .barra-texto { font-size: 13px; color: var(--texto-suave); white-space: nowrap; }
+  .rodape-fixo {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid var(--borda);
+    padding: 14px 16px;
+    text-align: center;
+  }
+  table.boletim { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px; }
+  table.boletim th, table.boletim td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--borda); }
+  table.boletim th { color: var(--texto-suave); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .tag-adequado { background: var(--verde-bg); color: var(--verde); }
+  .tag-desenvolvimento { background: var(--amarelo-bg); color: var(--amarelo); }
+  .tag-insuficiente { background: var(--vermelho-bg); color: var(--vermelho); }
+  .resumo-geral {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .resumo-geral .pct { font-size: 42px; font-weight: 700; color: var(--azul-escuro); }
+  .resumo-geral .pct-label { font-size: 13px; color: var(--texto-suave); }
+  footer.rodape-pagina {
+    text-align: center;
+    font-size: 12px;
+    color: var(--texto-suave);
+    padding: 20px;
+  }
+  .oculto { display: none; }
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(4, 44, 83, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-caixa {
+    background: #fff;
+    border-radius: 10px;
+    padding: 22px 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .modal-caixa p { font-size: 15px; margin: 0 0 18px; }
+  .modal-botoes { display: flex; gap: 10px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<header class="topbar">GOVERNO DO ESTADO DO CEARÁ — SECRETARIA DA EDUCAÇÃO · 3ª CREDE — Acaraú · EEMCP Francisco Araújo Barros</header>
+<header class="brand">
+  <h1>SIDEP-CE — Avaliação Diagnóstica Online</h1>
+  <p>Sistema de Diagnóstico da Educação Profissional do Ceará · Curso Técnico em Informática</p>
+</header>
+
+<main id="app"></main>
+<div id="modal-root"></div>
+
+<footer class="rodape-pagina">SIDEP-CE — instrumento de uso pedagógico interno. Os resultados não compõem nota bimestral.</footer>
+
+<script>
+var BANCO = {
+  ano1: {
+    label: "1º ano — Informática Básica + Lógica de Programação I",
+    turmaPadrao: "1ª TEC. INF.",
+    blocos: [
+      {
+        nome: "Bloco A — Informática Básica",
+        itens: [
+          { q: "A parte física de um computador — teclado, mouse, tela, gabinete — é chamada de:", op: ["Software.", "Hardware.", "Sistema operacional.", "Firmware social.", "Aplicativo."], r: 1 },
+          { q: "O programa que gerencia o hardware e permite que outros softwares funcionem é o:", op: ["Navegador.", "Antivírus.", "Sistema operacional.", "Editor de texto.", "Compilador."], r: 2 },
+          { q: "Windows, Linux e macOS são exemplos de:", op: ["Editores de planilha.", "Sistemas operacionais.", "Navegadores.", "Linguagens de programação.", "Antivírus."], r: 1 },
+          { q: "Um arquivo de texto salvo com formatação (negrito, título) foi provavelmente criado em um(a):", op: ["Editor de planilhas.", "Editor de apresentações.", "Editor de texto.", "Navegador.", "Player de vídeo."], r: 2 },
+          { q: "Para organizar gastos do mês com soma automática por categoria, o programa mais indicado é:", op: ["Editor de texto.", "Editor de planilhas.", "Editor de apresentações.", "Navegador.", "Sistema operacional."], r: 1 },
+          { q: "Uma \"pasta\" no computador serve para:", op: ["Executar programas diretamente.", "Agrupar e organizar arquivos.", "Substituir o sistema operacional.", "Proteger a internet de vírus.", "Armazenar apenas fotos."], r: 1 },
+          { q: "Você recebe um e-mail suspeito pedindo senha bancária, com link duvidoso. A atitude mais segura é:", op: ["Clicar para conferir se é verdade.", "Responder com a senha, pois parece urgente.", "Não clicar, não enviar dados e verificar a autenticidade da mensagem.", "Encaminhar para os colegas.", "Ignorar, mas manter a mesma senha em tudo."], r: 2 },
+          { q: "Uma senha considerada mais segura combina:", op: ["Data de nascimento.", "A mesma senha em todos os sites.", "Letras maiúsculas, minúsculas, números e símbolos, diferente em cada serviço.", "Sequência simples como \"123456\".", "Nome do usuário repetido."], r: 2 },
+          { q: "Internet e navegador (como o Chrome) são a mesma coisa?", op: ["Sim, são sinônimos.", "Não: internet é a rede mundial; navegador é o programa usado para acessá-la.", "Sim, ambos são hardware.", "Não: navegador é um vírus.", "Não: internet é um tipo de cabo."], r: 1 },
+          { q: "Antes de instalar um programa desconhecido baixado da internet, o mais seguro é:", op: ["Instalar direto.", "Verificar a fonte e, se possível, checar com antivírus antes.", "Desligar o antivírus para agilizar.", "Compartilhar o arquivo antes de testar.", "Nenhuma das anteriores."], r: 1 },
+          { q: "A unidade de medida que indica a capacidade de armazenamento de um pendrive é:", op: ["Hertz (Hz).", "Watts (W).", "Bytes (KB, MB, GB).", "Decibéis (dB).", "Pixels por polegada (PPI)."], r: 2 },
+          { q: "Um dispositivo de ENTRADA de dados no computador é:", op: ["Monitor.", "Impressora.", "Teclado.", "Caixa de som.", "Projetor."], r: 2 },
+          { q: "Um dispositivo de SAÍDA de dados é:", op: ["Mouse.", "Teclado.", "Monitor.", "Scanner.", "Microfone."], r: 2 },
+          { q: "A extensão \".pdf\" geralmente indica um arquivo:", op: ["Editável em qualquer editor de imagem.", "De documento com formatação preservada para leitura.", "Executável (programa).", "De música.", "De planilha."], r: 1 },
+          { q: "\"Backup\" é o termo usado para:", op: ["Apagar arquivos desnecessários.", "Cópia de segurança de dados.", "Vírus de computador.", "Atualização automática do sistema.", "Tipo de rede sem fio."], r: 1 },
+          { q: "Um exemplo de malware (programa malicioso) é:", op: ["Navegador.", "Vírus de computador.", "Editor de texto.", "Sistema operacional.", "Impressora."], r: 1 },
+          { q: "A rede sem fio usada para conectar computadores à internet em casa é chamada de:", op: ["Bluetooth.", "USB.", "Wi-Fi.", "HDMI.", "VGA."], r: 2 },
+          { q: "Copiar um texto selecionado e colá-lo em outro lugar corresponde, respectivamente, aos atalhos:", op: ["Ctrl+Z e Ctrl+Y.", "Ctrl+C e Ctrl+V.", "Ctrl+X e Ctrl+P.", "Ctrl+A e Ctrl+S.", "Ctrl+B e Ctrl+I."], r: 1 },
+          { q: "Guardar arquivos em serviços como Google Drive ou OneDrive é um exemplo de uso de:", op: ["Armazenamento em nuvem.", "Memória RAM.", "Disco rígido local apenas.", "Sistema operacional offline.", "Rede local sem internet."], r: 0 },
+          { q: "Usar linguagem respeitosa, não compartilhar boatos e citar fontes ao postar conteúdo na internet faz parte do conceito de:", op: ["Hardware.", "Cidadania digital.", "Firmware.", "Overclock.", "Streaming."], r: 1 }
+        ]
+      },
+      {
+        nome: "Bloco B — Lógica de Programação I (Python)",
+        itens: [
+          { q: "Uma sequência lógica de passos para resolver um problema, antes de virar código, é chamada de:", op: ["Sistema operacional.", "Algoritmo.", "Navegador.", "Servidor.", "Banco de dados."], r: 1 },
+          { q: "A diferença entre algoritmo e programa é que:", op: ["São a mesma coisa.", "O algoritmo é a lógica dos passos; o programa é essa lógica escrita em uma linguagem que o computador entende.", "O algoritmo só existe em Python.", "O programa é sempre mais lento que o algoritmo.", "Não existe relação entre os dois."], r: 1 },
+          { q: "Em um fluxograma, o símbolo em forma de losango (diamante) representa:", op: ["Início ou fim.", "Uma estrutura de decisão (Sim/Não).", "Entrada de dados apenas.", "Uma variável.", "Um comentário no código."], r: 1 },
+          { q: "Em Python, o comando usado para exibir uma mensagem na tela é:", op: ["echo()", "printf()", "print()", "display()", "show()"], r: 2 },
+          { q: "Observe: nome = input('Digite seu nome: '). O comando input() serve para:", op: ["Exibir o nome na tela.", "Armazenar o valor digitado pelo usuário na variável.", "Calcular o tamanho do nome.", "Apagar o conteúdo da variável.", "Verificar se o nome está correto."], r: 1 },
+          { q: "Uma VARIÁVEL em programação é:", op: ["Um tipo de impressora.", "Um espaço na memória onde se guarda um valor que pode mudar durante a execução.", "Um símbolo usado apenas em fluxogramas.", "Um comando que encerra o programa.", "Uma linguagem de programação."], r: 1 },
+          { q: "Qual será a saída do código abaixo?\n<pre>idade = 15\nprint('Minha idade é', idade)</pre>", op: ["idade", "Minha idade é idade", "15", "Minha idade é 15", "Erro de sintaxe"], r: 3 },
+          { q: "Observe o código abaixo. Qual será a saída?\n<pre>nota = 7\nif nota >= 6:\n    print('Aprovado')\nelse:\n    print('Reprovado')</pre>", op: ["nota >= 6", "Reprovado", "Aprovado", "7", "Nenhuma saída"], r: 2 },
+          { q: "O comando elif em Python é utilizado para:", op: ["Encerrar o programa.", "Repetir um bloco de código.", "Verificar uma nova condição quando a condição anterior do if foi falsa.", "Declarar uma variável.", "Mostrar erro na tela."], r: 2 },
+          { q: "Em Python, os tipos de dado int, float, str e bool representam, respectivamente:", op: ["Texto, número inteiro, decimal e lógico.", "Número inteiro, número decimal, texto e valor lógico (verdadeiro/falso).", "Lista, dicionário, texto e número.", "Apenas números.", "Apenas textos."], r: 1 },
+          { q: "Qual será a saída do código abaixo?\n<pre>contador = 1\nwhile contador <= 3:\n    print(contador)\n    contador = contador + 1</pre>", op: ["1 2 3 4", "0 1 2 3", "1 2 3", "Loop infinito", "Nenhuma saída"], r: 2 },
+          { q: "Quantas vezes o código abaixo exibirá 'Olá'?\n<pre>for i in range(4):\n    print('Olá')</pre>", op: ["3 vezes.", "5 vezes.", "1 vez.", "4 vezes.", "0 vezes."], r: 3 },
+          { q: "Em Python, o operador \"==\" é usado para:", op: ["Atribuir um valor a uma variável.", "Comparar se dois valores são iguais.", "Somar dois números.", "Criar um comentário.", "Multiplicar valores."], r: 1 },
+          { q: "Os operadores lógicos \"and\", \"or\" e \"not\" em Python servem para:", op: ["Realizar apenas operações matemáticas.", "Combinar ou negar condições lógicas.", "Substituir o comando print().", "Criar variáveis automaticamente.", "Formatar texto."], r: 1 },
+          { q: "A indentação (espaços no início da linha) em Python é importante porque:", op: ["É apenas estética, não afeta o funcionamento.", "Define blocos de código (ex.: o que pertence a um if ou loop).", "Só é usada em comentários.", "Impede erros de digitação automaticamente.", "Não tem função alguma em Python."], r: 1 },
+          { q: "Um comentário em Python (linha que o interpretador ignora) é escrito com o símbolo:", op: ["//", "#", "<!-- -->", "/* */", "::"], r: 1 },
+          { q: "Qual será o valor impresso pelo código abaixo?\n<pre>soma = 0\ni = 1\nwhile i <= 5:\n    soma = soma + i\n    i = i + 1\nprint(soma)</pre>", op: ["10", "5", "15", "25", "6"], r: 2 },
+          { q: "Uma lista em Python (ex.: idades = [15, 16, 17]) serve para:", op: ["Armazenar um único valor.", "Armazenar uma coleção de valores em uma única variável.", "Substituir o print().", "Criar apenas números decimais.", "Executar comandos condicionais."], r: 1 },
+          { q: "O código abaixo tenta somar dois números, mas apresenta um erro comum de iniciantes. Qual é o erro?\n<pre>a = input('Digite um número: ')\nb = input('Digite outro número: ')\nprint(a + b)</pre>", op: ["Não há erro, o código está correto.", "input() sempre retorna texto (string); é preciso converter para número com int() antes de somar.", "print() não pode receber variáveis.", "A variável \"a\" não pode se chamar assim.", "Falta um \"else\" no código."], r: 1 },
+          { q: "Em um fluxograma que representa \"ler a nota do aluno e verificar se passou\", a ordem correta dos símbolos é:", op: ["Fim → Entrada → Decisão → Início.", "Início → Entrada (ler nota) → Decisão (nota ≥ 6?) → Saída (resultado) → Fim.", "Decisão → Início → Entrada → Fim.", "Início → Saída → Entrada → Fim.", "Início → Processamento → Fim → Decisão."], r: 1 }
+        ]
+      }
+    ]
+  },
+  ano2: {
+    label: "2º ano — 8 disciplinas já ministradas",
+    turmaPadrao: "2ª TEC. INF.",
+    blocos: [
+      {
+        nome: "Bloco A — Informática Básica",
+        itens: [
+          { q: "A parte física do computador (teclado, tela, gabinete) é chamada de:", op: ["Software.", "Hardware.", "Sistema operacional.", "Firmware social.", "Aplicativo."], r: 1 },
+          { q: "O programa responsável por gerenciar o hardware e permitir que outros softwares funcionem é:", op: ["Editor de texto.", "Navegador.", "Sistema operacional.", "Antivírus.", "Compilador."], r: 2 },
+          { q: "Diante de um e-mail suspeito pedindo dados bancários, a atitude mais segura é:", op: ["Clicar no link para conferir.", "Responder com os dados solicitados.", "Não clicar, não enviar dados e verificar a autenticidade.", "Encaminhar aos colegas.", "Ignorar, mas manter a mesma senha em tudo."], r: 2 },
+          { q: "\"Backup\" é o termo usado para:", op: ["Vírus de computador.", "Cópia de segurança de dados.", "Atualização automática.", "Tipo de rede sem fio.", "Apagar arquivos."], r: 1 },
+          { q: "Guardar arquivos em serviços como Google Drive é um exemplo de:", op: ["Armazenamento em nuvem.", "Memória RAM.", "Disco rígido local apenas.", "Rede local sem internet.", "Sistema operacional offline."], r: 0 }
+        ]
+      },
+      {
+        nome: "Bloco B — Lógica de Programação I (Python)",
+        itens: [
+          { q: "Uma VARIÁVEL em programação é:", op: ["Um tipo de impressora.", "Um espaço na memória onde se guarda um valor que pode mudar.", "Um símbolo usado só em fluxogramas.", "Um comando que encerra o programa.", "Uma linguagem de programação."], r: 1 },
+          { q: "Em Python, o comando para exibir uma mensagem na tela é:", op: ["echo()", "printf()", "print()", "display()", "show()"], r: 2 },
+          { q: "Qual será a saída do código abaixo?\n<pre>nota = 7\nif nota >= 6:\n    print('Aprovado')\nelse:\n    print('Reprovado')</pre>", op: ["nota >= 6", "Reprovado", "Aprovado", "7", "Nenhuma saída"], r: 2 },
+          { q: "O comando input() em Python serve para:", op: ["Exibir texto na tela.", "Armazenar o valor digitado pelo usuário em uma variável.", "Calcular operações matemáticas.", "Apagar variáveis.", "Encerrar o programa."], r: 1 },
+          { q: "O operador \"==\" em Python é usado para:", op: ["Atribuir um valor a uma variável.", "Comparar se dois valores são iguais.", "Somar dois números.", "Criar um comentário.", "Multiplicar valores."], r: 1 }
+        ]
+      },
+      {
+        nome: "Bloco C — Arquitetura e Manutenção de Computadores",
+        itens: [
+          { q: "Um componente que armazena dados de forma permanente, mesmo com o computador desligado, é:", op: ["A memória RAM.", "O processador (CPU).", "O disco de armazenamento (HD/SSD).", "A placa de vídeo.", "O sistema operacional."], r: 2 },
+          { q: "A memória RAM se diferencia do disco de armazenamento porque:", op: ["É permanente, como o HD.", "É temporária: perde os dados quando o computador é desligado.", "Não tem relação com desempenho do computador.", "Serve apenas para conectar periféricos.", "É um tipo de software."], r: 1 },
+          { q: "O componente considerado o \"cérebro\" do computador, responsável por executar instruções, é:", op: ["A fonte de alimentação.", "O processador (CPU).", "O gabinete.", "O monitor.", "O teclado."], r: 1 },
+          { q: "Diante de um computador que \"trava direto\" e apresenta lentidão, o primeiro passo de um diagnóstico técnico é:", op: ["Formatar o computador sem investigar.", "Verificar sistematicamente possíveis causas (superaquecimento, memória, softwares em excesso).", "Trocar todos os componentes por padrão.", "Desligar e nunca mais ligar.", "Ignorar, pois não é possível diagnosticar."], r: 1 },
+          { q: "A placa que conecta todos os componentes do computador (processador, memória, etc.) é chamada de:", op: ["Placa de vídeo.", "Placa-mãe.", "Placa de rede.", "Fonte de alimentação.", "Placa de som."], r: 1 }
+        ]
+      },
+      {
+        nome: "Bloco D — Programação Orientada a Objetos",
+        itens: [
+          { q: "Em Programação Orientada a Objetos, uma CLASSE é:", op: ["Um valor numérico fixo.", "Um molde/modelo que define atributos e comportamentos de um tipo de objeto.", "Um comando de repetição.", "Um tipo de erro de sintaxe.", "Um arquivo de imagem."], r: 1 },
+          { q: "Um OBJETO, em POO, é:", op: ["A mesma coisa que uma variável simples.", "Uma instância concreta criada a partir de uma classe.", "Um tipo de comentário no código.", "Um erro de execução.", "Um comando de impressão."], r: 1 },
+          { q: "Em uma classe \"Aluno\" com atributos nome, idade e curso, esses atributos representam:", op: ["Ações que o aluno realiza.", "Características/dados que descrevem o aluno.", "Erros de programação.", "Comandos de repetição.", "Bibliotecas externas."], r: 1 },
+          { q: "Um MÉTODO, em uma classe, representa:", op: ["Um atributo apenas.", "Uma ação/comportamento que os objetos da classe podem realizar.", "Um erro de sintaxe.", "Um tipo de dado numérico.", "Um comentário no código."], r: 1 },
+          { q: "A principal vantagem de organizar um sistema em classes e objetos é:", op: ["Deixar o código mais difícil de entender.", "Organizar e reaproveitar código, representando entidades do mundo real de forma estruturada.", "Impedir que o programa seja executado.", "Eliminar a necessidade de variáveis.", "Tornar o programa mais lento."], r: 1 }
+        ]
+      },
+      {
+        nome: "Bloco E — Lógica de Programação II",
+        itens: [
+          { q: "Qual será a saída do código abaixo?\n<pre>contador = 1\nwhile contador <= 3:\n    print(contador)\n    contador = contador + 1</pre>", op: ["1 2 3 4", "0 1 2 3", "1 2 3", "Loop infinito", "Nenhuma saída"], r: 2 },
+          { q: "Quantas vezes o código abaixo exibirá 'Olá'?\n<pre>for i in range(4):\n    print('Olá')</pre>", op: ["3 vezes.", "5 vezes.", "1 vez.", "4 vezes.", "0 vezes."], r: 3 },
+          { q: "Uma lista em Python (ex.: idades = [15, 16, 17]) serve para:", op: ["Armazenar um único valor.", "Armazenar uma coleção de valores em uma única variável.", "Substituir o print().", "Criar apenas números decimais.", "Executar comandos condicionais."], r: 1 },
+          { q: "A principal diferença entre o laço for e o laço while em Python é que:", op: ["São exatamente iguais em todos os casos.", "O for é geralmente usado quando se sabe o número de repetições (ou percorre uma sequência); o while repete enquanto uma condição for verdadeira.", "O while nunca pode ser usado com listas.", "O for não pode usar range().", "O while é exclusivo para números decimais."], r: 1 },
+          { q: "Qual valor será impresso pelo código abaixo?\n<pre>soma = 0\ni = 1\nwhile i <= 5:\n    soma = soma + i\n    i = i + 1\nprint(soma)</pre>", op: ["10", "5", "15", "25", "6"], r: 2 }
+        ]
+      },
+      {
+        nome: "Bloco F — HTML/CSS",
+        itens: [
+          { q: "A sigla CSS significa Cascading Style Sheets e é usada para:", op: ["Estruturar o conteúdo da página.", "Definir a aparência visual (cores, fontes, layout) da página.", "Programar a lógica do site.", "Armazenar dados em banco de dados.", "Substituir o HTML completamente."], r: 1 },
+          { q: "Uma folha de estilo CSS pode ser aplicada a uma página HTML de que formas?", op: ["Apenas dentro da tag <body>.", "Inline (no próprio elemento), interna (tag <style>) ou externa (arquivo .css separado).", "Somente por meio de programas pagos.", "CSS não pode ser aplicado a HTML.", "Apenas via linha de comando."], r: 1 },
+          { q: "As tags semânticas do HTML5, como <header>, <main> e <footer>, se diferenciam da <div> porque:", op: ["Não há diferença nenhuma.", "Descrevem o significado do conteúdo, tornando o código mais organizado e acessível; a <div> é um container genérico.", "Só funcionam em navegadores antigos.", "São usadas apenas para imagens.", "<div> é mais moderna que as tags semânticas."], r: 1 },
+          { q: "Para inserir uma imagem em HTML garantindo acessibilidade a leitores de tela, o atributo obrigatório na tag <img> é:", op: ["title", "width", "href", "alt", "class"], r: 3 },
+          { q: "O elemento HTML usado para criar um link (hiperlink) que leva a outra página é:", op: ["<link>", "<src>", "<a>", "<nav>", "<button>"], r: 2 }
+        ]
+      },
+      {
+        nome: "Bloco G — Sistemas Operacionais",
+        itens: [
+          { q: "A principal função de um sistema operacional é:", op: ["Editar textos e planilhas.", "Gerenciar o hardware e permitir que os demais programas funcionem.", "Criar páginas de internet.", "Armazenar apenas fotos e vídeos.", "Substituir qualquer outro programa."], r: 1 },
+          { q: "Durante a instalação de um sistema operacional, a criação de um usuário serve para:", op: ["Definir a cor do papel de parede apenas.", "Controlar o acesso e personalizar configurações e permissões para cada pessoa que usa o computador.", "Aumentar a velocidade do processador.", "Substituir a necessidade de senha.", "Ativar o Wi-Fi automaticamente."], r: 1 },
+          { q: "Manter o sistema operacional atualizado é importante principalmente porque:", op: ["Deixa o computador mais lento de propósito.", "Corrige falhas de segurança e melhora a estabilidade do sistema.", "É apenas uma formalidade sem efeito real.", "Impede o uso de qualquer programa novo.", "Apaga todos os arquivos do usuário."], r: 1 },
+          { q: "A capacidade de um sistema operacional executar vários programas ao mesmo tempo é chamada de:", op: ["Backup.", "Multitarefa.", "Firewall.", "Overclock.", "Streaming."], r: 1 },
+          { q: "O sistema de arquivos de um sistema operacional é responsável por:", op: ["Definir a cor da interface.", "Organizar e gerenciar como os dados são armazenados e recuperados no disco.", "Conectar o computador à internet.", "Substituir o processador.", "Executar apenas jogos."], r: 1 }
+        ]
+      },
+      {
+        nome: "Bloco H — Design Gráfico",
+        itens: [
+          { q: "Em uma peça de comunicação visual (cartaz, banner), a \"hierarquia visual\" se refere a:", op: ["Usar o máximo de cores possível.", "Organizar os elementos de forma que o mais importante se destaque primeiro ao olhar.", "Usar apenas texto, sem imagens.", "Ignorar o público-alvo da peça.", "Usar sempre fundo preto."], r: 1 },
+          { q: "Um formato de imagem que preserva transparência (fundo sem cor) é:", op: ["JPG.", "PNG.", "DOCX.", "MP3.", "TXT."], r: 1 },
+          { q: "Escolher fontes (tipografia) legíveis e um tamanho adequado ao meio de divulgação (impresso ou digital) é importante para garantir:", op: ["Que a peça pareça mais cara.", "A legibilidade e a comunicação eficiente da mensagem.", "Que o arquivo fique menor automaticamente.", "Que apenas designers profissionais entendam a peça.", "Nada relevante; qualquer fonte funciona igual."], r: 1 },
+          { q: "A combinação de cores em uma peça gráfica deve considerar principalmente:", op: ["Usar todas as cores disponíveis ao mesmo tempo.", "Contraste, legibilidade e coerência com a identidade do que está sendo comunicado.", "Usar sempre tons de cinza, independentemente do contexto.", "A cor não influencia a comunicação visual.", "Escolher cores aleatoriamente."], r: 1 },
+          { q: "Uma peça gráfica feita para divulgar um evento comunitário deve, sobretudo:", op: ["Priorizar apenas a estética, sem se preocupar com a informação.", "Comunicar claramente as informações essenciais (o quê, quando, onde) de forma visualmente organizada.", "Ser o mais complexa possível.", "Evitar qualquer texto.", "Ser idêntica a peças de outras comunidades, sem adaptação."], r: 1 }
+        ]
+      }
+    ]
+  }
+};
+
+var estado = { ano: null, nome: "", turma: "", respostas: {} };
+var app = document.getElementById("app");
+var modalRoot = document.getElementById("modal-root");
+
+function fecharModal() {
+  modalRoot.innerHTML = "";
+}
+
+function mostrarAlerta(mensagem) {
+  modalRoot.innerHTML =
+    '<div class="modal-overlay"><div class="modal-caixa">' +
+      '<p>' + mensagem + '</p>' +
+      '<div class="modal-botoes"><button class="primario" id="modal-ok">Entendi</button></div>' +
+    '</div></div>';
+  document.getElementById("modal-ok").addEventListener("click", fecharModal);
+}
+
+function mostrarConfirmacao(mensagem, aoConfirmar) {
+  modalRoot.innerHTML =
+    '<div class="modal-overlay"><div class="modal-caixa">' +
+      '<p>' + mensagem + '</p>' +
+      '<div class="modal-botoes">' +
+        '<button class="secundario" id="modal-cancelar">Voltar e revisar</button>' +
+        '<button class="primario" id="modal-confirmar">Finalizar mesmo assim</button>' +
+      '</div>' +
+    '</div></div>';
+  document.getElementById("modal-cancelar").addEventListener("click", fecharModal);
+  document.getElementById("modal-confirmar").addEventListener("click", function() {
+    fecharModal();
+    aoConfirmar();
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderEnunciado(texto) {
+  var partes = texto.split(/(<pre>[\s\S]*?<\/pre>)/g);
+  return partes.map(function(p) {
+    if (p.indexOf("<pre>") === 0) {
+      var codigo = p.replace(/<\/?pre>/g, "");
+      return "<pre>" + escapeHtml(codigo) + "</pre>";
+    }
+    return escapeHtml(p).replace(/\n/g, "<br>");
+  }).join("");
+}
+
+function renderIntro() {
+  app.innerHTML =
+    '<div class="card">' +
+      '<h2 class="section-title">Avaliação diagnóstica</h2>' +
+      '<div class="aviso">Esta é uma avaliação <strong>diagnóstica</strong>: o objetivo é mapear o que já foi consolidado no conteúdo dado até aqui, não aprovar ou reprovar. O resultado não compõe nota bimestral; ele orienta o planejamento das próximas aulas e das trilhas de recomposição.</div>' +
+      '<p>Escolha o ano/turma para iniciar:</p>' +
+      '<div class="ano-opcoes">' +
+        '<button class="ano-btn" data-ano="ano1"><strong>1º ano</strong>Informática Básica + Lógica de Programação I — 40 itens</button>' +
+        '<button class="ano-btn" data-ano="ano2"><strong>2º ano</strong>8 disciplinas já ministradas — 40 itens</button>' +
+      '</div>' +
+    '</div>';
+  Array.prototype.forEach.call(app.querySelectorAll(".ano-btn"), function(btn) {
+    btn.addEventListener("click", function() {
+      estado.ano = btn.getAttribute("data-ano");
+      estado.turma = BANCO[estado.ano].turmaPadrao;
+      renderIdentificacao();
+    });
+  });
+}
+
+function renderIdentificacao() {
+  var banco = BANCO[estado.ano];
+  app.innerHTML =
+    '<div class="card">' +
+      '<h2 class="section-title">' + banco.label + '</h2>' +
+      '<label for="campo-nome">Nome do(a) aluno(a)</label>' +
+      '<input type="text" id="campo-nome" placeholder="Digite seu nome completo">' +
+      '<label for="campo-turma">Turma</label>' +
+      '<input type="text" id="campo-turma" value="' + banco.turmaPadrao + '">' +
+      '<div>' +
+        '<button class="secundario" id="btn-voltar">Voltar</button>' +
+        '<button class="primario" id="btn-comecar">Começar avaliação</button>' +
+      '</div>' +
+    '</div>';
+  document.getElementById("btn-voltar").addEventListener("click", renderIntro);
+  document.getElementById("btn-comecar").addEventListener("click", function() {
+    var nome = document.getElementById("campo-nome").value.trim();
+    var turma = document.getElementById("campo-turma").value.trim();
+    if (!nome) {
+      mostrarAlerta("Digite o nome do(a) aluno(a) antes de começar.");
+      return;
+    }
+    estado.nome = nome;
+    estado.turma = turma || banco.turmaPadrao;
+    estado.respostas = {};
+    renderQuiz();
+  });
+}
+
+function totalItens() {
+  var total = 0;
+  BANCO[estado.ano].blocos.forEach(function(b) { total += b.itens.length; });
+  return total;
+}
+
+function contarRespondidas() {
+  return Object.keys(estado.respostas).length;
+}
+
+function atualizarProgresso() {
+  var total = totalItens();
+  var respondidas = contarRespondidas();
+  var pct = Math.round((respondidas / total) * 100);
+  var barra = document.getElementById("barra-cheia");
+  var texto = document.getElementById("barra-texto");
+  if (barra) barra.style.width = pct + "%";
+  if (texto) texto.textContent = respondidas + " de " + total + " respondidas";
+}
+
+function renderQuiz() {
+  var banco = BANCO[estado.ano];
+  var html = '<div class="barra-progresso-wrap"><div class="barra-progresso-inner">' +
+    '<div class="barra-fundo"><div class="barra-cheia" id="barra-cheia"></div></div>' +
+    '<div class="barra-texto" id="barra-texto"></div>' +
+    '</div></div>';
+  html += '<div class="card"><h2 class="section-title">' + banco.label + '</h2>' +
+    '<p style="font-size:13px;color:var(--texto-suave);">Aluno(a): ' + escapeHtml(estado.nome) + ' &middot; Turma: ' + escapeHtml(estado.turma) + '</p></div>';
+
+  banco.blocos.forEach(function(bloco, bIdx) {
+    html += '<div class="bloco-titulo">' + escapeHtml(bloco.nome) + '</div>';
+    html += '<div class="card">';
+    bloco.itens.forEach(function(item, iIdx) {
+      var chave = bIdx + "_" + iIdx;
+      html += '<div class="item">';
+      html += '<div class="item-enunciado"><strong>' + (numeroGlobal(banco, bIdx, iIdx)) + '.</strong> ' + renderEnunciado(item.q) + '</div>';
+      var letras = ["A", "B", "C", "D", "E"];
+      item.op.forEach(function(opcao, oIdx) {
+        var id = "q" + chave + "_" + oIdx;
+        html += '<label class="opcao" for="' + id + '">' +
+          '<input type="radio" name="q' + chave + '" id="' + id + '" value="' + oIdx + '">' +
+          '<span>' + letras[oIdx] + ') ' + escapeHtml(opcao) + '</span>' +
+        '</label>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  html += '<div class="rodape-fixo"><button class="primario" id="btn-finalizar">Finalizar avaliação</button></div>';
+  app.innerHTML = html;
+
+  Array.prototype.forEach.call(app.querySelectorAll('input[type=radio]'), function(radio) {
+    radio.addEventListener("change", function() {
+      var nome = radio.name;
+      estado.respostas[nome.substring(1)] = parseInt(radio.value, 10);
+      atualizarProgresso();
+    });
+  });
+
+  atualizarProgresso();
+
+  document.getElementById("btn-finalizar").addEventListener("click", function() {
+    var total = totalItens();
+    var respondidas = contarRespondidas();
+    if (respondidas < total) {
+      var faltam = total - respondidas;
+      mostrarConfirmacao(faltam + " questão(ões) ainda não foram respondidas. Deseja finalizar mesmo assim?", renderResultados);
+      return;
+    }
+    renderResultados();
+  });
+}
+
+function numeroGlobal(banco, bIdx, iIdx) {
+  var n = 0;
+  for (var i = 0; i < bIdx; i++) n += banco.blocos[i].itens.length;
+  return n + iIdx + 1;
+}
+
+function classificar(pct) {
+  if (pct >= 70) return { tag: "tag-adequado", texto: "Adequado" };
+  if (pct >= 40) return { tag: "tag-desenvolvimento", texto: "Em desenvolvimento" };
+  return { tag: "tag-insuficiente", texto: "Insuficiente" };
+}
+
+function renderResultados() {
+  var banco = BANCO[estado.ano];
+  var totalAcertos = 0;
+  var totalItensCount = 0;
+  var linhas = "";
+
+  banco.blocos.forEach(function(bloco, bIdx) {
+    var acertosBloco = 0;
+    bloco.itens.forEach(function(item, iIdx) {
+      var chave = bIdx + "_" + iIdx;
+      if (estado.respostas[chave] === item.r) acertosBloco++;
+    });
+    var pctBloco = Math.round((acertosBloco / bloco.itens.length) * 100);
+    totalAcertos += acertosBloco;
+    totalItensCount += bloco.itens.length;
+    var classe = classificar(pctBloco);
+    linhas += '<tr>' +
+      '<td>' + escapeHtml(bloco.nome) + '</td>' +
+      '<td>' + acertosBloco + ' / ' + bloco.itens.length + '</td>' +
+      '<td>' + pctBloco + '%</td>' +
+      '<td><span class="tag ' + classe.tag + '">' + classe.texto + '</span></td>' +
+    '</tr>';
+  });
+
+  var pctGeral = Math.round((totalAcertos / totalItensCount) * 100);
+
+  app.innerHTML =
+    '<div class="card">' +
+      '<h2 class="section-title">Boletim diagnóstico</h2>' +
+      '<p style="font-size:13px;color:var(--texto-suave);">Aluno(a): ' + escapeHtml(estado.nome) + ' &middot; Turma: ' + escapeHtml(estado.turma) + ' &middot; ' + banco.label + '</p>' +
+      '<div class="resumo-geral">' +
+        '<div class="pct">' + pctGeral + '%</div>' +
+        '<div class="pct-label">de acerto geral (' + totalAcertos + ' de ' + totalItensCount + ' itens)</div>' +
+      '</div>' +
+      '<table class="boletim">' +
+        '<tr><th>Bloco / disciplina</th><th>Acertos</th><th>%</th><th>Situação</th></tr>' +
+        linhas +
+      '</table>' +
+      '<div class="aviso" style="margin-top:20px;">Este resultado é diagnóstico: indica em quais blocos o conteúdo já está consolidado e em quais ainda há fragilidade, para orientar as próximas aulas e trilhas de recomposição. Não representa uma nota.</div>' +
+      '<button class="secundario" id="btn-refazer">Fazer nova avaliação</button>' +
+    '</div>';
+
+  document.getElementById("btn-refazer").addEventListener("click", function() {
+    estado = { ano: null, nome: "", turma: "", respostas: {} };
+    renderIntro();
+  });
+}
+
+renderIntro();
+</script>
+</body>
+</html>
