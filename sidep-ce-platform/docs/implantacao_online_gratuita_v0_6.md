@@ -31,6 +31,18 @@ Esse volume e adequado para um piloto gratuito, desde que as respostas sejam arm
 
 ## Melhorias implementadas
 
+### 0. MVP online em piloto controlado
+
+Em 07/07/2026, o SIDEP-CE passou a operar em arquitetura hibrida:
+
+- modo local preservado para continuidade do desenvolvimento;
+- Supabase configurado como banco online do piloto;
+- Vercel configurado para deploy publico inicial;
+- GitHub usado como repositorio fonte;
+- rotina de migracao da base local para Supabase adicionada na area de Relatorios.
+
+Essa decisao permite iniciar aplicacoes reais em pequena escala sem perder os dados ja criados no navegador durante a fase de prototipo.
+
 ### 1. Resposta consolidada em JSON por aluno
 
 O sistema nao grava uma linha por alternativa marcada. Cada envio de prova gera um registro consolidado por aluno e avaliacao.
@@ -115,6 +127,36 @@ Regra:
 - codigo de avaliacao excluida tambem fica bloqueado;
 - codigo bloqueado nao pode ser reaproveitado.
 
+### 6. Migracao da base local para Supabase
+
+Foi criada uma rotina administrativa para enviar a base local do navegador para o Supabase.
+
+O botao fica na area **Relatorios** e deve ser usado pelo perfil **Administrador**.
+
+A rotina envia, em ordem:
+
+1. regionais CREDE/SEFOR;
+2. escolas;
+3. professores;
+4. competencias;
+5. descritores;
+6. questoes;
+7. avaliacoes;
+8. codigos de avaliacao bloqueados;
+9. respostas consolidadas dos estudantes.
+
+Observacao importante: a migracao deve ser feita pelo app local em `http://127.0.0.1:5173`, pois e nesse navegador que esta o `localStorage` com a base criada durante o prototipo. O Vercel nao consegue acessar dados locais do computador do professor/desenvolvedor.
+
+### 7. Banco de itens online
+
+Foram adicionadas tabelas MVP para manter compatibilidade direta com o modelo React atual:
+
+- `competencia_mvp`;
+- `descritor_mvp`;
+- `questao_mvp`.
+
+Essa camada preserva os codigos pedagogicos `C01`, `D01` e `Q-INF...`, mantendo rastreabilidade entre matriz, banco de itens, avaliacoes e relatorios.
+
 ## Tabelas MVP online adicionadas
 
 ### `avaliacao_mvp`
@@ -158,6 +200,48 @@ Principais campos:
 
 Ja existia no schema e permanece como a tabela principal de respostas consolidadas.
 
+### `competencia_mvp`
+
+Tabela de competencias pedagogicas utilizadas no MVP.
+
+Campos principais:
+
+- codigo;
+- curso_tecnico;
+- descricao;
+- fonte;
+- atualizada_em.
+
+### `descritor_mvp`
+
+Tabela de descritores avaliaveis vinculados a competencias.
+
+Campos principais:
+
+- codigo;
+- competencia_codigo;
+- componente_curricular;
+- descricao;
+- nivel_esperado;
+- atualizada_em.
+
+### `questao_mvp`
+
+Tabela de questoes do banco de itens do MVP.
+
+Campos principais:
+
+- codigo;
+- descritor_codigo;
+- componente_curricular;
+- enunciado;
+- alternativas A-E;
+- gabarito;
+- justificativa;
+- dificuldade_inicial;
+- status;
+- atualizada_em.
+
 ## Variaveis de ambiente
 
 No arquivo `.env.local` do app e nas variaveis da Vercel:
@@ -186,6 +270,9 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
 9. Configurar as variaveis de ambiente na Vercel.
 10. Fazer o primeiro deploy.
 11. Testar uma avaliacao completa com aluno, professor e gestao.
+12. Executar `database/migration_2026_07_07_banco_itens_mvp.sql` caso o schema inicial tenha sido rodado antes da criacao das tabelas MVP do banco de itens.
+13. No app local, entrar como Administrador e clicar em **Subir base local para Supabase**.
+14. Conferir no Supabase se as tabelas `competencia_mvp`, `descritor_mvp`, `questao_mvp`, `avaliacao_mvp` e `resposta_avaliacao` possuem registros.
 
 ## Observacao sobre seguranca
 
@@ -200,8 +287,19 @@ O piloto gratuito inicia a migracao para banco real. Para producao institucional
 - dominio institucional;
 - plano de contingencia.
 
+Enquanto RLS e autenticacao institucional nao estiverem implementadas, o uso online deve ser tratado como **piloto controlado**. O link deve ser compartilhado apenas com professores, gestao e turmas participantes. Dados sensiveis nao devem ser exportados ou expostos fora da finalidade pedagogica.
+
 ## Status tecnico
 
 Build validado em 07/07/2026 com `npm run build`.
 
 O sistema local continua funcionando quando o Supabase nao esta configurado.
+
+## Status operacional em 07/07/2026
+
+- Schema principal criado no Supabase.
+- Migracao do banco de itens MVP adicionada.
+- Variaveis de ambiente preparadas para Vercel.
+- Rotina de migracao local para Supabase implementada.
+- Base local pode ser enviada ao Supabase pelo perfil Administrador.
+- Uso online liberado apenas para piloto controlado.

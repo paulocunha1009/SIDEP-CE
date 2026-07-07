@@ -1,6 +1,6 @@
 # SIDEP-CE - Metodologia de Mestrado e Regras de Negocio
 
-Versao: 0.5 - Rastreabilidade de aplicacoes, codigo unico e exclusao segura  
+Versao: 0.6 - MVP online, migracao Supabase e uso em piloto controlado  
 Atualizado em: 07/07/2026
 
 ## 1. Tese Central
@@ -25,6 +25,19 @@ Estrutura atual:
 - 441 questoes piloto vinculadas ao banco diagnostico inicial;
 - 78 questoes inicialmente validadas e 363 questoes em revisao docente;
 - evidencias por itens objetivos, situacoes-problema, rubricas praticas, projetos, laboratorio, estagio e tempo comunidade.
+
+## 2.1 Marco de Implementacao Online
+
+Em 07/07/2026, o SIDEP-CE avancou de um MVP local para um MVP online em piloto controlado. A arquitetura passou a combinar:
+
+- React/Vite como interface responsiva;
+- Vercel como ambiente de deploy inicial;
+- Supabase/PostgreSQL como banco online do piloto;
+- GitHub como repositorio do projeto;
+- fallback local preservado para continuidade do desenvolvimento;
+- rotina de migracao da base local para o Supabase.
+
+Esse marco e relevante para a pesquisa porque transforma o projeto de uma proposta conceitual em produto tecnico-tecnologico testavel em contexto escolar. A plataforma passa a permitir coleta de respostas reais, armazenamento centralizado, relatorios por escopo e construcao progressiva de uma base empirica para analise classica de itens e futura calibracao TRI.
 
 ## 3. Diferenca Entre Competencia, Descritor e Indicador
 
@@ -81,6 +94,35 @@ A passagem para TRI exige:
 - validacao por especialistas e acompanhamento estatistico.
 
 No SIDEP-CE, a questao mede o descritor. O conjunto de descritores interpreta a competencia. O relatorio pedagogico deve priorizar fragilidades por descritor, pois e nesse nivel que o professor consegue intervir.
+
+### 5.1 O que o sistema calcula hoje
+
+Na fase atual, o sistema calcula:
+
+- acertos por estudante;
+- percentual bruto;
+- desempenho por descritor;
+- desempenho por componente curricular;
+- desempenho por competencia, a partir do agrupamento dos descritores;
+- relatorios por aluno, turma e avaliacao;
+- cobertura do banco de itens por competencia e descritor;
+- status de curadoria das questoes.
+
+Esses indicadores ainda nao sao TRI plena. Eles constituem a camada pre-TRI, necessaria para organizar dados, identificar itens problematicos, estabilizar o banco e preparar a etapa psicometrica posterior.
+
+### 5.2 O que ainda falta para TRI plena
+
+Para sair da fase pre-TRI, sera necessario:
+
+- aplicar itens em volume maior de estudantes;
+- manter itens ancora entre aplicacoes;
+- preservar historico de respostas por item;
+- estimar parametros de dificuldade, discriminacao e acerto casual;
+- comparar comportamento dos itens entre turmas, escolas e ciclos;
+- revisar itens com baixa discriminacao ou comportamento inconsistente;
+- validar a escala com apoio psicometrico.
+
+Assim, a comunicacao correta do projeto e: o SIDEP-CE organiza a avaliacao por competencias e descritores, calcula indicadores diagnosticos iniciais e estrutura a base de dados para futura calibracao pela TRI.
 
 ## 6. Regras de Negocio do Banco de Itens
 
@@ -182,6 +224,41 @@ Regras adotadas no MVP:
 
 Essa regra fortalece a rastreabilidade da aplicacao, evita colisao de dados entre turmas, impede reaproveitamento indevido de codigos e preserva a integridade dos relatorios pedagogicos. Para a pesquisa de mestrado, esse controle contribui para a confiabilidade da base empirica, pois garante que cada conjunto de respostas esteja associado a uma aplicacao unica, identificavel e auditavel.
 
+### 6.7 Persistencia Online e Migracao da Base Local
+
+O MVP passou a contar com persistencia online via Supabase/PostgreSQL. A base local criada no navegador pode ser migrada para o banco online por uma rotina administrativa, disponivel ao perfil Administrador.
+
+A migracao envia:
+
+- regionais CREDE/SEFOR;
+- escolas;
+- professores;
+- competencias;
+- descritores;
+- questoes;
+- avaliacoes;
+- codigos bloqueados;
+- respostas consolidadas.
+
+Do ponto de vista metodologico, essa etapa e importante porque permite sair de uma demonstracao isolada e iniciar um ciclo de aplicacao real. A partir da persistencia online, respostas de diferentes turmas e escolas podem compor uma base comum para acompanhamento longitudinal da aprendizagem tecnica.
+
+### 6.8 Estrategia de Armazenamento das Respostas
+
+Para preservar a viabilidade do piloto gratuito, cada envio de avaliacao gera um registro consolidado por estudante e avaliacao, em formato JSON. O sistema nao grava cada alternativa como uma linha separada.
+
+Essa decisao reduz custo, simplifica backup e mantem informacoes essenciais:
+
+- codigo da avaliacao;
+- nome/chave do estudante;
+- ordem sorteada das questoes;
+- respostas marcadas;
+- acertos;
+- percentual bruto;
+- desempenho por descritor;
+- desempenho por componente.
+
+Essa modelagem e suficiente para relatorios diagnosticos iniciais e para a futura reconstrucao da matriz de respostas quando houver volume para analise estatistica mais avancada.
+
 ## 7. Regras de Governanca Pedagogica
 
 O professor e responsavel por validar o sentido pedagogico dos itens, mas o sistema deve apoiar a consistencia tecnica da matriz. A gestao escolar acompanha relatorios agregados, sem transformar diagnostico em mecanismo de exposicao ou punicao.
@@ -250,8 +327,32 @@ A area do professor foi consolidada como nucleo inicial do MVP. Ela ja contempla
 - bloqueio definitivo do codigo apos abertura da avaliacao;
 - exclusao segura de avaliacao sem respostas, mantendo o codigo bloqueado para nao reaproveitamento;
 - bloqueio de exclusao quando a avaliacao ja possui respostas, preservando relatorios e auditoria.
+- deploy online em Vercel;
+- banco Supabase/PostgreSQL configurado;
+- schema principal criado;
+- tabelas MVP de competencia, descritor e questao adicionadas;
+- rotina de migracao da base local para Supabase;
+- respostas consolidadas em JSON por aluno/prova;
+- relatorios calculados sob demanda;
+- backup semanal em JSON disponivel na area de Relatorios.
 
-Com isso, a proxima sprint deve deslocar o foco para a area da escola/gestao escolar, responsavel por acompanhar relatorios, turmas, professores, aplicacoes, cobertura da escola e indicadores pedagogicos agregados.
+Com isso, a proxima sprint deve deslocar o foco para seguranca institucional, autenticacao real e RLS por perfil, sem abandonar a evolucao da area da escola/gestao escolar. O sistema ja pode ser apresentado como produto tecnico-tecnologico em funcionamento, mas seu uso ampliado depende de governanca LGPD, controle de acesso no banco e politicas de auditoria.
+
+## 9.2 Importancia para a Educacao Profissional do Ceara
+
+O SIDEP-CE contribui para a Educacao Profissional do Ceara ao propor uma infraestrutura pedagogica capaz de acompanhar a aprendizagem tecnica com maior precisao do que avaliacoes isoladas ou notas finais.
+
+Sua importancia esta em:
+
+- transformar matriz curricular em evidencias avaliaveis;
+- permitir diagnostico antes, durante e depois do curso;
+- orientar intervencoes por descritor, nao apenas por media geral;
+- apoiar professores na curadoria de itens e na recomposicao das aprendizagens;
+- oferecer a gestao escolar e regional indicadores sobre fragilidades tecnicas;
+- criar base historica para melhorar cursos, componentes, laboratorios e formacao docente;
+- preparar uma politica de avaliacao tecnica mais justa, transparente e baseada em dados.
+
+Na perspectiva da EPT, o sistema nao reduz a formacao profissional a prova teorica. Ao contrario, ele cria uma camada diagnostica que pode dialogar com projetos, laboratorios, estagio, praticas profissionais e rubricas, fortalecendo a integralidade da formacao tecnica.
 
 ## 10. Contribuicao Cientifica
 
