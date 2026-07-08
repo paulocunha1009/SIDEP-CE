@@ -207,6 +207,79 @@ function questionFingerprint(questao: Pick<QuestaoDraft, "enunciado" | "alternat
     .join("|");
 }
 
+function questionContextTokens(questao: Pick<QuestaoDraft, "enunciado">) {
+  const stopwords = new Set([
+    "qual",
+    "quais",
+    "uma",
+    "para",
+    "sobre",
+    "com",
+    "sem",
+    "por",
+    "que",
+    "das",
+    "dos",
+    "nas",
+    "nos",
+    "como",
+    "quando",
+    "onde",
+    "abaixo",
+    "correta",
+    "incorreta",
+    "alternativa",
+    "opcao",
+    "principal",
+    "exemplo",
+    "codigo",
+    "programa",
+  ]);
+  return new Set(
+    normalizeQuestionText(questao.enunciado)
+      .split(" ")
+      .filter((token) => token.length >= 4 && !stopwords.has(token)),
+  );
+}
+
+function tokenSimilarity(left: Set<string>, right: Set<string>) {
+  if (!left.size || !right.size) return 0;
+
+  let intersection = 0;
+  left.forEach((token) => {
+    if (right.has(token)) intersection += 1;
+  });
+
+  return intersection / (left.size + right.size - intersection);
+}
+
+function questionContextSignature(questao: Pick<QuestaoDraft, "enunciado">) {
+  return Array.from(questionContextTokens(questao)).sort().join(" ");
+}
+
+function getQuestionConflict(
+  candidate: QuestaoDraft,
+  selected: QuestaoDraft[],
+): { item: QuestaoDraft; motivo: "enunciado" | "alternativas" | "contexto" | "similaridade"; similaridade?: number } | null {
+  const candidateEnunciado = normalizeQuestionText(candidate.enunciado);
+  const candidateFingerprint = questionFingerprint(candidate);
+  const candidateSignature = questionContextSignature(candidate);
+  const candidateTokens = questionContextTokens(candidate);
+
+  for (const item of selected) {
+    if (normalizeQuestionText(item.enunciado) === candidateEnunciado) return { item, motivo: "enunciado" };
+    if (questionFingerprint(item) === candidateFingerprint) return { item, motivo: "alternativas" };
+    if (questionContextSignature(item) && questionContextSignature(item) === candidateSignature) {
+      return { item, motivo: "contexto" };
+    }
+
+    const similaridade = tokenSimilarity(candidateTokens, questionContextTokens(item));
+    if (similaridade >= 0.72) return { item, motivo: "similaridade", similaridade };
+  }
+
+  return null;
+}
+
 function hashString(value: string) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -2550,27 +2623,61 @@ function AssessmentsV2({
     solicitadas: questoesPorComponente[componente] ?? 0,
   }));
 
-  const questoesSelecionadas = componentesSelecionados.flatMap((componente) => {
-    const quantidade = questoesPorComponente[componente] ?? 0;
-    return questoesElegiveis
-      .filter((questao) => normalizeKey(questao.componente_curricular) === normalizeKey(componente))
-      .slice()
-      .sort((a, b) => a.dificuldade_inicial - b.dificuldade_inicial || a.codigo.localeCompare(b.codigo))
-      .slice(0, quantidade);
-  });
+  const selecaoAvaliacao = componentesSelecionados.reduce(
+    (acc, componente) => {
+      const quantidade = questoesPorComponente[componente] ?? 0;
+      const candidatas = questoesElegiveis
+        .filter((questao) => normalizeKey(questao.componente_curricular) === normalizeKey(componente))
+        .slice()
+        .sort((a, b) => a.dificuldade_inicial - b.dificuldade_inicial || a.codigo.localeCompare(b.codigo));
+      const selecionadasDoComponente: QuestaoDraft[] = [];
+
+      for (const questao of candidatas) {
+        if (selecionadasDoComponente.length >= quantidade) break;
+
+        const conflict = getQuestionConflict(questao, acc.questoes);
+        if (conflict) {
+          acc.conflitosIgnorados.push({ questao, conflitoCom: conflict.item, motivo: conflict.motivo, componente });
+          continue;
+        }
+
+        acc.questoes.push(questao);
+        selecionadasDoComponente.push(questao);
+      }
+
+      if (selecionadasDoComponente.length < quantidade) {
+        acc.componentesSemEstoqueContextual.push({
+          componente,
+          solicitadas: quantidade,
+          selecionadas: selecionadasDoComponente.length,
+        });
+      }
+
+      return acc;
+    },
+    {
+      questoes: [] as QuestaoDraft[],
+      conflitosIgnorados: [] as Array<{
+        questao: QuestaoDraft;
+        conflitoCom: QuestaoDraft;
+        motivo: "enunciado" | "alternativas" | "contexto" | "similaridade";
+        componente: string;
+      }>,
+      componentesSemEstoqueContextual: [] as Array<{ componente: string; solicitadas: number; selecionadas: number }>,
+    },
+  );
+  const questoesSelecionadas = selecaoAvaliacao.questoes;
   const componentesInsuficientes = componentesComEstoque.filter((item) => item.solicitadas > item.disponiveis);
   const questoesSelecionadasDuplicadas = questoesSelecionadas.filter((questao, index, lista) => {
-    const currentEnunciado = normalizeQuestionText(questao.enunciado);
-    const currentFingerprint = questionFingerprint(questao);
-    return lista.findIndex((item) => (
-      normalizeQuestionText(item.enunciado) === currentEnunciado || questionFingerprint(item) === currentFingerprint
-    )) !== index;
+    const previousItems = lista.slice(0, index);
+    return Boolean(getQuestionConflict(questao, previousItems));
   });
   const quantidadeValida = totalPlanejado >= 20 && totalPlanejado <= 80;
   const podePublicar =
     quantidadeValida &&
     totalPlanejado > 0 &&
     !componentesInsuficientes.length &&
+    !selecaoAvaliacao.componentesSemEstoqueContextual.length &&
     !questoesSelecionadasDuplicadas.length &&
     questoesSelecionadas.length === totalPlanejado;
 
@@ -2629,7 +2736,15 @@ function AssessmentsV2({
     if (!podePublicar) {
       if (questoesSelecionadasDuplicadas.length > 0) {
         setMessage(
-          `Duplicidade bloqueada na avaliação: revise os itens ${questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.`,
+          `Duplicidade/contexto repetido bloqueado na avaliação: revise os itens ${questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.`,
+        );
+        return;
+      }
+      if (selecaoAvaliacao.componentesSemEstoqueContextual.length > 0) {
+        setMessage(
+          `Banco insuficiente após filtro de contexto: ${selecaoAvaliacao.componentesSemEstoqueContextual
+            .map((item) => `${item.componente} (${item.selecionadas}/${item.solicitadas})`)
+            .join("; ")}. Reduza a quantidade ou valide mais itens diferentes.`,
         );
         return;
       }
@@ -2872,8 +2987,23 @@ function AssessmentsV2({
         {componentesInsuficientes.length > 0 && (
           <span> Componentes insuficientes: {componentesInsuficientes.map((item) => `${item.componente} (${item.disponiveis}/${item.solicitadas})`).join(", ")}.</span>
         )}
+        {selecaoAvaliacao.componentesSemEstoqueContextual.length > 0 && (
+          <span>
+            {" "}Filtro de contexto impediu repetição: {selecaoAvaliacao.componentesSemEstoqueContextual
+              .map((item) => `${item.componente} (${item.selecionadas}/${item.solicitadas})`)
+              .join(", ")}.
+          </span>
+        )}
         {questoesSelecionadasDuplicadas.length > 0 && (
-          <span> Duplicidade detectada: {questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.</span>
+          <span> Duplicidade ou mesmo contexto detectado: {questoesSelecionadasDuplicadas.map((questao) => questao.codigo).join(", ")}.</span>
+        )}
+        {selecaoAvaliacao.conflitosIgnorados.length > 0 && (
+          <span>
+            {" "}Candidatas parecidas ignoradas automaticamente: {selecaoAvaliacao.conflitosIgnorados.slice(0, 6)
+              .map((item) => `${item.questao.codigo}/${item.conflitoCom.codigo}`)
+              .join(", ")}
+            {selecaoAvaliacao.conflitosIgnorados.length > 6 ? "..." : ""}.
+          </span>
         )}
       </div>
 
