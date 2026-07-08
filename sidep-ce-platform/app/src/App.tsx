@@ -3,8 +3,6 @@
   BookOpenCheck,
   Building2,
   ClipboardList,
-  Database,
-  FileQuestion,
   GraduationCap,
   KeyRound,
   Layers3,
@@ -767,16 +765,6 @@ export function App() {
     load();
   }, []);
 
-  const stats = useMemo(
-    () => [
-      { label: "Escolas", value: schools.length, icon: Building2 },
-      { label: "Professores", value: teachers.length, icon: UserRoundCog },
-      { label: "Itens", value: questoes.length, icon: FileQuestion },
-      { label: "Banco", value: supabaseConfigured ? "Supabase" : "local", icon: Database },
-    ],
-    [questoes.length, schools.length, teachers.length],
-  );
-
   const authUsers = useMemo<AuthUser[]>(
     () => [
       masterUser,
@@ -1050,7 +1038,18 @@ export function App() {
             <div className="status-chip">{supabaseConfigured ? "Supabase" : "Local"}</div>
           </div>
 
-          {view === "home" && <Home stats={stats} />}
+          {view === "home" && (
+            <Home
+              schools={scopedSchools}
+              teachers={scopedTeachers}
+              assessments={scopedAssessments}
+              questoes={questoes}
+              competencias={competencias}
+              descritores={descritores}
+              respostas={respostas}
+              currentUser={currentUser}
+            />
+          )}
           {role === "management" && view === "schools" && canManageSchools && (
             <Schools schools={scopedSchools} allSchools={schools} setSchools={setSchools} setMessage={setMessage} currentUser={currentUser} />
           )}
@@ -1366,28 +1365,288 @@ function PasswordChangeScreen({
   );
 }
 
-function Home({ stats }: { stats: Array<{ label: string; value: string | number; icon: typeof BarChart3 }> }) {
+function Home({
+  schools,
+  teachers,
+  assessments,
+  questoes,
+  competencias,
+  descritores,
+  respostas,
+  currentUser,
+}: {
+  schools: EscolaDraft[];
+  teachers: ProfessorDraft[];
+  assessments: AvaliacaoDraft[];
+  questoes: QuestaoDraft[];
+  competencias: CompetenciaDraft[];
+  descritores: DescritorDraft[];
+  respostas: RespostaAvaliacaoDraft[];
+  currentUser: AuthUser;
+}) {
+  const visibleAssessmentCodes = new Set(assessments.map((assessment) => assessment.codigo_acesso));
+  const visibleResponses = respostas.filter((resposta) => visibleAssessmentCodes.has(resposta.avaliacao_codigo));
+  const totalAnswers = visibleResponses.reduce((sum, resposta) => sum + resposta.total_questoes, 0);
+  const totalHits = visibleResponses.reduce((sum, resposta) => sum + resposta.acertos, 0);
+  const average = totalAnswers ? Math.round((totalHits / totalAnswers) * 100) : 0;
+  const validated = questoes.filter((questao) => questao.status === "validada").length;
+  const reviewing = questoes.filter((questao) => questao.status === "em_revisao").length;
+  const drafts = questoes.filter((questao) => questao.status === "rascunho").length;
+  const courses = new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean));
+  const components = new Set(descritores.map((descritor) => descritor.componente_curricular).filter(Boolean));
+  const students = new Set(visibleResponses.map((resposta) => resposta.estudante_chave));
+  const descriptorByCode = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
+  const questionsByDescriptor = descritores.map((descritor) => {
+    const questions = questoes.filter((questao) => questao.descritor_codigo === descritor.codigo);
+    return {
+      descritor,
+      total: questions.length,
+      validadas: questions.filter((questao) => questao.status === "validada").length,
+    };
+  });
+  const lowCoverage = questionsByDescriptor.filter((item) => item.validadas < 20).length;
+
+  const levelTotals = descritores.reduce<Record<string, number>>(
+    (acc, descritor) => {
+      acc[descritor.nivel_esperado] = (acc[descritor.nivel_esperado] ?? 0) + questoes.filter((questao) => questao.descritor_codigo === descritor.codigo).length;
+      return acc;
+    },
+    { basico: 0, intermediario: 0, avancado: 0 },
+  );
+
+  const componentPerformance = visibleResponses.reduce<Record<string, { acertos: number; total: number }>>((acc, resposta) => {
+    Object.entries(resposta.desempenho_por_componente).forEach(([component, value]) => {
+      acc[component] = acc[component] ?? { acertos: 0, total: 0 };
+      acc[component].acertos += value.acertos;
+      acc[component].total += value.total;
+    });
+    return acc;
+  }, {});
+
+  const descriptorPerformance = visibleResponses.reduce<Record<string, { acertos: number; total: number }>>((acc, resposta) => {
+    Object.entries(resposta.desempenho_por_descritor).forEach(([descriptorCode, value]) => {
+      acc[descriptorCode] = acc[descriptorCode] ?? { acertos: 0, total: 0 };
+      acc[descriptorCode].acertos += value.acertos;
+      acc[descriptorCode].total += value.total;
+    });
+    return acc;
+  }, {});
+
+  const componentRows = Object.entries(componentPerformance)
+    .map(([component, value]) => ({ component, percentual: value.total ? Math.round((value.acertos / value.total) * 100) : 0, ...value }))
+    .sort((a, b) => a.percentual - b.percentual)
+    .slice(0, 4);
+
+  const criticalDescriptors = Object.entries(descriptorPerformance)
+    .map(([code, value]) => ({
+      code,
+      descricao: descriptorByCode.get(code)?.descricao ?? "Descritor sem descricao",
+      component: descriptorByCode.get(code)?.componente_curricular ?? "Componente nao informado",
+      percentual: value.total ? Math.round((value.acertos / value.total) * 100) : 0,
+      total: value.total,
+    }))
+    .filter((item) => item.total > 0)
+    .sort((a, b) => a.percentual - b.percentual)
+    .slice(0, 5);
+
+  const assessmentRows = [...assessments]
+    .sort((a, b) => (b.codigo_bloqueado_em ?? b.inicio_em ?? "").localeCompare(a.codigo_bloqueado_em ?? a.inicio_em ?? ""))
+    .slice(0, 5)
+    .map((assessment) => {
+      const assessmentResponses = visibleResponses.filter((resposta) => resposta.avaliacao_codigo === assessment.codigo_acesso);
+      const hits = assessmentResponses.reduce((sum, resposta) => sum + resposta.acertos, 0);
+      const total = assessmentResponses.reduce((sum, resposta) => sum + resposta.total_questoes, 0);
+      return { assessment, respostas: assessmentResponses.length, media: total ? Math.round((hits / total) * 100) : 0 };
+    });
+
+  const scopeLabel =
+    currentUser.role === "professor"
+      ? "Professor técnico"
+      : currentUser.role === "gestao_escolar"
+      ? "Gestão escolar"
+      : currentUser.role === "regional"
+      ? "CREDE/SEFOR"
+      : currentUser.role === "seduc"
+      ? "SEDUC"
+      : "Administrador";
+
   return (
-    <section className="panel">
-      <h2>Painel do MVP</h2>
-      <p>
-        O SIDEP-CE começa pela fundação cadastral. Sem escola, professor, curso, turma e avaliação vinculados,
-        não existe relatório confiável por estudante, turma, escola, CREDE/SEFOR ou rede estadual.
-      </p>
-      <div className="kpis">
-        {stats.map((item) => (
-          <article className="kpi" key={item.label}>
-            <item.icon size={22} />
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </article>
-        ))}
+    <div className="dashboard">
+      <section className="dashboard-hero">
+        <div>
+          <p className="eyebrow">Painel Geral</p>
+          <h2>Visão consolidada da avaliação diagnóstica</h2>
+          <p>
+            Visão consolidada do banco de itens, aplicações, respostas e desempenho pedagógico por curso,
+            componente, competência e descritor.
+          </p>
+        </div>
+        <div className="dashboard-scope">
+          <span>Escopo</span>
+          <strong>{scopeLabel}</strong>
+        </div>
+      </section>
+
+      <section className="dashboard-kpis">
+        <article className="dashboard-kpi">
+          <span>Questões no banco</span>
+          <strong>{questoes.length}</strong>
+          <small>{validated} validadas · {reviewing} em revisão · {drafts} rascunhos</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Cobertura curricular</span>
+          <strong>{descritores.length}</strong>
+          <small>{competencias.length} competências · {components.size} componentes · {courses.size} curso(s)</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Participação</span>
+          <strong>{visibleResponses.length}</strong>
+          <small>{students.size} estudantes · {assessments.length} avaliações · {schools.length} escola(s) · {teachers.length} professor(es)</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Média geral pré-TRI</span>
+          <strong>{average}%</strong>
+          <small>{totalHits} acertos · {Math.max(totalAnswers - totalHits, 0)} erros registrados</small>
+        </article>
+      </section>
+
+      <section className="dashboard-grid two">
+        <article className="dashboard-card">
+          <div className="card-heading">
+            <h3>Qualidade do banco de itens</h3>
+            <span className="tag">{supabaseConfigured ? "Supabase" : "Local"}</span>
+          </div>
+          <MetricBar label="Validadas" value={validated} total={Math.max(questoes.length, 1)} />
+          <MetricBar label="Em revisão" value={reviewing} total={Math.max(questoes.length, 1)} tone="warning" />
+          <MetricBar label="Rascunho" value={drafts} total={Math.max(questoes.length, 1)} tone="danger" />
+          <MetricBar label="Nível básico" value={levelTotals.basico ?? 0} total={Math.max(questoes.length, 1)} />
+          <MetricBar label="Intermediário" value={levelTotals.intermediario ?? 0} total={Math.max(questoes.length, 1)} />
+          <MetricBar label="Avançado" value={levelTotals.avancado ?? 0} total={Math.max(questoes.length, 1)} tone="warning" />
+        </article>
+
+        <article className="dashboard-card">
+          <div className="card-heading">
+            <h3>Alertas de gestão pedagógica</h3>
+          </div>
+          <div className="dashboard-alerts">
+            <DashboardAlert tone="warning" title="Curadoria necessária" text={`${reviewing} questões aguardam revisão docente antes de compor avaliações.`} />
+            <DashboardAlert tone="danger" title="Baixa cobertura" text={`${lowCoverage} descritores possuem menos de 20 questões validadas.`} />
+            <DashboardAlert title="Aplicações monitoradas" text={`${assessments.filter((assessment) => assessment.status === "aberta").length} avaliação(ões) abertas no escopo atual.`} />
+            <DashboardAlert tone="warning" title="Próxima ação sugerida" text="Priorizar validação dos descritores com baixa cobertura antes de novas aplicações formativas." />
+          </div>
+        </article>
+      </section>
+
+      <section className="dashboard-grid two">
+        <article className="dashboard-card">
+          <div className="card-heading">
+            <h3>Componentes com menor desempenho</h3>
+          </div>
+          {componentRows.length ? (
+            componentRows.map((item) => (
+              <MetricBar key={item.component} label={item.component} value={item.percentual} total={100} tone={item.percentual < 50 ? "danger" : item.percentual < 70 ? "warning" : "success"} suffix="%" />
+            ))
+          ) : (
+            <p className="empty-state">Ainda não há respostas suficientes para calcular desempenho por componente.</p>
+          )}
+        </article>
+
+        <article className="dashboard-card">
+          <div className="card-heading">
+            <h3>Descritores críticos</h3>
+          </div>
+          {criticalDescriptors.length ? (
+            <div className="critical-list">
+              {criticalDescriptors.map((item) => (
+                <div className="critical-item" key={item.code}>
+                  <strong>{item.code} · {item.percentual}%</strong>
+                  <span>{item.component}</span>
+                  <p>{item.descricao}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">Os descritores críticos aparecerão após o envio das primeiras avaliações.</p>
+          )}
+        </article>
+      </section>
+
+      <section className="dashboard-card">
+        <div className="card-heading">
+          <h3>Avaliações recentes</h3>
+          <span className="tag">{assessmentRows.length} registros</span>
+        </div>
+        <div className="dashboard-table-wrap">
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Turma</th>
+                <th>Etapa</th>
+                <th>Status</th>
+                <th>Questões</th>
+                <th>Respostas</th>
+                <th>Média</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assessmentRows.length ? assessmentRows.map(({ assessment, respostas: totalRespostas, media }) => (
+                <tr key={assessment.codigo_acesso}>
+                  <td><strong>{assessment.codigo_acesso}</strong></td>
+                  <td>{assessment.turma_codigo}</td>
+                  <td>{assessment.etapa}</td>
+                  <td><span className={`status-pill ${assessment.status ?? "rascunho"}`}>{assessment.status ?? "rascunho"}</span></td>
+                  <td>{assessment.quantidade_questoes}</td>
+                  <td>{totalRespostas}</td>
+                  <td>{media}%</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={7}>Nenhuma avaliação no escopo atual.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MetricBar({
+  label,
+  value,
+  total,
+  suffix = "",
+  tone = "success",
+}: {
+  label: string;
+  value: number;
+  total: number;
+  suffix?: string;
+  tone?: "success" | "warning" | "danger";
+}) {
+  const percent = Math.min(100, Math.max(0, total ? Math.round((value / total) * 100) : 0));
+  return (
+    <div className="metric-row">
+      <span>{label}</span>
+      <div className={`metric-track ${tone}`}>
+        <i style={{ width: `${percent}%` }} />
       </div>
-      <div className="notice">
-        <strong>Separação correta:</strong> o estudante vê apenas acesso e prova. Diagnóstico, intervenção,
-        banco de itens, parâmetros pré-TRI/TRI e relatórios ficam na área do professor e da gestão.
+      <strong>{value}{suffix}</strong>
+    </div>
+  );
+}
+
+function DashboardAlert({ title, text, tone = "success" }: { title: string; text: string; tone?: "success" | "warning" | "danger" }) {
+  return (
+    <div className={`dashboard-alert ${tone}`}>
+      <span />
+      <div>
+        <strong>{title}</strong>
+        <p>{text}</p>
       </div>
-    </section>
+    </div>
   );
 }
 
