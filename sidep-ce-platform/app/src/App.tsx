@@ -280,6 +280,218 @@ function getQuestionConflict(
   return null;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function safeFileSegment(value: string) {
+  return normalizeQuestionText(value || "sidep-ce")
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "sidep-ce";
+}
+
+function getCourseDescriptorStructure(competencias: CompetenciaDraft[], descritores: DescritorDraft[]) {
+  const competenciasPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
+  const cursos = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+  return cursos.map((curso) => {
+    const competenciasDoCurso = competencias
+      .filter((competencia) => normalizeKey(competencia.curso_tecnico) === normalizeKey(curso))
+      .sort((a, b) => a.codigo.localeCompare(b.codigo));
+    const codigosCompetencias = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
+    const descritoresDoCurso = descritores
+      .filter((descritor) => codigosCompetencias.has(descritor.competencia_codigo))
+      .sort((a, b) => a.componente_curricular.localeCompare(b.componente_curricular) || a.codigo.localeCompare(b.codigo));
+    const componentes = Array.from(new Set(descritoresDoCurso.map((descritor) => descritor.componente_curricular))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+
+    return {
+      curso,
+      competencias: competenciasDoCurso,
+      componentes: componentes.map((componente) => {
+        const descritoresDoComponente = descritoresDoCurso.filter(
+          (descritor) => normalizeKey(descritor.componente_curricular) === normalizeKey(componente),
+        );
+        const competenciasDoComponente = Array.from(
+          new Set(descritoresDoComponente.map((descritor) => descritor.competencia_codigo)),
+        )
+          .map((codigo) => competenciasPorCodigo.get(codigo))
+          .filter((competencia): competencia is CompetenciaDraft => Boolean(competencia))
+          .sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+        return {
+          componente,
+          competencias: competenciasDoComponente.map((competencia) => ({
+            competencia,
+            descritores: descritoresDoComponente.filter((descritor) => descritor.competencia_codigo === competencia.codigo),
+          })),
+        };
+      }),
+    };
+  });
+}
+
+function generateCourseDescriptorsMarkdown(competencias: CompetenciaDraft[], descritores: DescritorDraft[]) {
+  const estrutura = getCourseDescriptorStructure(competencias, descritores);
+  const generatedAt = new Date().toLocaleString("pt-BR");
+  const lines = [
+    "# SIDEP-CE - Componentes, Competências e Descritores",
+    "",
+    `Gerado em: ${generatedAt}`,
+    "",
+    `Total de cursos: ${estrutura.length}`,
+    `Total de competências: ${competencias.length}`,
+    `Total de descritores: ${descritores.length}`,
+    "",
+  ];
+
+  estrutura.forEach((curso) => {
+    const totalDescritoresCurso = curso.componentes.reduce(
+      (total, componente) => total + componente.competencias.reduce((subtotal, item) => subtotal + item.descritores.length, 0),
+      0,
+    );
+    lines.push(`## ${curso.curso}`, "");
+    lines.push(`- Competências: ${curso.competencias.length}`);
+    lines.push(`- Componentes curriculares: ${curso.componentes.length}`);
+    lines.push(`- Descritores: ${totalDescritoresCurso}`, "");
+
+    curso.componentes.forEach((componente) => {
+      lines.push(`### ${componente.componente}`, "");
+      componente.competencias.forEach(({ competencia, descritores: descritoresDaCompetencia }) => {
+        lines.push(`#### ${competencia.codigo} - ${competencia.descricao}`, "");
+        descritoresDaCompetencia.forEach((descritor) => {
+          lines.push(`- **${descritor.codigo}** (${descritor.nivel_esperado}) - ${descritor.descricao}`);
+        });
+        lines.push("");
+      });
+    });
+  });
+
+  return lines.join("\n");
+}
+
+function generateCourseDescriptorsHtml(competencias: CompetenciaDraft[], descritores: DescritorDraft[]) {
+  const estrutura = getCourseDescriptorStructure(competencias, descritores);
+  const generatedAt = new Date().toLocaleString("pt-BR");
+  const courseSections = estrutura
+    .map((curso) => {
+      const totalDescritoresCurso = curso.componentes.reduce(
+        (total, componente) => total + componente.competencias.reduce((subtotal, item) => subtotal + item.descritores.length, 0),
+        0,
+      );
+      const componentSections = curso.componentes
+        .map((componente) => {
+          const competencySections = componente.competencias
+            .map(({ competencia, descritores: descritoresDaCompetencia }) => `
+              <section class="competencia">
+                <h4>${escapeHtml(competencia.codigo)} - ${escapeHtml(competencia.descricao)}</h4>
+                <ul>
+                  ${descritoresDaCompetencia
+                    .map(
+                      (descritor) => `
+                        <li>
+                          <strong>${escapeHtml(descritor.codigo)}</strong>
+                          <span>${escapeHtml(descritor.descricao)}</span>
+                          <em>${escapeHtml(descritor.nivel_esperado)}</em>
+                        </li>
+                      `,
+                    )
+                    .join("")}
+                </ul>
+              </section>
+            `)
+            .join("");
+
+          return `
+            <section class="componente">
+              <h3>${escapeHtml(componente.componente)}</h3>
+              ${competencySections}
+            </section>
+          `;
+        })
+        .join("");
+
+      return `
+        <section class="curso">
+          <h2>${escapeHtml(curso.curso)}</h2>
+          <div class="metrics">
+            <span>${curso.competencias.length} competências</span>
+            <span>${curso.componentes.length} componentes</span>
+            <span>${totalDescritoresCurso} descritores</span>
+          </div>
+          ${componentSections}
+        </section>
+      `;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>SIDEP-CE - Componentes e Descritores</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #08295c; margin: 32px; line-height: 1.45; }
+    header { border-bottom: 4px solid #0b8f57; margin-bottom: 24px; padding-bottom: 16px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin-top: 28px; color: #06336f; page-break-after: avoid; }
+    h3 { margin-top: 20px; color: #0b6f4f; page-break-after: avoid; }
+    h4 { margin: 14px 0 8px; color: #08295c; page-break-after: avoid; }
+    .metrics { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 18px; }
+    .metrics span { border: 1px solid #c9d7e8; padding: 6px 10px; border-radius: 4px; background: #f6faf8; }
+    .curso { page-break-inside: auto; }
+    .componente { border-top: 1px solid #dbe5ef; padding-top: 10px; }
+    .competencia { page-break-inside: avoid; }
+    li { margin: 6px 0; }
+    li strong { display: inline-block; min-width: 48px; color: #06336f; }
+    li em { color: #51657d; font-size: 12px; margin-left: 8px; }
+    @media print { body { margin: 18mm; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SIDEP-CE - Componentes, Competências e Descritores</h1>
+    <p>Documento gerado em ${escapeHtml(generatedAt)}.</p>
+    <p>${estrutura.length} cursos · ${competencias.length} competências · ${descritores.length} descritores</p>
+  </header>
+  ${courseSections}
+</body>
+</html>`;
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function openPrintableHtml(html: string) {
+  const printWindow = window.open("", "_blank", "width=1100,height=800");
+  if (!printWindow) return false;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 400);
+  return true;
+}
+
 function hashString(value: string) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -1839,6 +2051,7 @@ function ItemBank({
   const [activeTab, setActiveTab] = useState<ItemBankTab>("competencias");
   const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
   const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
+  const [cursoExportacao, setCursoExportacao] = useState("todos");
 
   async function saveCompetencia() {
     if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
@@ -1975,6 +2188,45 @@ function ItemBank({
   const competenciaDaQuestao = descritorSelecionado
     ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
     : undefined;
+  const cursosDisponiveisExportacao = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const competenciasExportacao =
+    cursoExportacao === "todos"
+      ? competencias
+      : competencias.filter((competencia) => normalizeKey(competencia.curso_tecnico) === normalizeKey(cursoExportacao));
+  const codigosCompetenciasExportacao = new Set(competenciasExportacao.map((competencia) => competencia.codigo));
+  const descritoresExportacao =
+    cursoExportacao === "todos"
+      ? descritores
+      : descritores.filter((descritor) => codigosCompetenciasExportacao.has(descritor.competencia_codigo));
+
+  function exportarMatrizMarkdown() {
+    if (!competenciasExportacao.length || !descritoresExportacao.length) {
+      setMessage("Não há competências e descritores suficientes para exportar a matriz.");
+      return;
+    }
+
+    const markdown = generateCourseDescriptorsMarkdown(competenciasExportacao, descritoresExportacao);
+    const suffix = cursoExportacao === "todos" ? "todos-os-cursos" : safeFileSegment(cursoExportacao);
+    downloadTextFile(`sidep-ce-componentes-descritores-${suffix}.md`, markdown, "text/markdown;charset=utf-8");
+    setMessage(`Matriz exportada em Markdown: ${cursoExportacao === "todos" ? "todos os cursos" : cursoExportacao}.`);
+  }
+
+  function exportarMatrizPdf() {
+    if (!competenciasExportacao.length || !descritoresExportacao.length) {
+      setMessage("Não há competências e descritores suficientes para exportar a matriz.");
+      return;
+    }
+
+    const html = generateCourseDescriptorsHtml(competenciasExportacao, descritoresExportacao);
+    const opened = openPrintableHtml(html);
+    setMessage(
+      opened
+        ? "Versão de impressão aberta. No navegador, escolha Salvar como PDF."
+        : "O navegador bloqueou a janela de impressão. Libere pop-ups para exportar em PDF.",
+    );
+  }
 
   function useCompetenciaInDescritor(competencia: CompetenciaDraft) {
     setDescritorDraft({ ...descritorDraft, competencia_codigo: competencia.codigo });
@@ -1997,7 +2249,20 @@ function ItemBank({
         Cadastre competências, descritores e questões alinhadas às matrizes dos cursos técnicos. Esta camada prepara
         a geração de provas e a futura calibração TRI.
       </p>
-      <button className="secondary" onClick={importNorteadores}>Importar matriz piloto dos norteadores</button>
+      <div className="toolbar">
+        <button className="secondary" onClick={importNorteadores}>Importar matriz piloto dos norteadores</button>
+        <label>
+          Exportar curso
+          <select value={cursoExportacao} onChange={(event) => setCursoExportacao(event.target.value)}>
+            <option value="todos">Todos os cursos</option>
+            {cursosDisponiveisExportacao.map((curso) => (
+              <option key={curso} value={curso}>{curso}</option>
+            ))}
+          </select>
+        </label>
+        <button className="secondary" type="button" onClick={exportarMatrizMarkdown}>Exportar MD</button>
+        <button className="secondary" type="button" onClick={exportarMatrizPdf}>Exportar PDF</button>
+      </div>
       <div className="kpis">
         <article className="kpi"><span>Competências</span><strong>{competencias.length}</strong></article>
         <article className="kpi"><span>Descritores</span><strong>{descritores.length}</strong></article>

@@ -672,6 +672,26 @@ h1 {
   margin: 16px 0;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(230, 244, 239, 0.92), #fff);
+}
+
+.toolbar label {
+  min-width: min(280px, 100%);
+}
+
+.toolbar .secondary {
+  margin: 0;
+  min-height: 44px;
+}
+
 .kpi {
   border: 1px solid var(--line);
   background: #fff;
