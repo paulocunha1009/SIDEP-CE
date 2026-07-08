@@ -1,5 +1,6 @@
 import type { CompetenciaDraft, DescritorDraft, QuestaoDraft, ResultadoAcao } from "../types";
 import { supabase, supabaseConfigured } from "../lib/supabase";
+import { sanitizeRecordText } from "../utils/textSanitizer";
 
 const STORAGE_KEYS = {
   competencias: "sidep-ce:competencias",
@@ -23,7 +24,7 @@ function writeLocal<T>(key: string, value: T[]) {
 }
 
 export function carregarCompetenciasLocais() {
-  return readLocal<CompetenciaDraft>(STORAGE_KEYS.competencias);
+  return readLocal<CompetenciaDraft>(STORAGE_KEYS.competencias).map(sanitizeCompetencia);
 }
 
 export async function carregarCompetencias() {
@@ -36,36 +37,38 @@ export async function carregarCompetencias() {
 
   if (error) throw error;
   if (!data?.length) return carregarCompetenciasLocais();
-  return data as CompetenciaDraft[];
+  return (data as CompetenciaDraft[]).map(sanitizeCompetencia);
 }
 
 export function salvarCompetenciaLocal(competencia: CompetenciaDraft): ResultadoAcao<CompetenciaDraft> {
+  const competenciaLimpa = sanitizeCompetencia(competencia);
   const competencias = readLocal<CompetenciaDraft>(STORAGE_KEYS.competencias).filter(
-    (item) => item.codigo !== competencia.codigo,
+    (item) => item.codigo !== competenciaLimpa.codigo,
   );
-  writeLocal(STORAGE_KEYS.competencias, [...competencias, competencia]);
-  return { data: competencia, modo: "local" };
+  writeLocal(STORAGE_KEYS.competencias, [...competencias, competenciaLimpa]);
+  return { data: competenciaLimpa, modo: "local" };
 }
 
 export async function salvarCompetencia(competencia: CompetenciaDraft): Promise<ResultadoAcao<CompetenciaDraft>> {
-  salvarCompetenciaLocal(competencia);
+  const competenciaLimpa = sanitizeCompetencia(competencia);
+  salvarCompetenciaLocal(competenciaLimpa);
 
-  if (!supabaseConfigured || !supabase) return { data: competencia, modo: "local" };
+  if (!supabaseConfigured || !supabase) return { data: competenciaLimpa, modo: "local" };
 
   const { error } = await supabase.from("competencia_mvp").upsert(
     {
-      ...competencia,
+      ...competenciaLimpa,
       atualizada_em: new Date().toISOString(),
     },
     { onConflict: "codigo" },
   );
 
   if (error) return { erro: error.message, modo: "supabase" };
-  return { data: competencia, modo: "supabase" };
+  return { data: competenciaLimpa, modo: "supabase" };
 }
 
 export function carregarDescritoresLocais() {
-  return readLocal<DescritorDraft>(STORAGE_KEYS.descritores);
+  return readLocal<DescritorDraft>(STORAGE_KEYS.descritores).map(sanitizeDescritor);
 }
 
 export async function carregarDescritores() {
@@ -78,36 +81,38 @@ export async function carregarDescritores() {
 
   if (error) throw error;
   if (!data?.length) return carregarDescritoresLocais();
-  return data as DescritorDraft[];
+  return (data as DescritorDraft[]).map(sanitizeDescritor);
 }
 
 export function salvarDescritorLocal(descritor: DescritorDraft): ResultadoAcao<DescritorDraft> {
+  const descritorLimpo = sanitizeDescritor(descritor);
   const descritores = readLocal<DescritorDraft>(STORAGE_KEYS.descritores).filter(
-    (item) => item.codigo !== descritor.codigo,
+    (item) => item.codigo !== descritorLimpo.codigo,
   );
-  writeLocal(STORAGE_KEYS.descritores, [...descritores, descritor]);
-  return { data: descritor, modo: "local" };
+  writeLocal(STORAGE_KEYS.descritores, [...descritores, descritorLimpo]);
+  return { data: descritorLimpo, modo: "local" };
 }
 
 export async function salvarDescritor(descritor: DescritorDraft): Promise<ResultadoAcao<DescritorDraft>> {
-  salvarDescritorLocal(descritor);
+  const descritorLimpo = sanitizeDescritor(descritor);
+  salvarDescritorLocal(descritorLimpo);
 
-  if (!supabaseConfigured || !supabase) return { data: descritor, modo: "local" };
+  if (!supabaseConfigured || !supabase) return { data: descritorLimpo, modo: "local" };
 
   const { error } = await supabase.from("descritor_mvp").upsert(
     {
-      ...descritor,
+      ...descritorLimpo,
       atualizada_em: new Date().toISOString(),
     },
     { onConflict: "codigo" },
   );
 
   if (error) return { erro: error.message, modo: "supabase" };
-  return { data: descritor, modo: "supabase" };
+  return { data: descritorLimpo, modo: "supabase" };
 }
 
 export function carregarQuestoesLocais() {
-  return readLocal<QuestaoDraft>(STORAGE_KEYS.questoes);
+  return readLocal<QuestaoDraft>(STORAGE_KEYS.questoes).map(sanitizeQuestao);
 }
 
 export async function carregarQuestoes() {
@@ -122,30 +127,32 @@ export async function carregarQuestoes() {
 
   if (error) throw error;
   if (!data?.length) return carregarQuestoesLocais();
-  return data as QuestaoDraft[];
+  return (data as QuestaoDraft[]).map(sanitizeQuestao);
 }
 
 export function salvarQuestaoLocal(questao: QuestaoDraft): ResultadoAcao<QuestaoDraft> {
-  const questoes = readLocal<QuestaoDraft>(STORAGE_KEYS.questoes).filter((item) => item.codigo !== questao.codigo);
-  writeLocal(STORAGE_KEYS.questoes, [...questoes, questao]);
-  return { data: questao, modo: "local" };
+  const questaoLimpa = sanitizeQuestao(questao);
+  const questoes = readLocal<QuestaoDraft>(STORAGE_KEYS.questoes).filter((item) => item.codigo !== questaoLimpa.codigo);
+  writeLocal(STORAGE_KEYS.questoes, [...questoes, questaoLimpa]);
+  return { data: questaoLimpa, modo: "local" };
 }
 
 export async function salvarQuestao(questao: QuestaoDraft): Promise<ResultadoAcao<QuestaoDraft>> {
-  salvarQuestaoLocal(questao);
+  const questaoLimpa = sanitizeQuestao(questao);
+  salvarQuestaoLocal(questaoLimpa);
 
-  if (!supabaseConfigured || !supabase) return { data: questao, modo: "local" };
+  if (!supabaseConfigured || !supabase) return { data: questaoLimpa, modo: "local" };
 
   const { error } = await supabase.from("questao_mvp").upsert(
     {
-      ...questao,
+      ...questaoLimpa,
       atualizada_em: new Date().toISOString(),
     },
     { onConflict: "codigo" },
   );
 
   if (error) return { erro: error.message, modo: "supabase" };
-  return { data: questao, modo: "supabase" };
+  return { data: questaoLimpa, modo: "supabase" };
 }
 
 export function substituirBancoItensLocal({
@@ -157,9 +164,9 @@ export function substituirBancoItensLocal({
   descritores: DescritorDraft[];
   questoes: QuestaoDraft[];
 }) {
-  writeLocal(STORAGE_KEYS.competencias, competencias);
-  writeLocal(STORAGE_KEYS.descritores, descritores);
-  writeLocal(STORAGE_KEYS.questoes, questoes);
+  writeLocal(STORAGE_KEYS.competencias, competencias.map(sanitizeCompetencia));
+  writeLocal(STORAGE_KEYS.descritores, descritores.map(sanitizeDescritor));
+  writeLocal(STORAGE_KEYS.questoes, questoes.map(sanitizeQuestao));
   return { modo: "local" as const };
 }
 
@@ -172,16 +179,19 @@ export async function sincronizarBancoItensSupabase({
   descritores: DescritorDraft[];
   questoes: QuestaoDraft[];
 }) {
-  substituirBancoItensLocal({ competencias, descritores, questoes });
+  const competenciasLimpas = competencias.map(sanitizeCompetencia);
+  const descritoresLimpos = descritores.map(sanitizeDescritor);
+  const questoesLimpas = questoes.map(sanitizeQuestao);
+  substituirBancoItensLocal({ competencias: competenciasLimpas, descritores: descritoresLimpos, questoes: questoesLimpas });
 
   if (!supabaseConfigured || !supabase) {
-    return { modo: "local" as const, competencias: competencias.length, descritores: descritores.length, questoes: questoes.length };
+    return { modo: "local" as const, competencias: competenciasLimpas.length, descritores: descritoresLimpos.length, questoes: questoesLimpas.length };
   }
 
   const now = new Date().toISOString();
-  const competenciaRows = competencias.map((competencia) => ({ ...competencia, atualizada_em: now }));
-  const descritorRows = descritores.map((descritor) => ({ ...descritor, atualizada_em: now }));
-  const questaoRows = questoes.map((questao) => ({ ...questao, atualizada_em: now }));
+  const competenciaRows = competenciasLimpas.map((competencia) => ({ ...competencia, atualizada_em: now }));
+  const descritorRows = descritoresLimpos.map((descritor) => ({ ...descritor, atualizada_em: now }));
+  const questaoRows = questoesLimpas.map((questao) => ({ ...questao, atualizada_em: now }));
 
   const competenciaResult = await supabase.from("competencia_mvp").upsert(competenciaRows, { onConflict: "codigo" });
   if (competenciaResult.error) throw competenciaResult.error;
@@ -196,5 +206,17 @@ export async function sincronizarBancoItensSupabase({
     if (questaoResult.error) throw questaoResult.error;
   }
 
-  return { modo: "supabase" as const, competencias: competencias.length, descritores: descritores.length, questoes: questoes.length };
+  return { modo: "supabase" as const, competencias: competenciasLimpas.length, descritores: descritoresLimpos.length, questoes: questoesLimpas.length };
+}
+
+function sanitizeCompetencia(competencia: CompetenciaDraft): CompetenciaDraft {
+  return sanitizeRecordText(competencia);
+}
+
+function sanitizeDescritor(descritor: DescritorDraft): DescritorDraft {
+  return sanitizeRecordText(descritor);
+}
+
+function sanitizeQuestao(questao: QuestaoDraft): QuestaoDraft {
+  return sanitizeRecordText(questao);
 }
