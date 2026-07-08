@@ -1,105 +1,126 @@
-# SIDEP-CE: aplicação dos norteadores no sistema
+# SIDEP-CE: Aplicacao dos Norteadores no Sistema
 
-Atualizado em 05/07/2026.
+Atualizado em: 08/07/2026
 
-## O que foi incorporado agora
+## 1. O que ja foi incorporado
 
-- Importação do banco diagnóstico existente no HTML norteador.
-- Geração de semente técnica para o Banco de Itens do sistema.
-- Estrutura inicial por curso, competência, descritor e questão.
-- Separação de acesso por perfil: estudante, professor e gestão escolar.
-- Validação visual no fluxo do professor com 10 competências curriculares, 40 descritores avaliáveis e 78 questões validadas.
-- Consolidação da Matriz SIDEP-CE v0.1 para o curso Técnico em Informática como matriz inicial validável, não definitiva.
-- Criação da documentação metodológica de mestrado com regras de negócio, evolução da matriz, protocolo pré-TRI/TRI e governança pedagógica.
+- Importacao e estudo dos documentos norteadores do projeto SIDEP-CE.
+- Estrutura inicial por curso, componente curricular, competencia, descritor e questao.
+- Separacao de acesso por perfil: estudante, professor tecnico, coordenador/professor tecnico, gestao escolar, CREDE/SEFOR, SEDUC e Administrador.
+- Consolidacao da Matriz SIDEP-CE v0.1 para o curso Tecnico em Informatica.
+- Banco piloto com 10 competencias, 40 descritores e 441 questoes.
+- Fila de curadoria docente com status `rascunho`, `em_revisao` e `validada`.
+- Modal "Ver questao" para leitura completa antes da validacao.
+- Criador de avaliacoes com 20 a 80 questoes.
+- Codigo de avaliacao gerado automaticamente pelo sistema.
+- Codigo imutavel apos abertura da avaliacao.
+- Bloqueio de reaproveitamento de codigo usado ou excluido.
+- Embaralhamento individual da ordem das questoes por estudante.
+- Bloqueio de questoes duplicadas ou de mesmo contexto dentro da mesma prova.
+- Respostas consolidadas em JSON por aluno/prova.
+- Relatorios por aluno, turma, descritor, componente e competencia.
+- Exportacao de cursos, componentes, competencias e descritores em Markdown e PDF.
+- Migracao da base local para Supabase/PostgreSQL.
+- Manual operacional do MVP.
 
-## Fontes analisadas
+## 2. Fontes analisadas
 
-- Artigo SIDEP-CE e versão revisada.
+- Artigo SIDEP-CE e versao revisada.
 - TCC SIDEP-CE.
-- Resumo do Seminário DoCEntes 2026.
-- Arquivos de coorientação do projeto.
-- HTML diagnóstico SIDEP-CE e backups.
-- Tabelas normativas extraídas dos documentos `.docx`.
+- Resumo do Seminario DoCEntes 2026.
+- Arquivos de coorientacao do projeto.
+- HTML diagnostico SIDEP-CE e backups.
+- Matrizes curriculares 2025/2026 do curso Tecnico em Informatica.
+- Percurso formativo de TI.
+- Referencias do CNCT para o eixo Informacao e Comunicacao.
 
-## Diretrizes pedagógicas extraídas
+## 3. Diretrizes pedagogicas extraidas
 
-- O SIDEP-CE deve ser apresentado como método de avaliação diagnóstica, formativa e final para cursos técnicos.
-- A avaliação precisa estar organizada por competências, descritores avaliáveis, banco de itens, rubricas práticas e relatórios pedagógicos.
-- O dado de desempenho não deve terminar em nota: ele deve gerar intervenção pedagógica, recomposição e acompanhamento.
-- O estudante deve ver somente o ambiente de prova, sem diagnóstico, peso de item, intervenção ou análises psicométricas.
-- Professor e gestão escolar devem visualizar relatórios individuais, por turma, escola, curso, competência e descritor.
+- O SIDEP-CE deve ser apresentado como metodo de avaliacao diagnostica, formativa e final para cursos tecnicos.
+- A avaliacao precisa estar organizada por competencias, descritores avaliaveis, banco de itens, rubricas praticas e relatorios pedagogicos.
+- O dado de desempenho nao deve terminar em nota: ele deve gerar intervencao pedagogica, recomposicao e acompanhamento.
+- O estudante deve ver somente o ambiente de prova, sem diagnostico, peso de item, intervencao ou analises psicometricas.
+- Professor, gestao escolar e regional devem visualizar relatorios por aluno, turma, escola, curso, componente, competencia e descritor, respeitando o escopo de acesso.
 
-## Cuidado técnico sobre TRI
+## 4. Competencia, descritor e questao
 
-Nesta fase, o sistema deve operar como pré-TRI:
+No SIDEP-CE, competencia e descritor nao sao sinonimos.
 
-- cada questão possui dificuldade inicial estimada;
-- os dados de resposta serão acumulados;
-- a calibração TRI real depende de volume suficiente de respostas;
-- os relatórios iniciais devem deixar claro que usam parâmetros inspirados em TRI, ainda não calibrados estatisticamente.
+Competencia e uma capacidade ampla de mobilizar conhecimentos, habilidades, atitudes e procedimentos em situacoes tecnicas ou profissionais.
 
-Essa decisão evita a leitura de "TRI de fachada" e fortalece o projeto para banca, publicação e futura adoção institucional.
+Descritor e uma evidencia observavel e avaliavel dessa competencia, escrita de forma mais especifica para orientar itens, rubricas e relatorios.
 
-## Melhorias priorizadas para as próximas sprints
+Questao e o item que mede um descritor. Na fase pre-TRI, cada questao recebe dificuldade inicial e historico de acertos; na fase TRI, os parametros psicometricos passam a ser calibrados com volume suficiente de respostas.
 
-1. Criar módulo de aplicação real da prova com código de turma/avaliação, nome completo do estudante e responsividade para computador, tablet e celular.
-2. Implementar seleção de 20 a 40 questões validadas por avaliação, com filtro por curso, componente curricular, competência e descritor.
-3. Registrar respostas por estudante, turma, escola, curso, avaliação, item, alternativa marcada e tempo de resposta.
-4. Calcular resultado pré-TRI por estudante e por turma, combinando acerto, dificuldade inicial e descritores críticos.
-5. Criar relatórios separados:
-   - estudante: devolutiva simples e formativa;
-   - professor: diagnóstico por turma, descritor e item;
-   - gestão escolar: visão por escola, curso, turma e evolução.
-6. Implementar trilhas de recomposição vinculadas aos descritores com menor desempenho.
-7. Adicionar rubricas práticas para competências técnicas que não cabem bem em questão objetiva.
-8. Preparar o banco para futura calibração TRI com controle de exposição, histórico de respostas e qualidade psicométrica dos itens.
-9. Migrar a persistência local para Supabase/PostgreSQL com autenticação e regras de acesso por perfil.
-10. Criar painel de governança do banco de itens com status: rascunho, em revisão, validada, aplicada, calibrável e calibrada.
+Assim, os relatorios devem apontar fragilidades por descritor, enquanto a interpretacao pedagogica mais ampla pode agrupar resultados por competencia.
 
-## Competência, descritor e TRI
+## 5. Cuidado tecnico sobre TRI
 
-No SIDEP-CE, competência e descritor não são sinônimos:
+Nesta fase, o sistema opera como pre-TRI:
 
-- Competência é uma capacidade ampla de mobilizar conhecimentos, habilidades, atitudes e procedimentos em situações técnicas ou profissionais.
-- Descritor é uma evidência observável e avaliável dessa competência, escrita de forma mais específica para orientar itens, rubricas e relatórios.
-- Questão é o item que mede um descritor. Na fase pré-TRI, cada questão recebe dificuldade inicial e histórico de acertos; na fase TRI, os parâmetros psicométricos passam a ser calibrados com volume suficiente de respostas.
+- cada questao possui dificuldade inicial estimada;
+- os dados de resposta sao acumulados;
+- os relatorios usam acerto bruto, desempenho por descritor, componente e competencia;
+- a calibracao TRI real depende de volume suficiente de respostas, itens ancora e analise psicometrica.
 
-Assim, os relatórios devem apontar fragilidades por descritor, enquanto a interpretação pedagógica mais ampla pode agrupar resultados por competência.
+Essa decisao evita a leitura de "TRI de fachada" e fortalece o projeto para banca, publicacao e futura adocao institucional.
 
-## Matriz SIDEP-CE v0.1 e evolução metodológica
+## 6. Matriz SIDEP-CE v0.1
 
-A matriz atual deve ser tratada como uma hipótese pedagógica fundamentada. Ela está suficientemente organizada para aplicação piloto, mas ainda precisa ser validada por professores especialistas, aplicação em campo, análise de resultados e revisão psicométrica progressiva.
+A matriz atual deve ser tratada como uma hipotese pedagogica fundamentada. Ela esta suficientemente organizada para aplicacao piloto, mas ainda precisa ser validada por professores especialistas, aplicacao em campo, analise de resultados e revisao psicometrica progressiva.
 
-O caminho metodológico adotado é:
+O caminho metodologico adotado e:
 
-1. manter `C01` a `C10` como competências amplas iniciais do curso Técnico em Informática;
-2. manter `D01` a `D40` como descritores avaliáveis principais;
-3. criar indicadores ou subdescritores apenas como camada interna de planejamento pedagógico;
+1. manter `C01` a `C10` como competencias amplas iniciais do curso Tecnico em Informatica;
+2. manter `D01` a `D40` como descritores avaliaveis principais;
+3. criar indicadores ou subdescritores apenas como camada interna de planejamento pedagogico;
 4. produzir novos itens e rubricas vinculados aos descritores;
-5. aplicar avaliações diagnósticas, formativas e finais;
+5. aplicar avaliacoes diagnosticas, formativas e finais;
 6. analisar se algum descritor deve ser dividido, fundido, revisado ou removido;
-7. criar novas competências somente quando houver lacuna real na matriz curricular, no perfil profissional ou nos dados de aplicação.
+7. criar novas competencias somente quando houver lacuna real na matriz curricular, no perfil profissional ou nos dados de aplicacao.
 
-Essa estratégia evita uma matriz grande demais para ser alimentada e, ao mesmo tempo, permite amadurecimento científico do método para uma tese de mestrado.
+## 7. Regra de nomenclatura
 
-Regra de nomenclatura:
+- Competencias usam codigo curto sequencial: `C01`, `C02`, `C03`...
+- Descritores usam codigo curto sequencial: `D01`, `D02`, `D03`...
+- O codigo deve aparecer no campo `codigo` e tambem no inicio da descricao.
+- Exemplo: `C02 - Desenvolver solucoes computacionais...`
+- Essa nomenclatura deve ser usada em relatorios, filtros, graficos, trilhas de recomposicao e comunicacao pedagogica.
 
-- Competências usam código curto sequencial: `C01`, `C02`, `C03`...
-- Descritores usam código curto sequencial: `D01`, `D02`, `D03`...
-- O código deve aparecer no campo `codigo` e também no início da descrição, por exemplo: `C02 - Desenvolver soluções computacionais...`.
-- Essa nomenclatura será usada em relatórios, gráficos, filtros, sinalização de trilhas e comunicação pedagógica.
+## 8. Banco de itens e qualidade
 
-## Banco importado do HTML norteador
+O banco de itens deve crescer com curadoria. A meta nao e apenas quantidade de questoes, mas qualidade, diversidade e aderencia ao descritor.
 
-- Curso piloto: Técnico em Informática.
-- Competências curriculares: 10.
-- Descritores avaliáveis: 40.
-- Questões: 78.
-- Status inicial das questões: validada.
-- Origem: `norteadores/SIDEP-CE_Avaliacao_Diagnostica_Online.html`.
+Regras atuais:
 
-## Requisito de comunicação do projeto
+- questoes duplicadas nao devem ser cadastradas;
+- questoes em rascunho ou revisao nao entram em prova;
+- somente questoes validadas podem compor avaliacao;
+- a mesma prova nao pode conter questoes repetidas;
+- a mesma prova nao deve conter questoes com contexto muito semelhante;
+- descritores com baixa cobertura devem orientar novas producoes.
 
-Formulação recomendada:
+## 9. Exportacao curricular
 
-> O SIDEP-CE estrutura a base de dados e a arquitetura pedagógica para avaliação técnica baseada em competências, com parâmetros pré-TRI na fase inicial e possibilidade de calibração TRI à medida que o sistema acumular respostas em escala.
+A exportacao em Markdown e PDF permite transformar o banco do sistema em documento pedagogico organizado por:
+
+- curso;
+- componente curricular;
+- competencia;
+- descritores vinculados.
+
+Essa funcao serve para planejamento escolar, estudo de matriz, validacao por especialistas, apresentacao academica e acompanhamento da evolucao do metodo.
+
+## 10. Formulacao recomendada do projeto
+
+O SIDEP-CE estrutura a base de dados e a arquitetura pedagogica para avaliacao tecnica baseada em competencias, com parametros pre-TRI na fase inicial e possibilidade de calibracao TRI a medida que o sistema acumular respostas em escala.
+
+## 11. Proximas evolucoes recomendadas
+
+1. Implementar Supabase Auth e RLS real por perfil.
+2. Criar politica de auditoria completa.
+3. Ampliar relatorios da escola, CREDE/SEFOR e SEDUC.
+4. Produzir rubricas praticas para competencias tecnicas.
+5. Criar trilhas de recomposicao por descritor.
+6. Definir protocolo de validacao por especialistas.
+7. Planejar aplicacoes com itens ancora para futura calibracao TRI.

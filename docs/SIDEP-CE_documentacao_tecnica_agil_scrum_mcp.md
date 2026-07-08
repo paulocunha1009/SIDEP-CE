@@ -1461,3 +1461,58 @@ No MVP local, as senhas ficam no armazenamento local do navegador, apenas para v
 - logs de acesso;
 - bloqueio de usuário inativo;
 - RLS/políticas de permissão por escola, regional e perfil no PostgreSQL/Supabase.
+## 29. Incremento v0.7 - Qualidade do Banco, Exportação e Manual
+
+Data: 08/07/2026
+
+### 29.1 Objetivo da Sprint
+
+Consolidar o SIDEP-CE como MVP aplicável em piloto controlado, fortalecendo a qualidade do banco de itens, a rastreabilidade da avaliação e a documentação operacional do sistema.
+
+### 29.2 Entregas Realizadas
+
+- Checagem de duplicidade no cadastro de questões.
+- Revisão do banco base para reduzir questões repetidas e contextos equivalentes.
+- Normalização textual para reduzir problemas de acentuação e caracteres quebrados.
+- Regra de geração de prova sem questões repetidas.
+- Regra de geração de prova evitando itens com contexto muito semelhante na mesma avaliação.
+- Código de avaliação randômico, único e imutável após abertura.
+- Bloqueio definitivo de códigos usados ou excluídos.
+- Exportação de cursos, componentes, competências e descritores em Markdown.
+- Exportação de cursos, componentes, competências e descritores em PDF por impressão do navegador.
+- Criação do manual de uso operacional do SIDEP-CE v0.7.
+- Atualização da documentação de implantação online gratuita.
+- Atualização da metodologia de mestrado com as melhorias relevantes ao produto técnico-tecnológico.
+
+### 29.3 Regras de Negócio Consolidadas
+
+1. Somente questões validadas podem compor uma avaliação.
+2. Uma avaliação deve possuir entre 20 e 80 questões.
+3. O código da avaliação deve ser gerado pelo sistema.
+4. Após aberta, a avaliação mantém código imutável.
+5. Código excluído ou usado não pode ser reaproveitado.
+6. Questões iguais não podem ser cadastradas novamente.
+7. A mesma prova não pode conter questões repetidas.
+8. A mesma prova não deve conter questões de contexto muito semelhante.
+9. A ordem das questões deve ser embaralhada por estudante.
+10. O estudante não visualiza diagnóstico, peso, TRI, gabarito ou intervenção.
+
+### 29.4 Valor Pedagógico
+
+O incremento v0.7 reforça a validade de conteúdo do método, pois melhora a relação entre matriz curricular, descritores e itens. A exportação da matriz avaliativa permite que professores e gestores auditem o que está sendo avaliado e identifiquem lacunas no banco de itens.
+
+### 29.5 Valor para a Pesquisa de Mestrado
+
+As melhorias desta sprint fortalecem o SIDEP-CE como produto técnico-tecnológico, pois demonstram aplicabilidade, documentação de uso, governança do banco de itens e preparação para análise pré-TRI/TRI.
+
+### 29.6 Próxima Sprint Recomendada
+
+A próxima sprint deve priorizar segurança institucional:
+
+- Supabase Auth;
+- RLS por perfil;
+- políticas por escola, professor, CREDE/SEFOR, SEDUC e Administrador;
+- auditoria mais completa;
+- rotina formal de backup;
+- revisão LGPD;
+- painel de gestão escolar e regional com indicadores agregados.

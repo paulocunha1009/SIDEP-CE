@@ -1,6 +1,6 @@
-# SIDEP-CE - Implantacao online gratuita v0.6
+# SIDEP-CE - Implantacao online gratuita v0.7
 
-Data: 07/07/2026
+Data: 08/07/2026
 
 ## Objetivo
 
@@ -30,6 +30,23 @@ Cenario estimado:
 Esse volume e adequado para um piloto gratuito, desde que as respostas sejam armazenadas de forma consolidada e os relatorios sejam calculados sob demanda.
 
 ## Melhorias implementadas
+
+### Atualizacao v0.7 - qualidade, rastreabilidade e exportacao
+
+Em 08/07/2026, foram consolidadas melhorias importantes para o piloto online:
+
+- codigo de avaliacao randomico, unico e imutavel apos abertura;
+- codigo usado ou excluido permanece bloqueado e nao pode ser reaproveitado;
+- avaliacao criada por engano pode ser excluida apenas quando nao possui respostas;
+- gerador de prova impede questoes duplicadas dentro da mesma avaliacao;
+- gerador de prova evita questoes com contexto muito semelhante dentro da mesma avaliacao;
+- ordem das questoes e embaralhada por estudante;
+- banco de itens recebeu rotina de bloqueio de duplicidade na criacao;
+- textos das questoes foram normalizados para reduzir erros de acentuacao e caracteres quebrados;
+- banco de itens passou a exportar componentes, competencias e descritores em Markdown e PDF;
+- manual de uso operacional foi criado em `docs/manual_uso_sidep_ce.md`.
+
+Essas melhorias nao exigem nova tabela obrigatoria para funcionar quando o schema v0.6 ja esta aplicado, mas exigem que o deploy da Vercel esteja atualizado com o codigo mais recente.
 
 ### 0. MVP online em piloto controlado
 
@@ -273,6 +290,12 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
 12. Executar `database/migration_2026_07_07_banco_itens_mvp.sql` caso o schema inicial tenha sido rodado antes da criacao das tabelas MVP do banco de itens.
 13. No app local, entrar como Administrador e clicar em **Subir base local para Supabase**.
 14. Conferir no Supabase se as tabelas `competencia_mvp`, `descritor_mvp`, `questao_mvp`, `avaliacao_mvp` e `resposta_avaliacao` possuem registros.
+15. Rodar, quando aplicavel, as migracoes de saneamento e politicas piloto:
+    - `database/migration_2026_07_08_policies_mvp_piloto.sql`;
+    - `database/migration_2026_07_08_limpa_textos_questoes_mvp.sql`;
+    - `database/migration_2026_07_08_revisa_duplicidade_questoes_base.sql`.
+16. Testar a exportacao de componentes/descritores em Markdown e PDF no Banco de Itens.
+17. Criar uma avaliacao teste, abrir, responder como aluno e conferir relatorio.
 
 ## Observacao sobre seguranca
 
@@ -303,3 +326,12 @@ O sistema local continua funcionando quando o Supabase nao esta configurado.
 - Rotina de migracao local para Supabase implementada.
 - Base local pode ser enviada ao Supabase pelo perfil Administrador.
 - Uso online liberado apenas para piloto controlado.
+
+## Status operacional em 08/07/2026
+
+- Deploy online pode operar com banco Supabase povoado.
+- Banco base revisado para reduzir duplicidade e contextos repetidos.
+- A criacao de avaliacao possui controle contra repeticao dentro da mesma prova.
+- Exportacao curricular em Markdown/PDF disponivel no Banco de Itens.
+- Manual de uso do MVP criado.
+- Proxima prioridade tecnica: Supabase Auth, RLS real por perfil e auditoria mais forte.

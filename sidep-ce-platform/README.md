@@ -27,7 +27,7 @@ O SIDEP-CE nao e apenas uma prova online. Ele organiza um metodo de avaliacao di
 - Repositorio: GitHub.
 - Banco de itens piloto: curso Tecnico em Informatica.
 
-## Estado Atual do MVP
+## Estado Atual do MVP - v0.7
 
 - Login separado para aluno, professor, gestao escolar, CREDE/SEFOR, SEDUC e Administrador.
 - Aluno acessa somente por codigo da avaliacao e nome completo.
@@ -43,8 +43,12 @@ O SIDEP-CE nao e apenas uma prova online. Ele organiza um metodo de avaliacao di
 - Criador de avaliacoes monta provas entre 20 e 80 questoes.
 - Codigo de avaliacao e gerado automaticamente, com token randomico.
 - Codigo aberto ou excluido fica bloqueado e nao pode ser reaproveitado.
+- O codigo da avaliacao torna-se imutavel apos abertura e passa a ser a chave de rastreabilidade da aplicacao.
+- A montagem da prova bloqueia questoes duplicadas e tambem evita itens com contexto muito semelhante na mesma avaliacao.
+- A ordem das questoes e embaralhada individualmente para cada estudante.
 - Respostas sao salvas em JSON consolidado por aluno/prova.
 - Relatorios sao calculados sob demanda.
+- Banco de itens permite exportar componentes, competencias e descritores por curso em Markdown e PDF.
 - Migracao da base local para Supabase implementada pela area de Relatorios.
 
 ## Tabelas Online Principais
@@ -69,6 +73,22 @@ O sistema ja pode ser usado online em piloto com turmas pequenas, desde que:
 - a base local tenha sido migrada para o Supabase;
 - a avaliacao esteja com status `aberta`;
 - o professor acompanhe relatorios e registre intervencoes pedagogicas.
+
+## Manual de Uso
+
+O manual operacional do MVP esta em:
+
+- `docs/manual_uso_sidep_ce.md`
+
+Ele explica:
+
+- como aluno entra na avaliacao;
+- como professor cria e acompanha avaliacoes;
+- como gestao escolar, CREDE/SEFOR, SEDUC e Administrador acessam relatorios;
+- como validar questoes;
+- como exportar componentes e descritores;
+- como migrar a base local para o Supabase;
+- quais cuidados ainda existem no piloto controlado.
 
 ## Variaveis de Ambiente
 

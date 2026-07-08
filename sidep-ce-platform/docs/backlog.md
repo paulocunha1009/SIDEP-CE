@@ -1,6 +1,6 @@
 # SIDEP-CE - Backlog Tecnico e Pedagogico
 
-Atualizado em: 07/07/2026
+Atualizado em: 08/07/2026
 
 ## Visao do Produto
 
@@ -64,6 +64,9 @@ Entregas:
 - uso exclusivo de questoes validadas;
 - codigo randomico gerado pelo sistema;
 - bloqueio definitivo de codigos usados ou excluidos;
+- codigo imutavel apos abertura da avaliacao;
+- checagem contra questoes duplicadas na mesma prova;
+- checagem contra questoes de contexto muito semelhante na mesma prova;
 - pre-visualizacao como aluno.
 
 ## Sprint 5 - Aplicacao do estudante e relatorios
@@ -94,6 +97,20 @@ Entregas:
 - migracao da base local para Supabase;
 - fallback local preservado.
 
+## Sprint 6.1 - Qualidade do banco e exportacao curricular
+
+Status: implementada.
+
+Entregas:
+
+- revisao do banco base para reduzir repeticoes de enunciado e contexto;
+- normalizacao textual para corrigir problemas de acentuacao e caracteres quebrados;
+- rotina de bloqueio de duplicidade ao salvar novas questoes;
+- exportacao organizada de cursos, componentes, competencias e descritores em Markdown;
+- exportacao em PDF via janela de impressao do navegador;
+- selecao de "Todos os cursos" ou curso especifico antes da exportacao;
+- documentacao do fluxo de curadoria e exportacao para uso pedagogico e academico.
+
 ## Sprint 7 - Seguranca institucional
 
 Status: proxima prioridade.
@@ -113,6 +130,8 @@ Historias:
 - permitir Administrador com acesso total;
 - registrar logs de auditoria mais completos;
 - criar rotina de recuperacao/redefinicao de senha com seguranca.
+
+Observacao: as rotinas de login e permissao ja existem no MVP, mas a proxima etapa deve levar essa regra para Supabase Auth e RLS real, evitando dependencia de validacao apenas no frontend.
 
 ## Sprint 8 - Gestao escolar e regional
 
@@ -176,6 +195,7 @@ Uma entrega so e considerada pronta quando:
 - respeita o perfil de acesso;
 - nao expõe diagnostico ao aluno;
 - usa apenas itens validados em avaliacoes;
+- nao permite questoes repetidas ou de mesmo contexto dentro da mesma prova;
 - preserva rastreabilidade por codigo de avaliacao;
 - salva ou mantem fallback local sem perda de dados;
 - esta documentada;

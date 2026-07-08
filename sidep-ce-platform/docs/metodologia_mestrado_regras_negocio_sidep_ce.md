@@ -1,7 +1,7 @@
 # SIDEP-CE - Metodologia de Mestrado e Regras de Negocio
 
-Versao: 0.6 - MVP online, migracao Supabase e uso em piloto controlado  
-Atualizado em: 07/07/2026
+Versao: 0.7 - MVP online, governanca do banco, exportacao curricular e controle anti-repeticao  
+Atualizado em: 08/07/2026
 
 ## 1. Tese Central
 
@@ -335,6 +335,10 @@ A area do professor foi consolidada como nucleo inicial do MVP. Ela ja contempla
 - respostas consolidadas em JSON por aluno/prova;
 - relatorios calculados sob demanda;
 - backup semanal em JSON disponivel na area de Relatorios.
+- controle contra questoes duplicadas ou com mesmo contexto dentro da mesma avaliacao;
+- revisao do banco base para reduzir repeticoes e problemas de acentuacao;
+- exportacao de cursos, componentes, competencias e descritores em Markdown e PDF;
+- manual de uso operacional do MVP.
 
 Com isso, a proxima sprint deve deslocar o foco para seguranca institucional, autenticacao real e RLS por perfil, sem abandonar a evolucao da area da escola/gestao escolar. O sistema ja pode ser apresentado como produto tecnico-tecnologico em funcionamento, mas seu uso ampliado depende de governanca LGPD, controle de acesso no banco e politicas de auditoria.
 
@@ -353,6 +357,44 @@ Sua importancia esta em:
 - preparar uma politica de avaliacao tecnica mais justa, transparente e baseada em dados.
 
 Na perspectiva da EPT, o sistema nao reduz a formacao profissional a prova teorica. Ao contrario, ele cria uma camada diagnostica que pode dialogar com projetos, laboratorios, estagio, praticas profissionais e rubricas, fortalecendo a integralidade da formacao tecnica.
+
+## 9.3 Governanca do Banco e Controle Anti-Repeticao
+
+Na versao 0.7, o SIDEP-CE passou a tratar a qualidade do banco de itens como requisito metodologico, nao apenas tecnico. A repeticao de questoes iguais ou de contextos muito semelhantes compromete a validade pedagogica da avaliacao, reduz a confiabilidade dos relatorios e pode favorecer respostas por memorizacao ou comparacao entre estudantes.
+
+Foram adotadas duas regras complementares:
+
+- no cadastro de questoes, o sistema bloqueia itens duplicados por enunciado e alternativas;
+- na geracao de avaliacao, o sistema impede que a mesma prova contenha questoes repetidas ou com contexto muito semelhante.
+
+Uma questao pode aparecer em avaliacoes diferentes, pois isso e necessario para analise longitudinal, controle de itens ancora e futura calibracao psicometrica. Entretanto, dentro da mesma aplicacao, a repeticao deve ser evitada para preservar diversidade avaliativa e reduzir risco de cola.
+
+Essa decisao fortalece a etapa pre-TRI, pois melhora a qualidade da matriz de respostas antes da calibracao estatistica. Tambem contribui para a futura TRI, pois itens redundantes ou mal diferenciados tendem a oferecer pouca informacao psicometrica.
+
+## 9.4 Exportacao Curricular e Transparencia Pedagogica
+
+O Banco de Itens passou a permitir exportacao de cursos, componentes, competencias e descritores em Markdown e PDF. A exportacao pode ser feita por curso especifico ou por todos os cursos cadastrados.
+
+Do ponto de vista pedagogico, essa funcao permite:
+
+- socializar a matriz avaliativa com professores e coordenadores;
+- apoiar reunioes de planejamento por componente curricular;
+- identificar lacunas de descritores sem itens suficientes;
+- documentar a evolucao da matriz SIDEP-CE;
+- subsidiar apresentacoes academicas, relatorios de pesquisa e validacao por especialistas.
+
+Do ponto de vista da pesquisa de mestrado, a exportacao torna a matriz auditavel. Isso e importante porque uma proposta baseada em competencias, descritores e TRI precisa demonstrar claramente o que esta sendo avaliado, por que esta sendo avaliado e como cada item se vincula ao curriculo.
+
+## 9.5 Manual Operacional como Produto Tecnico-Tecnologico
+
+Foi criado o manual de uso do SIDEP-CE v0.7, disponivel em `docs/manual_uso_sidep_ce.md`. O manual descreve perfis, acessos, validacao de questoes, criacao de avaliacoes, aplicacao para alunos, relatorios, exportacao curricular, backup e cuidados do piloto online.
+
+Para a pesquisa, o manual cumpre duas funcoes:
+
+- transforma a proposta em produto tecnico-tecnologico aplicavel;
+- reduz dependencia do pesquisador para operacao basica do sistema por outros professores e gestores.
+
+Assim, o SIDEP-CE passa a ter nao apenas fundamentacao teorica e prototipo funcional, mas tambem documentacao de uso, regra de negocio e trilha de implantacao.
 
 ## 10. Contribuicao Cientifica
 
