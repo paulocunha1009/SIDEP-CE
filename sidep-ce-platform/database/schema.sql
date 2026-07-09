@@ -303,6 +303,7 @@ create table if not exists questao_mvp (
   alternativa_e text not null,
   gabarito varchar(1) not null check (gabarito in ('A', 'B', 'C', 'D', 'E')),
   justificativa text,
+  imagem_url text,
   dificuldade_inicial numeric(5,2) not null default 1.00,
   status varchar(30) not null default 'rascunho' check (status in ('rascunho', 'em_revisao', 'validada')),
   atualizada_em timestamptz not null default now()

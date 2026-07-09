@@ -119,7 +119,7 @@ Entregas:
 
 ## Sprint 6.2 - Multcurso, questoes por curso e imagem opcional
 
-Status: implementada no MVP local; pronta para deploy online controlado.
+Status: implementada no MVP local e preparada para deploy online controlado.
 
 Entregas:
 
@@ -133,6 +133,8 @@ Entregas:
 - exibicao da imagem na prova do estudante;
 - exibicao da imagem no modal de validacao docente;
 - preservacao da responsividade para questoes com ou sem imagem;
+- upload de imagem para Supabase Storage quando o ambiente online esta configurado;
+- migracao SQL para bucket `sidep-questoes-imagens` e coluna `imagem_url`;
 - documentacao da estrategia recomendada: Supabase Storage para arquivos e URL/metadados no banco.
 
 ## Sprint 7 - Seguranca institucional
@@ -154,8 +156,7 @@ Historias:
 - permitir Administrador com acesso total;
 - registrar logs de auditoria mais completos;
 - criar rotina de recuperacao/redefinicao de senha com seguranca.
-- criar bucket Supabase Storage para imagens do banco de itens;
-- adicionar coluna/campo persistente para URL da imagem da questao no banco online;
+- substituir policies permissivas de Storage por regras baseadas em Supabase Auth;
 - definir politicas de upload/leitura de imagens por perfil institucional.
 
 Observacao: as rotinas de login e permissao ja existem no MVP, mas a proxima etapa deve levar essa regra para Supabase Auth e RLS real, evitando dependencia de validacao apenas no frontend.

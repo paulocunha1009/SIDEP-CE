@@ -15,7 +15,7 @@ import logoCrede03 from "./assets/logo-crede-03-transparent.png";
 import logoSeduc from "./assets/logo-seduc-transparent.png";
 import { regionaisSeed } from "./data/mock";
 import { competenciasNorteadoras, descritoresNorteadores, questoesNorteadoras } from "./data/norteadoresSeed";
-import { supabaseConfigured } from "./lib/supabase";
+import { supabase, supabaseConfigured } from "./lib/supabase";
 import {
   carregarCompetencias,
   carregarCompetenciasLocais,
@@ -290,7 +290,24 @@ function resolveCourseName(value: string) {
   return findOfficialCourse(value)?.nome ?? value;
 }
 
+function sanitizeFileName(value: string) {
+  return normalizeKey(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "imagem";
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Nao foi possivel ler a imagem selecionada."));
+    reader.readAsDataURL(file);
+  });
+}
+
 const quantidadePorComponenteOptions = [2, 5, 10, 20];
+const QUESTION_IMAGE_BUCKET = "sidep-questoes-imagens";
 const DEFAULT_ACCESS_PASSWORD = "AGzzcso1$";
 const DEFAULT_TEACHER_CPF = "00000000000";
 const MASTER_USER_STORAGE_KEY = "sidep-ce:master-user";
@@ -2515,6 +2532,44 @@ function ItemBank({
     });
   }
 
+  async function anexarImagemQuestao(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage("Selecione um arquivo de imagem valido.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("Imagem muito grande. Use arquivo com ate 2 MB para preservar a cota gratuita.");
+      return;
+    }
+
+    try {
+      if (supabaseConfigured && supabase) {
+        const extension = file.name.split(".").pop()?.toLowerCase() || "png";
+        const path = `questoes/${questaoDraft.codigo}/${Date.now()}-${sanitizeFileName(file.name)}.${extension}`;
+        const { error } = await supabase.storage.from(QUESTION_IMAGE_BUCKET).upload(path, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+        if (error) {
+          setMessage(`Falha no upload da imagem: ${error.message}. Confira se o bucket ${QUESTION_IMAGE_BUCKET} foi criado no Supabase.`);
+          return;
+        }
+        const { data } = supabase.storage.from(QUESTION_IMAGE_BUCKET).getPublicUrl(path);
+        setQuestaoDraft({ ...questaoDraft, imagem_url: data.publicUrl });
+        setMessage("Imagem enviada ao Supabase Storage e vinculada a questao.");
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      setQuestaoDraft({ ...questaoDraft, imagem_url: base64 });
+      setMessage("Imagem anexada em modo local como base64. No online, use Supabase Storage.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel anexar a imagem.");
+    }
+  }
+
   function trocarCursoSelecionado(curso: string) {
     const primeiraCompetencia = competencias.find((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso));
     const descritoresDaPrimeiraCompetencia = primeiraCompetencia
@@ -3194,14 +3249,29 @@ function ItemBank({
           <Field
             label="Imagem da questão (opcional)"
             value={questaoDraft.imagem_url ?? ""}
-            placeholder="Cole uma URL pública ou base64 da imagem"
+            placeholder="Cole uma URL publica ou use o upload abaixo"
             onChange={(value) => setQuestaoDraft({ ...questaoDraft, imagem_url: value })}
-            helper="Use quando o item precisar de figura, diagrama, tabela ou captura de tela."
+            helper="No online, prefira upload para Supabase Storage. A URL/caminho fica salvo na questao."
           />
+          <label>
+            Upload da imagem (Supabase Storage)
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                anexarImagemQuestao(event.target.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+            <small>Opcional. Use arquivos leves, ate 2 MB, para preservar a cota gratuita.</small>
+          </label>
           {questaoDraft.imagem_url && (
             <div className="question-image-preview">
               <span>Prévia da imagem</span>
               <img src={questaoDraft.imagem_url} alt="Prévia da imagem vinculada à questão" />
+              <button className="secondary small" type="button" onClick={() => setQuestaoDraft({ ...questaoDraft, imagem_url: "" })}>
+                Remover imagem
+              </button>
             </div>
           )}
           <TextArea label="Justificativa pedagógica" value={questaoDraft.justificativa} onChange={(value) => setQuestaoDraft({ ...questaoDraft, justificativa: value })} />

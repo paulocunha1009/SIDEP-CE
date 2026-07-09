@@ -125,7 +125,7 @@ O codigo da questao e gerado automaticamente por curso. No curso Tecnico em Info
 
 O campo "Imagem da questao" e opcional. Quando preenchido, a imagem aparece abaixo do enunciado na prova do estudante e no modal "Ver questao" da curadoria docente. Quando vazio, a questao funciona normalmente sem qualquer alteracao.
 
-No piloto local, a imagem pode ser informada por URL publica ou base64. Para uso online estadual, a recomendacao e armazenar o arquivo no Supabase Storage e gravar no banco apenas a URL/metadados, evitando consumo excessivo da cota do banco.
+No piloto local, a imagem pode ser informada por URL publica ou base64. No ambiente online, o fluxo recomendado e implementado e armazenar o arquivo no Supabase Storage e gravar no banco apenas a URL/metadados, evitando consumo excessivo da cota do banco.
 
 ## 5. Status das questoes
 
@@ -266,10 +266,11 @@ Na fase atual, esses resultados sao pre-TRI. A TRI plena depende de volume maior
 
 No plano gratuito do Supabase, o projeto pode usar banco PostgreSQL e Storage dentro das cotas do plano. Para imagens em questoes, a estrategia recomendada e:
 
-1. criar um bucket de Storage para imagens do banco de itens;
-2. enviar a imagem para o bucket;
-3. salvar na questao apenas a URL publica ou caminho controlado do arquivo;
-4. evitar salvar imagens base64 grandes no PostgreSQL.
+1. rodar a migracao `migration_2026_07_09_storage_imagens_questoes.sql`;
+2. criar/atualizar o bucket `sidep-questoes-imagens`;
+3. enviar a imagem para o bucket pelo formulario da questao;
+4. salvar na questao apenas a URL publica ou caminho controlado do arquivo;
+5. evitar salvar imagens base64 grandes no PostgreSQL.
 
 Base64 pode funcionar tecnicamente, mas aumenta muito o tamanho do registro e consome rapidamente a cota de banco. Para piloto com poucas imagens, URL publica e aceitavel. Para uso estadual, Supabase Storage e a solucao correta.
 

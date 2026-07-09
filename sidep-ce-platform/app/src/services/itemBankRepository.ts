@@ -121,7 +121,7 @@ export async function carregarQuestoes() {
   const { data, error } = await supabase
     .from("questao_mvp")
     .select(
-      "codigo,descritor_codigo,componente_curricular,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,alternativa_e,gabarito,justificativa,dificuldade_inicial,status",
+      "codigo,descritor_codigo,componente_curricular,enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,alternativa_e,gabarito,justificativa,imagem_url,dificuldade_inicial,status",
     )
     .order("codigo");
 
@@ -143,11 +143,9 @@ export async function salvarQuestao(questao: QuestaoDraft): Promise<ResultadoAca
 
   if (!supabaseConfigured || !supabase) return { data: questaoLimpa, modo: "local" };
 
-  const questaoSupabase = { ...questaoLimpa };
-  delete questaoSupabase.imagem_url;
   const { error } = await supabase.from("questao_mvp").upsert(
     {
-      ...questaoSupabase,
+      ...questaoLimpa,
       atualizada_em: new Date().toISOString(),
     },
     { onConflict: "codigo" },
