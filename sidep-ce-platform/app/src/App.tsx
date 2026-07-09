@@ -3835,8 +3835,44 @@ function AssessmentsV2({
 
   return (
     <section className="panel">
-      <h2>Criador de Avaliações</h2>
-      <p>A avaliação agora é gerada a partir de questões validadas do Banco de Itens, com vínculo por curso, componente e descritor.</p>
+      <section className="dashboard-hero page-banner">
+        <div>
+          <p className="eyebrow">Avaliações</p>
+          <h2>Criação segura de aplicações diagnósticas</h2>
+          <p>
+            Gere avaliações a partir de questões validadas do Banco de Itens, com vínculo por curso, componente,
+            descritor e regra de bloqueio contra duplicidade de código e repetição de contexto.
+          </p>
+        </div>
+        <div className="dashboard-scope">
+          <span>Código</span>
+          <strong>{draft.codigo_acesso}</strong>
+        </div>
+      </section>
+
+      <section className="dashboard-kpis assessment-kpis">
+        <article className="dashboard-kpi">
+          <span>Planejadas</span>
+          <strong>{totalPlanejado}</strong>
+          <small>mínimo 20 · máximo 80 questões</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Selecionáveis</span>
+          <strong>{questoesElegiveis.length}</strong>
+          <small>itens validados dentro do filtro atual</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Componentes</span>
+          <strong>{componentesSelecionados.length}</strong>
+          <small>{componentesDisponiveis.length} componentes disponíveis no banco</small>
+        </article>
+        <article className="dashboard-kpi">
+          <span>Pronto para abrir</span>
+          <strong>{podePublicar ? "Sim" : "Não"}</strong>
+          <small>{podePublicar ? "sem conflito de estoque ou contexto" : "ajuste quantidade, estoque ou filtros"}</small>
+        </article>
+      </section>
+
       <div className="form-grid">
         <Field label="Título" value={draft.titulo} onChange={(value) => setDraft({ ...draft, titulo: value })} />
         <label>
