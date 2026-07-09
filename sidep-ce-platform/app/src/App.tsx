@@ -68,6 +68,7 @@ import type {
 type Role = "student" | "teacher" | "management";
 type View = "home" | "student" | "schools" | "teachers" | "items" | "assessments" | "reports";
 type ItemBankTab = "competencias" | "descritores" | "questoes";
+type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario" | "solicitacoes" | "historico";
 type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
 type AuthRole = "aluno" | "professor" | "gestao_escolar" | "regional" | "seduc" | "administrador";
 
@@ -2311,6 +2312,11 @@ function ItemBank({
   const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
   const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
   const [cursoExportacao, setCursoExportacao] = useState("todos");
+  const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
+  const [reviewSearch, setReviewSearch] = useState("");
+  const [reviewComponentFilter, setReviewComponentFilter] = useState("todos");
+  const [reviewDescriptorFilter, setReviewDescriptorFilter] = useState("todos");
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<QuestaoStatusFiltro>("todas");
 
   async function saveCompetencia() {
     if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
@@ -2417,6 +2423,29 @@ function ItemBank({
   const questoesFiltradas = questoes
     .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
     .slice(0, 80);
+  const reviewComponents = Array.from(new Set(questoes.map((questao) => questao.componente_curricular).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const reviewDescriptors = descritores
+    .filter((descritor) => reviewComponentFilter === "todos" || descritor.componente_curricular === reviewComponentFilter)
+    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+  const reviewQuestionsAllFiltered = questoes
+    .filter((questao) => reviewStatusFilter === "todas" || questao.status === reviewStatusFilter)
+    .filter((questao) => reviewComponentFilter === "todos" || questao.componente_curricular === reviewComponentFilter)
+    .filter((questao) => reviewDescriptorFilter === "todos" || questao.descritor_codigo === reviewDescriptorFilter)
+    .filter((questao) => {
+      const term = normalizeKey(reviewSearch);
+      if (!term) return true;
+      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+      return [
+        questao.codigo,
+        questao.enunciado,
+        questao.componente_curricular,
+        questao.descritor_codigo,
+        descritor?.descricao ?? "",
+      ].some((value) => normalizeKey(value).includes(term));
+    });
+  const reviewQuestionsFiltered = reviewQuestionsAllFiltered.slice(0, 120);
   const coberturaCompetencias = competencias.map((competencia) => {
     const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
     const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
@@ -2670,11 +2699,63 @@ function ItemBank({
       <section className="subpanel wide">
         <div className="section-heading">
           <div>
-            <h3>Cadastro de Questões</h3>
-            <p>A questão deve nascer ligada a um descritor. O sistema puxa o componente curricular e mostra a competência associada.</p>
+            <h3>Questões</h3>
+            <p>Cadastro, curadoria, cobertura, inventário e revisão colaborativa em uma área única, sem perder as rotinas atuais.</p>
           </div>
           <span className="count-chip">{questoes.length} cadastradas</span>
         </div>
+
+        <div className="question-module-tabs" role="tablist" aria-label="Subtelas da aba Questões">
+          {[
+            ["cadastro", "1. Cadastro"],
+            ["curadoria", "2. Curadoria"],
+            ["cobertura", "3. Cobertura"],
+            ["inventario", "4. Inventário"],
+            ["solicitacoes", "5. Solicitações"],
+            ["historico", "6. Histórico"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              className={questaoSubTab === id ? "active" : ""}
+              onClick={() => setQuestaoSubTab(id as QuestaoSubTab)}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="question-module-kpis">
+          <article>
+            <span>Total</span>
+            <strong>{questoes.length}</strong>
+            <small>questões cadastradas</small>
+          </article>
+          <article>
+            <span>Validadas</span>
+            <strong>{questoesValidadas}</strong>
+            <small>liberadas para avaliação</small>
+          </article>
+          <article>
+            <span>Em revisão</span>
+            <strong>{questoesEmRevisao}</strong>
+            <small>fora das provas</small>
+          </article>
+          <article>
+            <span>Rascunhos</span>
+            <strong>{questoesRascunho}</strong>
+            <small>em elaboração</small>
+          </article>
+        </div>
+
+        {questaoSubTab === "cadastro" && (
+        <section className="question-module-section">
+          <div className="section-heading compact">
+            <div>
+              <h4>Cadastro de questão</h4>
+              <p>A questão deve nascer ligada a um descritor. O sistema puxa o componente curricular e mostra a competência associada.</p>
+            </div>
+          </div>
         <div className="link-context">
           <strong>Caminho da questão</strong>
           <span>
@@ -2738,7 +2819,10 @@ function ItemBank({
           </label>
         </div>
         <button className="primary" onClick={saveQuestao}>Salvar questão</button>
+        </section>
+        )}
 
+        {questaoSubTab === "curadoria" && (
         <section className="review-panel" aria-label="Validação docente das questões">
           <div className="section-heading">
             <div>
@@ -2811,7 +2895,9 @@ function ItemBank({
             <p className="helper">Mostrando as primeiras 80 questões do filtro para manter a tela leve.</p>
           )}
         </section>
+        )}
 
+        {questaoSubTab === "cobertura" && (
         <section className="coverage-panel" aria-label="Cobertura do banco de itens por competência e descritor">
           <div className="section-heading">
             <div>
@@ -2855,7 +2941,25 @@ function ItemBank({
             </div>
           </div>
         </section>
+        )}
 
+        {questaoSubTab === "inventario" && (
+        <section className="question-module-section">
+          <div className="section-heading">
+            <div>
+              <h3>Inventário técnico de questões</h3>
+              <p>Consulta técnica preservada com código, descritor, competência, componente, gabarito, dificuldade e status.</p>
+            </div>
+            <label className="inline-filter">
+              Situação
+              <select value={questaoStatusFiltro} onChange={(event) => setQuestaoStatusFiltro(event.target.value as QuestaoStatusFiltro)}>
+                <option value="todas">Todas</option>
+                <option value="validada">Validadas</option>
+                <option value="em_revisao">Em revisão</option>
+                <option value="rascunho">Rascunhos</option>
+              </select>
+            </label>
+          </div>
         <DataTable
           headers={["Código", "Descritor", "Competência", "Componente", "Gabarito", "Dificuldade", "Status"]}
           rows={questoesFiltradas.map((questao) => {
@@ -2871,6 +2975,36 @@ function ItemBank({
             ];
           })}
         />
+        </section>
+        )}
+
+        {questaoSubTab === "solicitacoes" && (
+          <QuestionReviewRequestsPreview
+            questoes={reviewQuestionsFiltered}
+            totalQuestoes={questoes.length}
+            totalFiltrado={reviewQuestionsAllFiltered.length}
+            componentes={reviewComponents}
+            descritores={descritores}
+            descritoresFiltrados={reviewDescriptors}
+            competencias={competencias}
+            search={reviewSearch}
+            setSearch={setReviewSearch}
+            componentFilter={reviewComponentFilter}
+            setComponentFilter={(value) => {
+              setReviewComponentFilter(value);
+              setReviewDescriptorFilter("todos");
+            }}
+            descriptorFilter={reviewDescriptorFilter}
+            setDescriptorFilter={setReviewDescriptorFilter}
+            statusFilter={reviewStatusFilter}
+            setStatusFilter={setReviewStatusFilter}
+            setMessage={setMessage}
+          />
+        )}
+
+        {questaoSubTab === "historico" && (
+          <QuestionReviewHistoryPreview />
+        )}
       </section>
       )}
 
@@ -2962,6 +3096,263 @@ function ItemBank({
           </section>
         </div>
       )}
+    </section>
+  );
+}
+
+function QuestionReviewRequestsPreview({
+  questoes,
+  totalQuestoes,
+  totalFiltrado,
+  componentes,
+  descritores,
+  descritoresFiltrados,
+  competencias,
+  search,
+  setSearch,
+  componentFilter,
+  setComponentFilter,
+  descriptorFilter,
+  setDescriptorFilter,
+  statusFilter,
+  setStatusFilter,
+  setMessage,
+}: {
+  questoes: QuestaoDraft[];
+  totalQuestoes: number;
+  totalFiltrado: number;
+  componentes: string[];
+  descritores: DescritorDraft[];
+  descritoresFiltrados: DescritorDraft[];
+  competencias: CompetenciaDraft[];
+  search: string;
+  setSearch: (value: string) => void;
+  componentFilter: string;
+  setComponentFilter: (value: string) => void;
+  descriptorFilter: string;
+  setDescriptorFilter: (value: string) => void;
+  statusFilter: QuestaoStatusFiltro;
+  setStatusFilter: (value: QuestaoStatusFiltro) => void;
+  setMessage: (message: string) => void;
+}) {
+  return (
+    <section className="question-module-section">
+      <div className="section-heading">
+        <div>
+          <h3>Solicitar revisão de questões</h3>
+          <p>
+            Use esta área quando encontrar uma questão que precisa de ajuste, mas que não foi criada por você.
+            A solicitação vai para o responsável pelo item, sem alterar automaticamente a questão.
+          </p>
+        </div>
+        <span className="count-chip">Fluxo guiado</span>
+      </div>
+
+      <div className="review-explain-grid">
+        <article>
+          <strong>1. Consulte o banco</strong>
+          <span>Você pode ler todas as questões para comparar contexto, gabarito, descritor e qualidade pedagógica.</span>
+        </article>
+        <article>
+          <strong>2. Solicite revisão</strong>
+          <span>Se a questão não for sua, registre o motivo e escreva uma sugestão objetiva para o criador.</span>
+        </article>
+        <article>
+          <strong>3. O criador decide</strong>
+          <span>O responsável aceita, edita, recusa com justificativa ou encaminha para curadoria.</span>
+        </article>
+      </div>
+
+      <div className="guided-callout">
+        <strong>Regra simples para o professor</strong>
+        <p>
+          Se a questão é sua, use a curadoria normal para revisar, validar ou devolver para rascunho. Se a questão é de
+          outro professor, use <b>Solicitar revisão</b> e explique o motivo. Assim o banco melhora sem perder autoria,
+          rastreabilidade e responsabilidade pedagógica.
+        </p>
+      </div>
+
+      <div className="section-heading compact">
+        <div>
+          <h4>Questões disponíveis para revisão colaborativa</h4>
+          <p>
+            Use os filtros para localizar qualquer questão do banco por código, texto, componente, descritor ou status.
+            Mostrando {questoes.length} de {totalFiltrado} encontradas no banco de {totalQuestoes} questões.
+          </p>
+        </div>
+      </div>
+
+      <div className="review-filter-panel">
+        <label>
+          Buscar questão
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Código, trecho do enunciado, componente ou descritor"
+          />
+        </label>
+        <label>
+          Componente
+          <select value={componentFilter} onChange={(event) => setComponentFilter(event.target.value)}>
+            <option value="todos">Todos os componentes</option>
+            {componentes.map((component) => (
+              <option key={component} value={component}>{component}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Descritor
+          <select value={descriptorFilter} onChange={(event) => setDescriptorFilter(event.target.value)}>
+            <option value="todos">Todos os descritores</option>
+            {descritoresFiltrados.map((descritor) => (
+              <option key={descritor.codigo} value={descritor.codigo}>
+                {descritor.codigo} · {descritor.componente_curricular}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Status
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as QuestaoStatusFiltro)}>
+            <option value="todas">Todos os status</option>
+            <option value="validada">Validadas</option>
+            <option value="em_revisao">Em revisão</option>
+            <option value="rascunho">Rascunhos</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="table-wrap review-request-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Questão</th>
+              <th>Descritor</th>
+              <th>Competência</th>
+              <th>Componente</th>
+              <th>O que você pode fazer</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!questoes.length && (
+              <tr>
+                <td colSpan={6}>Nenhuma questão encontrada com os filtros atuais.</td>
+              </tr>
+            )}
+            {questoes.map((questao, index) => {
+              const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+              const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+              const ownItem = index % 3 === 0;
+
+              return (
+                <tr key={questao.codigo}>
+                  <td><strong>{questao.codigo}</strong><br />{questao.enunciado.slice(0, 90)}...</td>
+                  <td>{questao.descritor_codigo}</td>
+                  <td>{competencia?.codigo ?? "-"}</td>
+                  <td>{questao.componente_curricular}</td>
+                  <td>
+                    <span className={`status-badge ${ownItem ? "validada" : "em_revisao"}`}>
+                      {ownItem ? "Revisar diretamente" : "Pedir revisão ao criador"}
+                    </span>
+                  </td>
+                  <td>
+                    <button className={ownItem ? "secondary small" : "secondary small inline-action"} type="button" onClick={() => setMessage(ownItem ? "Esta questão pode ser revisada diretamente pelo responsável." : "Prévia local: abriria o popup de solicitação de revisão.")}>
+                      {ownItem ? "Revisar item" : "Solicitar revisão"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {totalFiltrado > questoes.length && (
+        <p className="helper">Mostrando as primeiras 120 questões filtradas para manter a tela leve. Refine por componente, descritor ou busca para chegar ao item desejado.</p>
+      )}
+
+      <div className="review-request-grid clearer">
+        <article className="review-request-modal">
+          <h4>Formulário que abre ao solicitar revisão</h4>
+          <p>O professor informa o problema de forma objetiva para ajudar o criador a decidir.</p>
+          <label>
+            Motivo da solicitação
+            <select defaultValue="contexto">
+              <option value="contexto">Contexto repetido ou muito semelhante</option>
+              <option value="gabarito">Problema de gabarito</option>
+              <option value="ambiguidade">Enunciado ambíguo</option>
+              <option value="descritor">Descritor desalinhado</option>
+              <option value="linguagem">Linguagem inadequada</option>
+            </select>
+          </label>
+          <label>
+            Sugestão para o criador
+            <textarea defaultValue="A questão usa contexto semelhante a outro item e pode reduzir a diversidade diagnóstica. Sugiro reescrever o cenário mantendo vínculo com o descritor." />
+          </label>
+          <div className="modal-actions">
+            <button className="secondary" type="button">Cancelar</button>
+            <button className="primary" type="button" onClick={() => setMessage("Solicitação de revisão simulada. No fluxo definitivo, ela ficará registrada para o criador da questão.")}>
+              Enviar solicitação
+            </button>
+          </div>
+        </article>
+
+        <article className="review-request-modal">
+          <h4>Área do criador/curador</h4>
+          <p>Quem criou ou recebeu curadoria da questão registra a decisão e mantém o histórico do item.</p>
+          <label>
+            Decisão
+            <select defaultValue="aceitar-revisao">
+              <option value="aceitar-revisao">Aceitar e colocar questão em revisão</option>
+              <option value="editar">Aceitar e editar agora</option>
+              <option value="recusar">Recusar com justificativa</option>
+              <option value="curadoria">Encaminhar para curadoria</option>
+            </select>
+          </label>
+          <label>
+            Parecer para o solicitante
+            <textarea defaultValue="Solicitação pertinente. O item será reescrito para reduzir repetição de contexto e manter alinhamento ao descritor." />
+          </label>
+          <div className="modal-actions">
+            <button className="secondary" type="button">Responder depois</button>
+            <button className="primary" type="button" onClick={() => setMessage("Decisão simulada. No fluxo definitivo, o histórico ficará vinculado à questão.")}>
+              Registrar decisão
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function QuestionReviewHistoryPreview() {
+  return (
+    <section className="question-module-section">
+      <div className="section-heading">
+        <div>
+          <h3>Histórico de revisão</h3>
+          <p>Prévia da trilha de auditoria: quem solicitou, quem decidiu, quando e qual providência foi tomada.</p>
+        </div>
+        <span className="count-chip warning">Prévia local</span>
+      </div>
+
+      <div className="review-history-list">
+        <article>
+          <strong>Solicitação enviada</strong>
+          <span>08/07/2026 · Q-INF-0144 · Motivo: contexto repetido</span>
+          <p>Professor solicitou reescrita do cenário para preservar diversidade diagnóstica no descritor D05.</p>
+        </article>
+        <article>
+          <strong>Decisão registrada</strong>
+          <span>08/07/2026 · Criador aceitou a solicitação</span>
+          <p>Item voltaria para revisão e ficaria fora das avaliações até nova validação docente.</p>
+        </article>
+        <article>
+          <strong>Encaminhamento para curadoria</strong>
+          <span>Futuro · coordenação/professor técnico</span>
+          <p>Solicitações sensíveis podem ser encaminhadas para curadoria compartilhada antes da decisão final.</p>
+        </article>
+      </div>
     </section>
   );
 }
