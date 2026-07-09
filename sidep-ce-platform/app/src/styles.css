@@ -729,6 +729,7 @@ h1 {
 .dashboard {
   display: grid;
   gap: 18px;
+  min-width: 0;
 }
 
 .dashboard-hero {
@@ -772,6 +773,7 @@ h1 {
 .dashboard-hero > * {
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .dashboard-hero .eyebrow,
@@ -834,6 +836,7 @@ h1 {
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 12px 28px rgba(6, 53, 111, 0.06);
+  min-width: 0;
 }
 
 .dashboard-kpi {
@@ -862,6 +865,7 @@ h1 {
   color: var(--muted);
   line-height: 1.35;
   margin-top: 10px;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-grid {
@@ -883,12 +887,14 @@ h1 {
   gap: 12px;
   align-items: flex-start;
   margin-bottom: 14px;
+  min-width: 0;
 }
 
 .card-heading h3 {
   color: var(--blue);
   margin: 0;
   font-size: 18px;
+  overflow-wrap: anywhere;
 }
 
 .tag {
@@ -916,6 +922,7 @@ h1 {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .metric-row strong {
@@ -986,6 +993,7 @@ h1 {
   color: var(--muted);
   margin: 0;
   line-height: 1.38;
+  overflow-wrap: anywhere;
 }
 
 .critical-list {
@@ -1016,6 +1024,7 @@ h1 {
   margin: 6px 0 0;
   color: var(--muted);
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .empty-state {
@@ -1028,6 +1037,7 @@ h1 {
 
 .dashboard-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .dashboard-table {
@@ -1050,6 +1060,7 @@ h1 {
   border-bottom: 1px solid #edf2f6;
   padding: 12px 8px;
   color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .status-pill {
@@ -2131,6 +2142,14 @@ th {
   .login-panel {
     max-width: 720px;
   }
+
+  .dashboard-hero {
+    display: grid;
+  }
+
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 860px) {
@@ -2251,6 +2270,10 @@ th {
     display: grid;
   }
 
+  .card-heading {
+    display: grid;
+  }
+
   .item-bank-tabs button {
     flex: 1;
   }
@@ -2309,9 +2332,17 @@ th {
     font-size: 30px;
   }
 
+  .dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-scope {
     width: 100%;
     text-align: left;
+  }
+
+  .dashboard-table {
+    min-width: 680px;
   }
 
   .login-panel h2 {
