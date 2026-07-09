@@ -2530,13 +2530,61 @@ function ItemBank({
     setActiveTab("questoes");
   }
 
+  const questaoSubTabDetails: Record<QuestaoSubTab, { eyebrow: string; title: string; description: string; scope: string }> = {
+    cadastro: {
+      eyebrow: "Banco de Itens",
+      title: "Cadastro qualificado de questões",
+      description: "Crie itens vinculados a descritores, componentes e competências, preservando rastreabilidade para o diagnóstico pré-TRI.",
+      scope: "Cadastro",
+    },
+    curadoria: {
+      eyebrow: "Curadoria docente",
+      title: "Validação técnica e pedagógica dos itens",
+      description: "Revise, valide ou devolva questões ao rascunho antes que elas entrem nas avaliações dos estudantes.",
+      scope: "Curadoria",
+    },
+    cobertura: {
+      eyebrow: "Cobertura curricular",
+      title: "Distribuição do banco por competência e descritor",
+      description: "Acompanhe a quantidade de itens por competência, descritor, status e componente curricular.",
+      scope: "Cobertura",
+    },
+    inventario: {
+      eyebrow: "Inventário técnico",
+      title: "Consulta estruturada do banco de questões",
+      description: "Veja código, descritor, competência, componente, gabarito, dificuldade e situação de cada item.",
+      scope: "Inventário",
+    },
+    solicitacoes: {
+      eyebrow: "Revisão colaborativa",
+      title: "Solicitações de melhoria entre professores",
+      description: "Localize qualquer questão do banco, revise itens próprios e solicite ajustes ao criador quando necessário.",
+      scope: "Solicitações",
+    },
+    historico: {
+      eyebrow: "Rastreabilidade",
+      title: "Histórico de revisão dos itens",
+      description: "Acompanhe solicitações, decisões e encaminhamentos para manter auditoria pedagógica do banco.",
+      scope: "Histórico",
+    },
+  };
+
   return (
     <section className="panel">
-      <h2>Banco de Itens</h2>
-      <p>
-        Cadastre competências, descritores e questões alinhadas às matrizes dos cursos técnicos. Esta camada prepara
-        a geração de provas e a futura calibração TRI.
-      </p>
+      <section className="dashboard-hero page-banner">
+        <div>
+          <p className="eyebrow">Banco de Itens</p>
+          <h2>Matriz avaliativa, descritores e questões</h2>
+          <p>
+            Cadastre competências, descritores e questões alinhadas às matrizes dos cursos técnicos. Esta camada prepara
+            a geração de provas, a curadoria docente e a futura calibração TRI.
+          </p>
+        </div>
+        <div className="dashboard-scope">
+          <span>Base</span>
+          <strong>{questoes.length} itens</strong>
+        </div>
+      </section>
       <div className="toolbar">
         <button className="secondary" onClick={importNorteadores}>Importar matriz piloto dos norteadores</button>
         <label>
@@ -2697,13 +2745,17 @@ function ItemBank({
 
       {activeTab === "questoes" && (
       <section className="subpanel wide">
-        <div className="section-heading">
+        <section className="dashboard-hero subtab-banner">
           <div>
-            <h3>Questões</h3>
-            <p>Cadastro, curadoria, cobertura, inventário e revisão colaborativa em uma área única, sem perder as rotinas atuais.</p>
+            <p className="eyebrow">{questaoSubTabDetails[questaoSubTab].eyebrow}</p>
+            <h2>{questaoSubTabDetails[questaoSubTab].title}</h2>
+            <p>{questaoSubTabDetails[questaoSubTab].description}</p>
           </div>
-          <span className="count-chip">{questoes.length} cadastradas</span>
-        </div>
+          <div className="dashboard-scope">
+            <span>{questaoSubTabDetails[questaoSubTab].scope}</span>
+            <strong>{questoes.length} questões</strong>
+          </div>
+        </section>
 
         <div className="question-module-tabs" role="tablist" aria-label="Subtelas da aba Questões">
           {[

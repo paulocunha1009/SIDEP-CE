@@ -824,6 +824,29 @@ h1 {
   font-size: 15px;
 }
 
+.page-banner {
+  margin-bottom: 18px;
+}
+
+.subtab-banner {
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 10px 22px rgba(6, 53, 111, 0.08);
+}
+
+.subtab-banner h2 {
+  font-size: clamp(24px, 2.4vw, 34px);
+}
+
+.subtab-banner p {
+  max-width: 760px;
+}
+
+.subtab-banner .dashboard-scope {
+  min-width: 140px;
+}
+
 .dashboard-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
