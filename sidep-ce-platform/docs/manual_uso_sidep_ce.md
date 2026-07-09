@@ -274,6 +274,19 @@ No plano gratuito do Supabase, o projeto pode usar banco PostgreSQL e Storage de
 
 Base64 pode funcionar tecnicamente, mas aumenta muito o tamanho do registro e consome rapidamente a cota de banco. Para piloto com poucas imagens, URL publica e aceitavel. Para uso estadual, Supabase Storage e a solucao correta.
 
+## 13. Responsividade e acessibilidade
+
+O SIDEP-CE deve funcionar em celular, tablet, notebook, desktop, tela cheia e janela compartilhada. As telas foram ajustadas para:
+
+- evitar rolagem horizontal indevida;
+- adaptar cards, formularios, filtros e modais em uma coluna nas telas estreitas;
+- manter botoes com area adequada de toque;
+- preservar foco visivel para navegacao por teclado;
+- permitir rolagem horizontal controlada em tabelas extensas;
+- exibir imagens de questao de forma responsiva.
+
+O relatorio de QA da sprint esta em `sidep-ce-platform/docs/qa_responsividade_acessibilidade_2026_07_09.md`.
+
 Quando o Supabase esta configurado, o sistema salva dados online. Quando nao esta configurado, o sistema usa o modo local como fallback.
 
 Para usar online:

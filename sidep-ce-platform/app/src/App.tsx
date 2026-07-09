@@ -5897,8 +5897,8 @@ function TextArea({
 function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   if (!rows.length) return <p className="empty">Nenhum registro salvo ainda.</p>;
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-wrap" tabIndex={0} aria-label="Tabela com rolagem horizontal quando necessario">
+      <table aria-label="Tabela de dados do SIDEP-CE">
         <thead>
           <tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr>
         </thead>

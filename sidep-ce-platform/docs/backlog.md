@@ -137,6 +137,21 @@ Entregas:
 - migracao SQL para bucket `sidep-questoes-imagens` e coluna `imagem_url`;
 - documentacao da estrategia recomendada: Supabase Storage para arquivos e URL/metadados no banco.
 
+## Sprint 6.3 - QA responsivo e acessibilidade basica
+
+Status: implementada e validada em build local.
+
+Entregas:
+
+- auditoria da tela inicial nos breakpoints 320, 390, 768, 900, 1366 e 1600 px;
+- correcoes globais contra overflow horizontal;
+- foco visivel reforcado para teclado;
+- botoes pequenos com area minima de toque melhorada;
+- tabelas com rolagem horizontal controlada e navegacao por teclado;
+- modais, cards, filtros e grids adaptados para celular e janela compartilhada;
+- imagens de questoes responsivas;
+- documento de QA em `docs/qa_responsividade_acessibilidade_2026_07_09.md`.
+
 ## Sprint 7 - Seguranca institucional
 
 Status: proxima prioridade apos deploy das melhorias da Sprint 6.2.

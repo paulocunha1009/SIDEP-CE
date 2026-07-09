@@ -20,6 +20,11 @@
   box-sizing: border-box;
 }
 
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", Arial, Helvetica, sans-serif;
@@ -30,6 +35,49 @@ body {
     var(--bg);
   color: var(--ink);
   overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+label,
+.reference-card,
+.dashboard-card,
+.dashboard-kpi,
+.subpanel,
+.panel {
+  min-width: 0;
+}
+
+p,
+span,
+strong,
+small,
+em,
+h1,
+h2,
+h3,
+h4,
+td,
+th {
+  overflow-wrap: anywhere;
 }
 
 .login-shell {
@@ -362,7 +410,7 @@ body {
   background: #fff;
   color: var(--blue);
   padding: 10px 12px;
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -1181,6 +1229,16 @@ textarea:focus {
   border-color: var(--green);
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.table-wrap:focus-visible {
+  outline: 4px solid rgba(244, 123, 32, 0.28);
+  outline-offset: 2px;
+}
+
 input[readonly] {
   background: #f4f8fb;
   color: var(--blue);
@@ -1936,7 +1994,7 @@ textarea {
 
 .secondary.small {
   justify-self: start;
-  min-height: 36px;
+  min-height: 40px;
   padding: 8px 10px;
   font-size: 12px;
 }
@@ -2502,10 +2560,13 @@ textarea {
 .table-wrap {
   overflow-x: auto;
   margin-top: 18px;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -2641,15 +2702,22 @@ th {
   }
 
   .hero-grid,
-    .form-grid,
-    .kpis,
-    .split-grid,
-    .dependency-flow,
-    .check-grid,
-    .status-legend,
-    .review-card,
-    .modal-context,
-    .coverage-grid {
+  .form-grid,
+  .kpis,
+  .split-grid,
+  .dependency-flow,
+  .check-grid,
+  .status-legend,
+  .review-card,
+  .modal-context,
+  .coverage-grid,
+  .course-context-panel,
+  .question-module-kpis,
+  .review-request-grid,
+  .review-explain-grid,
+  .review-filter-panel,
+  .component-builder,
+  .reference-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2664,6 +2732,9 @@ th {
 
   .review-actions {
     min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .student-login-input {
@@ -2677,6 +2748,7 @@ th {
 
   .section-heading {
     display: grid;
+    gap: 10px;
   }
 
   .card-heading {
@@ -2693,6 +2765,21 @@ th {
 
   .student-runner-header {
     display: grid;
+  }
+
+  .modal-header {
+    display: grid;
+  }
+
+  .question-modal {
+    width: 100%;
+    padding: 16px;
+    max-height: calc(100vh - 24px);
+  }
+
+  .modal-backdrop {
+    padding: 12px;
+    place-items: start center;
   }
 
   .option-row {
@@ -2730,6 +2817,19 @@ th {
     padding: 20px;
   }
 
+  .workspace-content,
+  .student-shell {
+    padding: 10px;
+  }
+
+  .panel,
+  .subpanel,
+  .review-panel,
+  .question-module-section,
+  .assessment-setup-panel {
+    padding: 12px;
+  }
+
   .dashboard-hero,
   .dashboard-card,
   .dashboard-kpi {
@@ -2752,6 +2852,16 @@ th {
 
   .dashboard-table {
     min-width: 680px;
+  }
+
+  table {
+    min-width: 620px;
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 9px 7px;
   }
 
   .mini-bar-meta {
@@ -2790,6 +2900,37 @@ th {
 
   .code-generator {
     grid-template-columns: 1fr;
+  }
+
+  .primary,
+  .secondary,
+  .secondary.small,
+  .role-button,
+  .nav-button,
+  .item-bank-tabs button,
+  .question-module-tabs button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .login-logo-strip,
+  .login-panel-logos {
+    width: 100%;
+  }
+
+  .question-title-row,
+  .student-runner-actions,
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .question-image-preview img,
+  .question-image-box img {
+    justify-self: center;
+    max-height: 300px;
   }
 
   .student-login-card {
