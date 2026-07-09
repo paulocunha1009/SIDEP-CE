@@ -1299,8 +1299,10 @@ textarea {
   background: #fff;
   color: var(--blue);
   padding: 10px 13px;
+  min-width: 132px;
   font-weight: 900;
   cursor: pointer;
+  white-space: normal;
 }
 
 .question-module-tabs button.active {
@@ -1421,8 +1423,27 @@ textarea {
   margin: 0;
 }
 
+.review-filter-panel input,
+.review-filter-panel select {
+  min-width: 0;
+}
+
 .review-request-table {
   margin-bottom: 16px;
+}
+
+.review-request-table table {
+  min-width: 880px;
+}
+
+.review-request-table th,
+.review-request-table td {
+  overflow-wrap: anywhere;
+}
+
+.review-request-table td:first-child {
+  min-width: 260px;
+  max-width: 380px;
 }
 
 .review-request-grid.clearer {
