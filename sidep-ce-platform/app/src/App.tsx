@@ -118,6 +118,69 @@ const perfilOptions: Array<{ value: PerfilAcesso; label: string; description: st
   { value: "administrador", label: "Administrador", description: "Gerencia parametrizações e permissões do sistema." },
 ];
 
+type CursoTecnicoOficial = {
+  codigo: string;
+  nome: string;
+  eixo: string;
+  matrizAno: number;
+  status: "ativo" | "inativo";
+};
+
+const cursosTecnicosOficiais: CursoTecnicoOficial[] = [
+  { codigo: "TECADM", nome: "Técnico em Administração", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAGR", nome: "Técnico em Agricultura", eixo: "Recursos Naturais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAGI", nome: "Técnico em Agroindústria", eixo: "Produção Alimentícia", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAGN", nome: "Técnico em Agronegócio", eixo: "Recursos Naturais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAGP", nome: "Técnico em Agropecuária", eixo: "Recursos Naturais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAQI", nome: "Técnico em Aquicultura", eixo: "Recursos Naturais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECAUT", nome: "Técnico em Automação Industrial", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECBIO", nome: "Técnico em Biotecnologia", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECCOM", nome: "Técnico em Comércio", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECCG", nome: "Técnico em Computação Gráfica", eixo: "Informação e Comunicação", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECCON", nome: "Técnico em Contabilidade", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECDCC", nome: "Técnico em Desenho de Construção Civil", eixo: "Infraestrutura", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECDS", nome: "Técnico em Desenvolvimento de Sistemas", eixo: "Informação e Comunicação", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECDI", nome: "Técnico em Design de Interiores", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECEDF", nome: "Técnico em Edificações", eixo: "Infraestrutura", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECELM", nome: "Técnico em Eletromecânica", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECELT", nome: "Técnico em Eletrotécnica", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECENF", nome: "Técnico em Enfermagem", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECEST", nome: "Técnico em Estética", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECEVE", nome: "Técnico em Eventos", eixo: "Turismo, Hospitalidade e Lazer", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECFM", nome: "Técnico em Fabricação Mecânica", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECFIN", nome: "Técnico em Finanças", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECFRU", nome: "Técnico em Fruticultura", eixo: "Recursos Naturais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECGT", nome: "Técnico em Guia de Turismo", eixo: "Turismo, Hospitalidade e Lazer", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECHOS", nome: "Técnico em Hospedagem", eixo: "Turismo, Hospitalidade e Lazer", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECINF", nome: "Técnico em Informática", eixo: "Informação e Comunicação", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECLOG", nome: "Técnico em Logística", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMA", nome: "Técnico em Manutenção Automotiva", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMAS", nome: "Técnico em Massoterapia", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMEC", nome: "Técnico em Mecânica", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMAI", nome: "Técnico em Meio Ambiente", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMV", nome: "Técnico em Modelagem do Vestuário", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMOV", nome: "Técnico em Móveis", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECMUL", nome: "Técnico em Multimídia", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECND", nome: "Técnico em Nutrição e Dietética", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECPG", nome: "Técnico em Petróleo e Gás", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECPOR", nome: "Técnico em Portos", eixo: "Infraestrutura", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECPC", nome: "Técnico em Produção Cultural", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECPAV", nome: "Técnico em Produção de Áudio e Vídeo", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECQUI", nome: "Técnico em Química", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECRDC", nome: "Técnico em Redes de Computadores", eixo: "Informação e Comunicação", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECREG", nome: "Técnico em Regência", eixo: "Produção Cultural e Design", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECSAN", nome: "Técnico em Saneamento", eixo: "Infraestrutura", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECSB", nome: "Técnico em Saúde Bucal", eixo: "Ambiente e Saúde", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECSE", nome: "Técnico em Secretaria Escolar", eixo: "Desenvolvimento Educacional e Social", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECSEC", nome: "Técnico em Secretariado", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECST", nome: "Técnico em Segurança do Trabalho", eixo: "Segurança", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECSER", nome: "Técnico em Sistemas de Energia Renovável", eixo: "Controle e Processos Industriais", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECTEX", nome: "Técnico em Têxtil", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECTIL", nome: "Técnico em Tradução e Interpretação de Libras", eixo: "Desenvolvimento Educacional e Social", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECTI", nome: "Técnico em Transações Imobiliárias", eixo: "Gestão e Negócios", matrizAno: 2026, status: "ativo" },
+  { codigo: "TECVES", nome: "Técnico em Vestuário", eixo: "Produção Industrial", matrizAno: 2026, status: "ativo" },
+];
+
 function perfilAcessoLabel(perfil: PerfilAcesso) {
   if (perfil === "professor") return "Professor Técnico";
   return perfilOptions.find((option) => option.value === perfil)?.label ?? perfil;
@@ -136,12 +199,95 @@ function authRoleLabel(role: AuthRole) {
   return labels[role];
 }
 
+function formatDateTime(value?: string) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function authRoleFromPerfil(perfil: PerfilAcesso): AuthRole {
   if (perfil === "administrador") return "administrador";
   if (perfil === "seduc") return "seduc";
   if (perfil === "crede") return "regional";
   if (perfil === "coordenador_escolar") return "gestao_escolar";
   return "professor";
+}
+
+function normalizeCourseName(value: string) {
+  return normalizeKey(value)
+    .replace(/\b(tecnico|tecnica|curso|de|do|da|em|nivel|medio)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findOfficialCourse(curso: string) {
+  const target = normalizeCourseName(curso);
+  return cursosTecnicosOficiais.find((item) => normalizeCourseName(item.nome) === target);
+}
+
+function courseCode(curso: string) {
+  const official = findOfficialCourse(curso);
+  if (official) return official.codigo;
+  return normalizeKey(curso).split(" ").map((part) => part.slice(0, 3)).join("").toUpperCase().slice(0, 10) || "CURSO";
+}
+
+function isLegacyInformaticaCourse(curso: string) {
+  return courseCode(curso) === "TECINF";
+}
+
+function visiblePedagogicalCode(codigo: string) {
+  const match = codigo.match(/^TEC[A-Z0-9]+-(C\d{2,}|D\d{2,})$/i);
+  return match ? match[1].toUpperCase() : codigo.toUpperCase();
+}
+
+function scopedPedagogicalCode(curso: string, codigo: string) {
+  const normalized = visiblePedagogicalCode(codigo.trim().toUpperCase());
+  if (!normalized) return normalized;
+  if (codigo.includes("-")) return codigo.trim().toUpperCase();
+  if (isLegacyInformaticaCourse(curso)) return normalized;
+  return `${courseCode(curso)}-${normalized}`;
+}
+
+function questionCodeNumber(codigo: string) {
+  const normalized = codigo.trim().toUpperCase();
+  const match = normalized.match(/(?:^|-)Q(?:-)?(\d+)$/) ?? normalized.match(/^Q[A-Z]*-(\d+)$/);
+  return match ? Number(match[1]) : 0;
+}
+
+function scopedQuestionCode(curso: string, numero: number) {
+  const next = String(Math.max(1, numero)).padStart(4, "0");
+  if (isLegacyInformaticaCourse(curso)) return `Q-INF-${next}`;
+  return `${courseCode(curso)}-Q${next}`;
+}
+
+function nextQuestionCodeForCourse(curso: string, questoesCurso: QuestaoDraft[]) {
+  const ultimoNumero = questoesCurso.reduce((maior, questao) => Math.max(maior, questionCodeNumber(questao.codigo)), 0);
+  return scopedQuestionCode(curso, ultimoNumero + 1);
+}
+
+function questionCodeMatchesCourse(curso: string, codigo: string) {
+  const normalized = codigo.trim().toUpperCase();
+  const prefix = courseCode(curso);
+  if (isLegacyInformaticaCourse(curso)) return normalized.startsWith("Q-INF-") || normalized.startsWith("TECINF-Q");
+  return normalized.startsWith(`${prefix}-Q`);
+}
+
+function splitCourseList(value?: string) {
+  return (value ?? "")
+    .split(/[;,|]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function resolveCourseName(value: string) {
+  return findOfficialCourse(value)?.nome ?? value;
 }
 
 const quantidadePorComponenteOptions = [2, 5, 10, 20];
@@ -838,11 +984,11 @@ export function App() {
   const scopedAssessments = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === "professor") {
-      return assessments.filter((assessment) => !assessment.professor_matricula || assessment.professor_matricula === currentUser.professor_matricula);
+      return assessments.filter((assessment) => assessment.professor_matricula === currentUser.professor_matricula);
     }
     const visibleSchoolIds = new Set(scopedSchools.map((school) => school.codigo_inep));
     if (currentUser.role === "gestao_escolar" || currentUser.role === "regional") {
-      return assessments.filter((assessment) => !assessment.escola_inep || visibleSchoolIds.has(assessment.escola_inep));
+      return assessments.filter((assessment) => !!assessment.escola_inep && visibleSchoolIds.has(assessment.escola_inep));
     }
     return assessments;
   }, [assessments, currentUser, scopedSchools]);
@@ -1073,6 +1219,8 @@ export function App() {
               assessments={assessments}
               setAssessments={setAssessments}
               currentUser={currentUser}
+              teachers={scopedTeachers}
+              visibleSchoolIds={scopedSchools.map((school) => school.codigo_inep)}
               competencias={competencias}
               descritores={descritores}
               questoes={questoes}
@@ -1864,6 +2012,11 @@ function StudentAssessmentRunner({
               <small>{questao.componente_curricular} - {questao.descritor_codigo}</small>
             </div>
             <p>{questao.enunciado}</p>
+            {questao.imagem_url && (
+              <div className="question-image-box">
+                <img src={questao.imagem_url} alt={`Imagem de apoio da questão ${index + 1}`} />
+              </div>
+            )}
             {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((option) => {
               const text = questao[`alternativa_${option.toLowerCase()}` as keyof QuestaoDraft] as string;
               return (
@@ -2305,6 +2458,7 @@ function ItemBank({
     alternativa_e: "",
     gabarito: "A",
     justificativa: "",
+    imagem_url: "",
     dificuldade_inicial: 1,
     status: "rascunho",
   });
@@ -2317,6 +2471,84 @@ function ItemBank({
   const [reviewComponentFilter, setReviewComponentFilter] = useState("todos");
   const [reviewDescriptorFilter, setReviewDescriptorFilter] = useState("todos");
   const [reviewStatusFilter, setReviewStatusFilter] = useState<QuestaoStatusFiltro>("todas");
+  const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
+  const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean)));
+  const cursosCadastro = [...cursosTecnicosOficiais.map((curso) => curso.nome), ...cursosDoBanco.filter((curso) => !findOfficialCourse(curso))]
+    .sort((a, b) => a.localeCompare(b));
+  const cursoAtual = findOfficialCourse(cursoSelecionado);
+  const competenciasDoCurso = competencias.filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoSelecionado));
+  const codigosCompetenciasDoCurso = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
+  const descritoresDoCurso = descritores.filter((descritor) => codigosCompetenciasDoCurso.has(descritor.competencia_codigo));
+  const codigosDescritoresDoCurso = new Set(descritoresDoCurso.map((descritor) => descritor.codigo));
+  const questoesDoCurso = questoes.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
+  const proximoCodigoQuestao = nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
+  const componentesDaQuestao = Array.from(new Set(descritoresDoCurso.map((descritor) => descritor.componente_curricular).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const descritoresDoComponenteDaQuestao = descritoresDoCurso.filter(
+    (descritor) => !questaoDraft.componente_curricular || descritor.componente_curricular === questaoDraft.componente_curricular,
+  );
+
+  useEffect(() => {
+    if (!questaoDraft.codigo || !questionCodeMatchesCourse(cursoSelecionado, questaoDraft.codigo)) {
+      setQuestaoDraft((current) => ({ ...current, codigo: proximoCodigoQuestao }));
+    }
+  }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo]);
+
+  useEffect(() => {
+    if (!componentesDaQuestao.length) return;
+    if (questaoDraft.componente_curricular && componentesDaQuestao.includes(questaoDraft.componente_curricular)) return;
+
+    const primeiroComponente = componentesDaQuestao[0];
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === primeiroComponente);
+    setQuestaoDraft((current) => ({
+      ...current,
+      componente_curricular: primeiroComponente,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+    }));
+  }, [componentesDaQuestao, descritoresDoCurso, questaoDraft.componente_curricular]);
+
+  function selecionarComponenteQuestao(componente: string) {
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === componente);
+    setQuestaoDraft({
+      ...questaoDraft,
+      componente_curricular: componente,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+    });
+  }
+
+  function trocarCursoSelecionado(curso: string) {
+    const primeiraCompetencia = competencias.find((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso));
+    const descritoresDaPrimeiraCompetencia = primeiraCompetencia
+      ? descritores.filter((descritor) => descritor.competencia_codigo === primeiraCompetencia.codigo)
+      : [];
+    const primeiroDescritor = descritoresDaPrimeiraCompetencia[0];
+    const codigosCompetenciasNovoCurso = new Set(
+      competencias
+        .filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso))
+        .map((competencia) => competencia.codigo),
+    );
+    const codigosDescritoresNovoCurso = new Set(
+      descritores
+        .filter((descritor) => codigosCompetenciasNovoCurso.has(descritor.competencia_codigo))
+        .map((descritor) => descritor.codigo),
+    );
+    const questoesNovoCurso = questoes.filter((questao) => codigosDescritoresNovoCurso.has(questao.descritor_codigo));
+    setCursoSelecionado(curso);
+    setCompetenciaDraft({ ...competenciaDraft, curso_tecnico: curso, codigo: "C01" });
+    setDescritorDraft({
+      ...descritorDraft,
+      codigo: "D01",
+      competencia_codigo: primeiraCompetencia?.codigo ?? "",
+      componente_curricular: primeiroDescritor?.componente_curricular ?? descritorDraft.componente_curricular,
+    });
+    setQuestaoDraft({
+      ...questaoDraft,
+      codigo: nextQuestionCodeForCourse(curso, questoesNovoCurso),
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+      componente_curricular: primeiroDescritor?.componente_curricular ?? questaoDraft.componente_curricular,
+    });
+    setReviewComponentFilter("todos");
+    setReviewDescriptorFilter("todos");
+  }
 
   async function saveCompetencia() {
     if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
@@ -2324,7 +2556,21 @@ function ItemBank({
       return;
     }
 
-    const normalized = { ...competenciaDraft, codigo: competenciaDraft.codigo.toUpperCase() };
+    const normalized = {
+      ...competenciaDraft,
+      curso_tecnico: cursoSelecionado,
+      codigo: scopedPedagogicalCode(cursoSelecionado, competenciaDraft.codigo),
+    };
+    const repeatedInCourse = competencias.some(
+      (item) =>
+        item.codigo !== normalized.codigo &&
+        normalizeCourseName(item.curso_tecnico) === normalizeCourseName(normalized.curso_tecnico) &&
+        visiblePedagogicalCode(item.codigo) === visiblePedagogicalCode(normalized.codigo),
+    );
+    if (repeatedInCourse) {
+      setMessage(`Já existe a competência ${visiblePedagogicalCode(normalized.codigo)} cadastrada para ${normalized.curso_tecnico}.`);
+      return;
+    }
     const result = await salvarCompetencia(normalized);
     setCompetencias([...competencias.filter((item) => item.codigo !== normalized.codigo), normalized]);
     setDescritorDraft({ ...descritorDraft, competencia_codigo: normalized.codigo });
@@ -2336,12 +2582,29 @@ function ItemBank({
       setMessage("Preencha código, competência vinculada e descrição do descritor.");
       return;
     }
-    if (!competencias.some((item) => item.codigo === descritorDraft.competencia_codigo)) {
-      setMessage("O descritor precisa estar vinculado a uma competência cadastrada.");
+    if (!competenciasDoCurso.some((item) => item.codigo === descritorDraft.competencia_codigo)) {
+      setMessage("O descritor precisa estar vinculado a uma competência cadastrada no curso em trabalho.");
       return;
     }
 
-    const normalized = { ...descritorDraft, codigo: descritorDraft.codigo.toUpperCase() };
+    const competenciaVinculada = competencias.find((item) => item.codigo === descritorDraft.competencia_codigo);
+    const cursoDoDescritor = competenciaVinculada?.curso_tecnico ?? cursoSelecionado;
+    const normalized = { ...descritorDraft, codigo: scopedPedagogicalCode(cursoDoDescritor, descritorDraft.codigo) };
+    const competenciasMesmoCurso = new Set(
+      competencias
+        .filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoDoDescritor))
+        .map((competencia) => competencia.codigo),
+    );
+    const repeatedInCourse = descritores.some(
+      (item) =>
+        item.codigo !== normalized.codigo &&
+        competenciasMesmoCurso.has(item.competencia_codigo) &&
+        visiblePedagogicalCode(item.codigo) === visiblePedagogicalCode(normalized.codigo),
+    );
+    if (repeatedInCourse) {
+      setMessage(`Já existe o descritor ${visiblePedagogicalCode(normalized.codigo)} cadastrado para ${cursoDoDescritor}.`);
+      return;
+    }
     const result = await salvarDescritor(normalized);
     setDescritores([...descritores.filter((item) => item.codigo !== normalized.codigo), normalized]);
     setQuestaoDraft({
@@ -2364,8 +2627,13 @@ function ItemBank({
       setMessage("Preencha código, descritor, enunciado e todas as alternativas da questão.");
       return;
     }
-    if (!descritores.some((item) => item.codigo === questaoDraft.descritor_codigo)) {
-      setMessage("A questão precisa estar vinculada a um descritor cadastrado.");
+    if (!descritoresDoCurso.some((item) => item.codigo === questaoDraft.descritor_codigo)) {
+      setMessage("A questão precisa estar vinculada a um descritor cadastrado no curso em trabalho.");
+      return;
+    }
+    const descritorDaQuestao = descritoresDoCurso.find((item) => item.codigo === questaoDraft.descritor_codigo);
+    if (!descritorDaQuestao || descritorDaQuestao.componente_curricular !== questaoDraft.componente_curricular) {
+      setMessage("Selecione um descritor do componente curricular escolhido para esta questão.");
       return;
     }
     if (questaoDraft.dificuldade_inicial < 0.1 || questaoDraft.dificuldade_inicial > 5) {
@@ -2373,7 +2641,7 @@ function ItemBank({
       return;
     }
 
-    const normalized = { ...questaoDraft, codigo: questaoDraft.codigo.toUpperCase() };
+    const normalized = { ...questaoDraft, codigo: proximoCodigoQuestao };
     const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
     const normalizedFingerprint = questionFingerprint(normalized);
     const duplicate = questoes.find((questao) => {
@@ -2390,7 +2658,21 @@ function ItemBank({
     }
 
     const result = await salvarQuestao(normalized);
-    setQuestoes([...questoes.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    const questoesAtualizadas = [...questoes.filter((item) => item.codigo !== normalized.codigo), normalized];
+    const questoesAtualizadasDoCurso = questoesAtualizadas.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
+    setQuestoes(questoesAtualizadas);
+    setQuestaoDraft({
+      ...questaoDraft,
+      codigo: nextQuestionCodeForCourse(cursoSelecionado, questoesAtualizadasDoCurso),
+      enunciado: "",
+      alternativa_a: "",
+      alternativa_b: "",
+      alternativa_c: "",
+      alternativa_d: "",
+      alternativa_e: "",
+      justificativa: "",
+      imagem_url: "",
+    });
     setMessage(result.erro ?? `Questão salva em modo ${result.modo}. Ela já pode compor avaliações futuras.`);
   }
 
@@ -2417,19 +2699,19 @@ function ItemBank({
     setMessage(`${codigo} alterada para ${questaoStatusLabel(status)}. ${questaoStatusHint(status)}`);
   }
 
-  const questoesValidadas = questoes.filter((questao) => questao.status === "validada").length;
-  const questoesEmRevisao = questoes.filter((questao) => questao.status === "em_revisao").length;
-  const questoesRascunho = questoes.filter((questao) => questao.status === "rascunho").length;
-  const questoesFiltradas = questoes
+  const questoesValidadas = questoesDoCurso.filter((questao) => questao.status === "validada").length;
+  const questoesEmRevisao = questoesDoCurso.filter((questao) => questao.status === "em_revisao").length;
+  const questoesRascunho = questoesDoCurso.filter((questao) => questao.status === "rascunho").length;
+  const questoesFiltradas = questoesDoCurso
     .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
     .slice(0, 80);
-  const reviewComponents = Array.from(new Set(questoes.map((questao) => questao.componente_curricular).filter(Boolean))).sort((a, b) =>
+  const reviewComponents = Array.from(new Set(questoesDoCurso.map((questao) => questao.componente_curricular).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
   );
-  const reviewDescriptors = descritores
+  const reviewDescriptors = descritoresDoCurso
     .filter((descritor) => reviewComponentFilter === "todos" || descritor.componente_curricular === reviewComponentFilter)
     .sort((a, b) => a.codigo.localeCompare(b.codigo));
-  const reviewQuestionsAllFiltered = questoes
+  const reviewQuestionsAllFiltered = questoesDoCurso
     .filter((questao) => reviewStatusFilter === "todas" || questao.status === reviewStatusFilter)
     .filter((questao) => reviewComponentFilter === "todos" || questao.componente_curricular === reviewComponentFilter)
     .filter((questao) => reviewDescriptorFilter === "todos" || questao.descritor_codigo === reviewDescriptorFilter)
@@ -2446,7 +2728,7 @@ function ItemBank({
       ].some((value) => normalizeKey(value).includes(term));
     });
   const reviewQuestionsFiltered = reviewQuestionsAllFiltered.slice(0, 120);
-  const coberturaCompetencias = competencias.map((competencia) => {
+  const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
     const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
     const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
     const questoesDaCompetencia = questoes.filter((questao) => codigosDescritores.has(questao.descritor_codigo));
@@ -2460,7 +2742,7 @@ function ItemBank({
       rascunhos: questoesDaCompetencia.filter((questao) => questao.status === "rascunho").length,
     };
   });
-  const coberturaDescritores = descritores.map((descritor) => {
+  const coberturaDescritores = descritoresDoCurso.map((descritor) => {
     const questoesDoDescritor = questoes.filter((questao) => questao.descritor_codigo === descritor.codigo);
 
     return {
@@ -2582,10 +2864,21 @@ function ItemBank({
         </div>
         <div className="dashboard-scope">
           <span>Base</span>
-          <strong>{questoes.length} itens</strong>
+          <strong>{questoesDoCurso.length} itens</strong>
         </div>
       </section>
       <div className="toolbar">
+        <label>
+          Curso em trabalho
+          <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionado(event.target.value)}>
+            {cursosCadastro.map((curso) => (
+              <option key={curso} value={curso}>{curso}</option>
+            ))}
+          </select>
+        </label>
+        <div className="status-chip course-chip">
+          {cursoAtual ? `${cursoAtual.codigo} · ${cursoAtual.eixo}` : "Curso não oficial"}
+        </div>
         <button className="secondary" onClick={importNorteadores}>Importar matriz piloto dos norteadores</button>
         <label>
           Exportar curso
@@ -2600,9 +2893,10 @@ function ItemBank({
         <button className="secondary" type="button" onClick={exportarMatrizPdf}>Exportar PDF</button>
       </div>
       <div className="kpis">
-        <article className="kpi"><span>Competências</span><strong>{competencias.length}</strong></article>
-        <article className="kpi"><span>Descritores</span><strong>{descritores.length}</strong></article>
-        <article className="kpi"><span>Questões</span><strong>{questoes.length}</strong></article>
+        <article className="kpi"><span>Cursos oficiais</span><strong>{cursosTecnicosOficiais.length}</strong></article>
+        <article className="kpi"><span>Competências do curso</span><strong>{competenciasDoCurso.length}</strong></article>
+        <article className="kpi"><span>Descritores do curso</span><strong>{descritoresDoCurso.length}</strong></article>
+        <article className="kpi"><span>Questões do curso</span><strong>{questoesDoCurso.length}</strong></article>
         <article className="kpi"><span>Validadas</span><strong>{questoesValidadas}</strong></article>
         <article className="kpi"><span>Em revisão</span><strong>{questoesEmRevisao}</strong></article>
         <article className="kpi"><span>Rascunhos</span><strong>{questoesRascunho}</strong></article>
@@ -2661,11 +2955,18 @@ function ItemBank({
               <h3>Cadastro de Competências</h3>
               <p>Comece por aqui. A competência é o agrupador maior do banco e será usada pelos descritores.</p>
             </div>
-            <span className="count-chip">{competencias.length} cadastradas</span>
+            <span className="count-chip">{competenciasDoCurso.length} cadastradas</span>
           </div>
           <div className="form-grid single">
-            <Field label="Código" value={competenciaDraft.codigo} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, codigo: value.toUpperCase() })} />
-            <Field label="Curso técnico" value={competenciaDraft.curso_tecnico} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, curso_tecnico: value })} />
+            <Field label="Código pedagógico da competência" value={visiblePedagogicalCode(competenciaDraft.codigo)} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, codigo: value.toUpperCase() })} />
+            <label>
+              Curso técnico
+              <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionado(event.target.value)}>
+                {cursosCadastro.map((curso) => (
+                  <option key={curso} value={curso}>{curso}</option>
+                ))}
+              </select>
+            </label>
             <TextArea label="Descrição da competência" value={competenciaDraft.descricao} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, descricao: value })} />
             <Field label="Fonte normativa/matriz" value={competenciaDraft.fonte} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, fonte: value })} />
           </div>
@@ -2675,11 +2976,11 @@ function ItemBank({
             title="Códigos de competências"
             empty="Nenhuma competência cadastrada ainda. Importe os norteadores ou salve a primeira competência."
             kind="competencia"
-            items={competencias.map((competencia) => ({
-              code: competencia.codigo,
+            items={competenciasDoCurso.map((competencia) => ({
+              code: visiblePedagogicalCode(competencia.codigo),
               title: competencia.curso_tecnico,
               description: competencia.descricao,
-              meta: competencia.fonte,
+              meta: `${courseCode(competencia.curso_tecnico)} · ${competencia.fonte}`,
               actionLabel: "Usar no descritor",
               onAction: () => useCompetenciaInDescritor(competencia),
             }))}
@@ -2694,20 +2995,36 @@ function ItemBank({
               <h3>Cadastro de Descritores</h3>
               <p>O descritor sempre depende de uma competência. Ele diz exatamente o que será observado na avaliação.</p>
             </div>
-            <span className="count-chip">{descritores.length} cadastrados</span>
+            <span className="count-chip">{descritoresDoCurso.length} cadastrados</span>
+          </div>
+          <div className="course-context-panel">
+            <label>
+              Curso técnico do descritor
+              <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionado(event.target.value)}>
+                {cursosCadastro.map((curso) => (
+                  <option key={curso} value={curso}>{curso}</option>
+                ))}
+              </select>
+            </label>
+            <div>
+              <strong>{cursoAtual ? `${cursoAtual.codigo} · ${cursoAtual.eixo}` : "Curso cadastrado localmente"}</strong>
+              <span>
+                {competenciasDoCurso.length} competências disponíveis para vincular descritores neste curso.
+              </span>
+            </div>
           </div>
           <div className="link-context">
             <strong>Competência selecionada</strong>
-            <span>{competenciaSelecionada ? `${competenciaSelecionada.codigo} · ${competenciaSelecionada.descricao}` : "Selecione uma competência cadastrada para vincular o descritor."}</span>
+            <span>{competenciaSelecionada ? `${visiblePedagogicalCode(competenciaSelecionada.codigo)} · ${competenciaSelecionada.descricao}` : "Selecione uma competência cadastrada para vincular o descritor."}</span>
           </div>
           <div className="form-grid single">
-            <Field label="Código" value={descritorDraft.codigo} onChange={(value) => setDescritorDraft({ ...descritorDraft, codigo: value.toUpperCase() })} />
+            <Field label="Código pedagógico do descritor" value={visiblePedagogicalCode(descritorDraft.codigo)} onChange={(value) => setDescritorDraft({ ...descritorDraft, codigo: value.toUpperCase() })} />
             <label>
               Competência vinculada
               <select value={descritorDraft.competencia_codigo} onChange={(event) => setDescritorDraft({ ...descritorDraft, competencia_codigo: event.target.value })}>
                 <option value="">Selecione</option>
-                {competencias.map((competencia) => (
-                  <option key={competencia.codigo} value={competencia.codigo}>{competencia.codigo} · {competencia.descricao}</option>
+                {competenciasDoCurso.map((competencia) => (
+                  <option key={competencia.codigo} value={competencia.codigo}>{visiblePedagogicalCode(competencia.codigo)} · {competencia.descricao}</option>
                 ))}
               </select>
             </label>
@@ -2728,13 +3045,13 @@ function ItemBank({
             title="Códigos de descritores"
             empty="Nenhum descritor cadastrado ainda. Cadastre um descritor depois de criar/importar competências."
             kind="descritor"
-            items={descritores.map((descritor) => {
+            items={descritoresDoCurso.map((descritor) => {
               const competencia = competencias.find((item) => item.codigo === descritor.competencia_codigo);
               return {
-                code: descritor.codigo,
+                code: visiblePedagogicalCode(descritor.codigo),
                 title: descritor.componente_curricular,
                 description: descritor.descricao,
-                meta: `Competência: ${descritor.competencia_codigo}${competencia ? ` · ${competencia.descricao}` : ""}`,
+                meta: `Competência: ${competencia ? visiblePedagogicalCode(competencia.codigo) : descritor.competencia_codigo}${competencia ? ` · ${competencia.descricao}` : ""}`,
                 actionLabel: "Usar na questão",
                 onAction: () => useDescritorInQuestao(descritor),
               };
@@ -2753,7 +3070,7 @@ function ItemBank({
           </div>
           <div className="dashboard-scope">
             <span>{questaoSubTabDetails[questaoSubTab].scope}</span>
-            <strong>{questoes.length} questões</strong>
+            <strong>{questoesDoCurso.length} questões</strong>
           </div>
         </section>
 
@@ -2780,7 +3097,7 @@ function ItemBank({
         <div className="question-module-kpis">
           <article>
             <span>Total</span>
-            <strong>{questoes.length}</strong>
+            <strong>{questoesDoCurso.length}</strong>
             <small>questões cadastradas</small>
           </article>
           <article>
@@ -2808,20 +3125,51 @@ function ItemBank({
               <p>A questão deve nascer ligada a um descritor. O sistema puxa o componente curricular e mostra a competência associada.</p>
             </div>
           </div>
+        <div className="course-context-panel">
+          <label>
+            Curso técnico da questão
+            <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionado(event.target.value)}>
+              {cursosCadastro.map((curso) => (
+                <option key={curso} value={curso}>{curso}</option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <strong>{cursoAtual ? `${cursoAtual.codigo} · ${cursoAtual.eixo}` : "Curso cadastrado localmente"}</strong>
+            <span>
+              {descritoresDoCurso.length} descritores e {questoesDoCurso.length} questões cadastradas neste curso.
+            </span>
+          </div>
+        </div>
         <div className="link-context">
           <strong>Caminho da questão</strong>
           <span>
             {descritorSelecionado
-              ? `${questaoDraft.codigo} → ${descritorSelecionado.codigo} · ${descritorSelecionado.descricao} → ${competenciaDaQuestao?.codigo ?? "competência não encontrada"}`
+              ? `${questaoDraft.codigo} → ${visiblePedagogicalCode(descritorSelecionado.codigo)} · ${descritorSelecionado.descricao} → ${competenciaDaQuestao ? visiblePedagogicalCode(competenciaDaQuestao.codigo) : "competência não encontrada"}`
               : "Selecione um descritor para vincular a questão ao mapa de competências."}
           </span>
         </div>
         <div className="form-grid">
-          <Field label="Código da questão" value={questaoDraft.codigo} onChange={(value) => setQuestaoDraft({ ...questaoDraft, codigo: value.toUpperCase() })} />
+          <Field
+            label="Código da questão"
+            value={questaoDraft.codigo}
+            onChange={() => undefined}
+            readOnly
+            helper="Gerado automaticamente a partir da última questão cadastrada neste curso."
+          />
+          <label>
+            Componente curricular
+            <select value={questaoDraft.componente_curricular} onChange={(event) => selecionarComponenteQuestao(event.target.value)}>
+              <option value="">Selecione o componente</option>
+              {componentesDaQuestao.map((componente) => (
+                <option key={componente} value={componente}>{componente}</option>
+              ))}
+            </select>
+          </label>
           <label>
             Descritor vinculado
             <select value={questaoDraft.descritor_codigo} onChange={(event) => {
-              const descritor = descritores.find((item) => item.codigo === event.target.value);
+              const descritor = descritoresDoComponenteDaQuestao.find((item) => item.codigo === event.target.value);
               setQuestaoDraft({
                 ...questaoDraft,
                 descritor_codigo: event.target.value,
@@ -2829,12 +3177,11 @@ function ItemBank({
               });
             }}>
               <option value="">Selecione</option>
-              {descritores.map((descritor) => (
-                <option key={descritor.codigo} value={descritor.codigo}>{descritor.codigo} · {descritor.componente_curricular} · {descritor.descricao}</option>
+              {descritoresDoComponenteDaQuestao.map((descritor) => (
+                <option key={descritor.codigo} value={descritor.codigo}>{visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular} · {descritor.descricao}</option>
               ))}
             </select>
           </label>
-          <Field label="Componente curricular" value={questaoDraft.componente_curricular} onChange={(value) => setQuestaoDraft({ ...questaoDraft, componente_curricular: value })} />
           <label>
             Status
             <select value={questaoDraft.status} onChange={(event) => setQuestaoDraft({ ...questaoDraft, status: event.target.value as QuestaoDraft["status"] })}>
@@ -2844,6 +3191,19 @@ function ItemBank({
             </select>
           </label>
           <TextArea label="Enunciado" value={questaoDraft.enunciado} onChange={(value) => setQuestaoDraft({ ...questaoDraft, enunciado: value })} />
+          <Field
+            label="Imagem da questão (opcional)"
+            value={questaoDraft.imagem_url ?? ""}
+            placeholder="Cole uma URL pública ou base64 da imagem"
+            onChange={(value) => setQuestaoDraft({ ...questaoDraft, imagem_url: value })}
+            helper="Use quando o item precisar de figura, diagrama, tabela ou captura de tela."
+          />
+          {questaoDraft.imagem_url && (
+            <div className="question-image-preview">
+              <span>Prévia da imagem</span>
+              <img src={questaoDraft.imagem_url} alt="Prévia da imagem vinculada à questão" />
+            </div>
+          )}
           <TextArea label="Justificativa pedagógica" value={questaoDraft.justificativa} onChange={(value) => setQuestaoDraft({ ...questaoDraft, justificativa: value })} />
           <Field label="Alternativa A" value={questaoDraft.alternativa_a} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_a: value })} />
           <Field label="Alternativa B" value={questaoDraft.alternativa_b} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_b: value })} />
@@ -2919,7 +3279,7 @@ function ItemBank({
                     </div>
                     <p>{questao.enunciado}</p>
                     <small>
-                      {questao.descritor_codigo} · {descritor?.descricao ?? "Descritor não encontrado"} · {competencia?.codigo ?? "sem competência"}
+                      {visiblePedagogicalCode(questao.descritor_codigo)} · {descritor?.descricao ?? "Descritor não encontrado"} · {competencia ? visiblePedagogicalCode(competencia.codigo) : "sem competência"}
                     </small>
                     <small>
                       {questao.componente_curricular} · Gabarito {questao.gabarito} · dificuldade pré-TRI {questao.dificuldade_inicial}
@@ -2943,7 +3303,7 @@ function ItemBank({
               );
             })}
           </div>
-          {questoesFiltradas.length < questoes.filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro).length && (
+          {questoesFiltradas.length < questoesDoCurso.filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro).length && (
             <p className="helper">Mostrando as primeiras 80 questões do filtro para manter a tela leve.</p>
           )}
         </section>
@@ -2967,7 +3327,7 @@ function ItemBank({
               <DataTable
                 headers={["Competência", "Descritores", "Total", "Validadas", "Em revisão", "Rascunhos"]}
                 rows={coberturaCompetencias.map((item) => [
-                  `${item.competencia.codigo} · ${item.competencia.descricao}`,
+                  `${visiblePedagogicalCode(item.competencia.codigo)} · ${item.competencia.descricao}`,
                   String(item.descritores),
                   String(item.total),
                   String(item.validadas),
@@ -2982,7 +3342,7 @@ function ItemBank({
               <DataTable
                 headers={["Descritor", "Componente", "Total", "Validadas", "Em revisão", "Rascunhos"]}
                 rows={coberturaDescritores.map((item) => [
-                  `${item.descritor.codigo} · ${item.descritor.descricao}`,
+                  `${visiblePedagogicalCode(item.descritor.codigo)} · ${item.descritor.descricao}`,
                   item.descritor.componente_curricular,
                   String(item.total),
                   String(item.validadas),
@@ -3018,8 +3378,8 @@ function ItemBank({
             const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
             return [
               questao.codigo,
-              questao.descritor_codigo,
-              descritor?.competencia_codigo ?? "",
+              visiblePedagogicalCode(questao.descritor_codigo),
+              descritor?.competencia_codigo ? visiblePedagogicalCode(descritor.competencia_codigo) : "",
               questao.componente_curricular,
               questao.gabarito,
               String(questao.dificuldade_inicial),
@@ -3033,7 +3393,7 @@ function ItemBank({
         {questaoSubTab === "solicitacoes" && (
           <QuestionReviewRequestsPreview
             questoes={reviewQuestionsFiltered}
-            totalQuestoes={questoes.length}
+            totalQuestoes={questoesDoCurso.length}
             totalFiltrado={reviewQuestionsAllFiltered.length}
             componentes={reviewComponents}
             descritores={descritores}
@@ -3090,11 +3450,11 @@ function ItemBank({
                   <div className="modal-context">
                     <div>
                       <strong>Competência</strong>
-                      <span>{competencia ? `${competencia.codigo} · ${competencia.descricao}` : "Competência não encontrada"}</span>
+                      <span>{competencia ? `${visiblePedagogicalCode(competencia.codigo)} · ${competencia.descricao}` : "Competência não encontrada"}</span>
                     </div>
                     <div>
                       <strong>Descritor</strong>
-                      <span>{descritor ? `${descritor.codigo} · ${descritor.descricao}` : questaoEmLeitura.descritor_codigo}</span>
+                      <span>{descritor ? `${visiblePedagogicalCode(descritor.codigo)} · ${descritor.descricao}` : visiblePedagogicalCode(questaoEmLeitura.descritor_codigo)}</span>
                     </div>
                     <div>
                       <strong>Dificuldade pré-TRI</strong>
@@ -3105,6 +3465,11 @@ function ItemBank({
                   <div className="question-reading">
                     <strong>Enunciado</strong>
                     <p>{questaoEmLeitura.enunciado}</p>
+                    {questaoEmLeitura.imagem_url && (
+                      <div className="question-image-box">
+                        <img src={questaoEmLeitura.imagem_url} alt={`Imagem de apoio da questão ${questaoEmLeitura.codigo}`} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="alternatives-list">
@@ -3222,6 +3587,11 @@ function QuestionReviewRequestsPreview({
           outro professor, use <b>Solicitar revisão</b> e explique o motivo. Assim o banco melhora sem perder autoria,
           rastreabilidade e responsabilidade pedagógica.
         </p>
+        <p>
+          <b>Regra multcurso:</b> cada curso pode ter seus próprios códigos C01, C02, D01 e D02. Para evitar choque no banco,
+          cursos novos usam um identificador técnico interno composto pela sigla do curso e pelo código pedagógico, como
+          <b> TECADM-C01</b>. Na tela, o professor continua lendo apenas <b>C01</b> e <b>D01</b>.
+        </p>
       </div>
 
       <div className="section-heading compact">
@@ -3258,7 +3628,7 @@ function QuestionReviewRequestsPreview({
             <option value="todos">Todos os descritores</option>
             {descritoresFiltrados.map((descritor) => (
               <option key={descritor.codigo} value={descritor.codigo}>
-                {descritor.codigo} · {descritor.componente_curricular}
+                {visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular}
               </option>
             ))}
           </select>
@@ -3300,8 +3670,8 @@ function QuestionReviewRequestsPreview({
               return (
                 <tr key={questao.codigo}>
                   <td><strong>{questao.codigo}</strong><br />{questao.enunciado.slice(0, 90)}...</td>
-                  <td>{questao.descritor_codigo}</td>
-                  <td>{competencia?.codigo ?? "-"}</td>
+                  <td>{visiblePedagogicalCode(questao.descritor_codigo)}</td>
+                  <td>{competencia ? visiblePedagogicalCode(competencia.codigo) : "-"}</td>
                   <td>{questao.componente_curricular}</td>
                   <td>
                     <span className={`status-badge ${ownItem ? "validada" : "em_revisao"}`}>
@@ -3492,6 +3862,8 @@ function AssessmentsV2({
   assessments,
   setAssessments,
   currentUser,
+  teachers,
+  visibleSchoolIds,
   competencias,
   descritores,
   questoes,
@@ -3502,6 +3874,8 @@ function AssessmentsV2({
   assessments: AvaliacaoDraft[];
   setAssessments: (assessments: AvaliacaoDraft[]) => void;
   currentUser: AuthUser;
+  teachers: ProfessorDraft[];
+  visibleSchoolIds: string[];
   competencias: CompetenciaDraft[];
   descritores: DescritorDraft[];
   questoes: QuestaoDraft[];
@@ -3510,10 +3884,45 @@ function AssessmentsV2({
   setMessage: (message: string) => void;
 }) {
   const [blockedAssessmentCodes, setBlockedAssessmentCodes] = useState<string[]>(() => carregarCodigosAvaliacaoBloqueados());
+  const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const professorLogado = teachers.find(
+    (teacher) => teacher.matricula === currentUser.professor_matricula || teacher.email_institucional === currentUser.email,
+  );
+  const cursosProfessorLogado = splitCourseList(professorLogado?.curso_responsavel).map(resolveCourseName);
+  const cursosDaEscola = Array.from(new Set([
+    ...teachers.flatMap((teacher) => splitCourseList(teacher.curso_responsavel).map(resolveCourseName)),
+    ...assessments
+      .filter((assessment) => !currentUser.escola_inep || assessment.escola_inep === currentUser.escola_inep)
+      .map((assessment) => resolveCourseName(assessment.curso_tecnico))
+      .filter(Boolean),
+  ])).sort((a, b) => a.localeCompare(b));
+  const cursosPermitidos = (() => {
+    if (currentUser.role === "professor" && cursosProfessorLogado.length) return cursosProfessorLogado;
+    if (currentUser.role === "gestao_escolar" && cursosDaEscola.length) return cursosDaEscola;
+    if (currentUser.role === "regional" && cursosDaEscola.length) return cursosDaEscola;
+    if (currentUser.role === "seduc" || currentUser.role === "administrador") return cursosDoBanco.length ? cursosDoBanco : cursosTecnicosOficiais.map((curso) => curso.nome);
+    return cursosDoBanco.length ? cursosDoBanco : ["Técnico em Informática"];
+  })();
+  const visibleSchoolSet = new Set(visibleSchoolIds);
+  const avaliacoesVisiveis = assessments.filter((assessment) => {
+    if (currentUser.role === "professor") return assessment.professor_matricula === currentUser.professor_matricula;
+    if (currentUser.role === "gestao_escolar") return assessment.escola_inep === currentUser.escola_inep;
+    if (currentUser.role === "regional") return !!assessment.escola_inep && visibleSchoolSet.has(assessment.escola_inep);
+    if (currentUser.role === "seduc" || currentUser.role === "administrador") return true;
+    return true;
+  });
+  const scopeLabel = currentUser.role === "professor"
+    ? "Minhas provas"
+    : currentUser.role === "gestao_escolar"
+      ? "Provas da escola"
+      : currentUser.role === "regional"
+        ? "Provas das escolas da CREDE/SEFOR"
+        : "Todas as provas";
+  const cursoInicialPermitido = cursosPermitidos[0] ?? "Técnico em Informática";
   const [draft, setDraft] = useState<AvaliacaoDraft>(() => ({
-    titulo: "Diagnóstico Técnico em Informática",
-    codigo_acesso: generateAssessmentAccessCode(assessments, "Técnico em Informática", "diagnostica", blockedAssessmentCodes),
-    curso_tecnico: "Técnico em Informática",
+    titulo: `Diagnóstico ${cursoInicialPermitido}`,
+    codigo_acesso: generateAssessmentAccessCode(assessments, cursoInicialPermitido, "diagnostica", blockedAssessmentCodes),
+    curso_tecnico: cursoInicialPermitido,
     componentes: "",
     quantidade_questoes: 20,
     turma_codigo: "2ª TEC. INF.",
@@ -3533,6 +3942,22 @@ function AssessmentsV2({
       });
   }, [setMessage]);
 
+  useEffect(() => {
+    if (cursosPermitidos.some((curso) => normalizeCourseName(curso) === normalizeCourseName(draft.curso_tecnico))) return;
+    const nextCurso = cursosPermitidos[0] ?? draft.curso_tecnico;
+    setDraft((current) => ({
+      ...current,
+      titulo: current.titulo || `Diagnóstico ${nextCurso}`,
+      curso_tecnico: nextCurso,
+      codigo_acesso: generateAssessmentAccessCode(assessments, nextCurso, current.etapa, blockedAssessmentCodes),
+      componentes: "",
+      quantidade_questoes: 20,
+      questoes_por_componente: {},
+      descritores_selecionados: [],
+      questoes_codigos: [],
+    }));
+  }, [assessments, blockedAssessmentCodes, cursosPermitidos, draft.curso_tecnico]);
+
   const descritorPorCodigo = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
   const competenciaPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
   const questoesPorComponente = draft.questoes_por_componente ?? {};
@@ -3547,7 +3972,7 @@ function AssessmentsV2({
     const descritor = descritorPorCodigo.get(questao.descritor_codigo);
     if (questao.status !== "validada" || !descritor) return false;
     const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
-    return !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+    return !competencia || normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(draft.curso_tecnico);
   }
 
   const componentesDisponiveis = Array.from(
@@ -3557,12 +3982,17 @@ function AssessmentsV2({
   const descritoresElegiveis = descritores.filter((descritor) => {
     if (!componentesSelecionados.length) return false;
     const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
-    const mesmoCurso = !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+    const mesmoCurso = !competencia || normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(draft.curso_tecnico);
     const mesmoComponente =
       componentesSelecionados.length === 0 ||
       componentesSelecionados.some((componente) => normalizeKey(componente) === normalizeKey(descritor.componente_curricular));
     return mesmoCurso && mesmoComponente;
   });
+  const questoesValidadasPorDescritor = questoes.reduce<Record<string, number>>((acc, questao) => {
+    if (!isQuestaoValidadaDoCurso(questao)) return acc;
+    acc[questao.descritor_codigo] = (acc[questao.descritor_codigo] ?? 0) + 1;
+    return acc;
+  }, {});
 
   function isQuestaoElegivel(questao: QuestaoDraft) {
     if (!componentesSelecionados.length) return false;
@@ -3572,7 +4002,7 @@ function AssessmentsV2({
     if (descritoresSelecionados.length > 0 && !descritoresSelecionados.includes(questao.descritor_codigo)) return false;
 
     const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
-    const mesmoCurso = !competencia || normalizeKey(competencia.curso_tecnico) === normalizeKey(draft.curso_tecnico);
+    const mesmoCurso = !competencia || normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(draft.curso_tecnico);
     const mesmoComponente =
       componentesSelecionados.length === 0 ||
       componentesSelecionados.some((componente) => normalizeKey(componente) === normalizeKey(questao.componente_curricular));
@@ -3677,6 +4107,19 @@ function AssessmentsV2({
       componentes: selected.join("; "),
       quantidade_questoes: selected.reduce((total, item) => total + (next[item] ?? 0), 0),
       questoes_por_componente: next,
+    });
+  }
+
+  function trocarCursoAvaliacao(curso: string) {
+    setDraft({
+      ...draft,
+      curso_tecnico: curso,
+      codigo_acesso: generateAssessmentAccessCode(assessments, curso, draft.etapa, blockedAssessmentCodes),
+      componentes: "",
+      quantidade_questoes: 20,
+      questoes_por_componente: {},
+      descritores_selecionados: [],
+      questoes_codigos: [],
     });
   }
 
@@ -3873,7 +4316,15 @@ function AssessmentsV2({
         </article>
       </section>
 
-      <div className="form-grid">
+      <section className="subpanel wide assessment-setup-panel">
+        <div className="section-heading compact">
+          <div>
+            <h3>Dados da aplicação</h3>
+            <p>Defina título, curso, turma e etapa. O código do estudante é gerado pelo sistema e não deve ser reutilizado.</p>
+          </div>
+          <span className="count-chip">{cursosPermitidos.length} curso(s) permitido(s)</span>
+        </div>
+      <div className="form-grid assessment-form-grid">
         <Field label="Título" value={draft.titulo} onChange={(value) => setDraft({ ...draft, titulo: value })} />
         <label>
           Código para estudantes
@@ -3883,15 +4334,21 @@ function AssessmentsV2({
           </div>
           <small>O código é gerado pelo sistema. Depois que a avaliação for aberta, ele fica bloqueado para investigação, auditoria e relatórios.</small>
         </label>
-        <Field
-          label="Curso técnico"
-          value={draft.curso_tecnico}
-          onChange={(value) => setDraft({
-            ...draft,
-            curso_tecnico: value,
-            codigo_acesso: generateAssessmentAccessCode(assessments, value, draft.etapa, blockedAssessmentCodes),
-          })}
-        />
+        <label>
+          Curso técnico
+          <select value={draft.curso_tecnico} onChange={(event) => trocarCursoAvaliacao(event.target.value)}>
+            {cursosPermitidos.map((curso) => (
+              <option key={curso} value={curso}>{curso}</option>
+            ))}
+          </select>
+          <small>
+            {currentUser.role === "professor"
+              ? "Professor visualiza apenas o curso vinculado ao seu cadastro."
+              : currentUser.role === "gestao_escolar"
+                ? "Gestão visualiza os cursos vinculados à escola."
+                : "Acesso institucional com visão ampliada dos cursos disponíveis."}
+          </small>
+        </label>
         <Field label="Turma" value={draft.turma_codigo} onChange={(value) => setDraft({ ...draft, turma_codigo: value })} />
         <label>
           Etapa
@@ -3922,6 +4379,7 @@ function AssessmentsV2({
           />
         </label>
       </div>
+      </section>
 
       <section className="subpanel wide">
         <div className="section-heading">
@@ -3977,7 +4435,10 @@ function AssessmentsV2({
                 checked={descritoresSelecionados.includes(descritor.codigo)}
                 onChange={() => toggleDescritor(descritor.codigo)}
               />
-              <span>{descritor.codigo} - {descritor.componente_curricular}</span>
+              <span>
+                {visiblePedagogicalCode(descritor.codigo)} - {descritor.componente_curricular}
+                <small>{questoesValidadasPorDescritor[descritor.codigo] ?? 0} questões validadas neste descritor</small>
+              </span>
             </label>
           ))}
         </div>
@@ -4013,7 +4474,7 @@ function AssessmentsV2({
       <button className="primary" onClick={save} disabled={!podePublicar}>Abrir avaliação</button>
       <DataTable
         headers={["Código", "Título", "Curso", "Turma", "Questões", "Status"]}
-        rows={assessments.map((assessment) => [
+        rows={avaliacoesVisiveis.map((assessment) => [
           assessment.codigo_acesso,
           assessment.titulo,
           assessment.curso_tecnico,
@@ -4026,17 +4487,21 @@ function AssessmentsV2({
         <div className="section-heading">
           <div>
             <h3>Aplicações criadas</h3>
-            <p>Controle o ciclo da aplicação e visualize a prova sem gravar resposta de aluno.</p>
+            <p>{scopeLabel}. Controle o ciclo da aplicação e visualize a prova sem gravar resposta de aluno.</p>
           </div>
+          <span className="count-chip">{avaliacoesVisiveis.length} prova(s)</span>
         </div>
         <div className="reference-grid">
-          {assessments.map((assessment) => (
+          {avaliacoesVisiveis.map((assessment) => (
             <article className="reference-card" key={assessment.codigo_acesso}>
               <div>
                 <strong>{assessment.codigo_acesso} - {assessment.titulo}</strong>
                 <em>{assessment.turma_codigo} - {assessment.status ?? "rascunho"} - {assessment.questoes_codigos?.length ?? assessment.quantidade_questoes} questões</em>
+                <span>{assessment.curso_tecnico}</span>
                 <span>{assessment.componentes}</span>
-                <small>Código bloqueado para relatórios e rastreabilidade da aplicação.</small>
+                <small>
+                  Escola: {assessment.escola_inep ?? "não informada"} · Professor: {assessment.professor_matricula ?? "não informado"} · Código bloqueado para relatórios.
+                </small>
               </div>
               <button className="secondary small" onClick={() => setPreviewAssessment(assessment)}>Pré-visualizar como aluno</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "agendada")}>Agendar</button>
@@ -4046,6 +4511,7 @@ function AssessmentsV2({
               <button className="secondary danger small" onClick={() => excluirAvaliacao(assessment)}>Excluir avaliação</button>
             </article>
           ))}
+          {!avaliacoesVisiveis.length && <p className="empty">Nenhuma avaliação criada dentro do seu escopo de acesso.</p>}
         </div>
       </section>
     </section>
@@ -4088,26 +4554,64 @@ function Reports({
   setMessage: (message: string) => void;
 }) {
   const [syncing, setSyncing] = useState(false);
+  const [activeReportTab, setActiveReportTab] = useState<"geral" | "avaliacao" | "individual" | "pedagogico" | "exportacoes">("geral");
+  const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("");
+  const [selectedResponseId, setSelectedResponseId] = useState("");
   const assessmentCodes = new Set(assessments.map((assessment) => assessment.codigo_acesso));
   const respostasEscopo = respostas.filter((resposta) => assessmentCodes.has(resposta.avaliacao_codigo));
   const mediaGeral = respostasEscopo.length
     ? Math.round((respostasEscopo.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasEscopo.length) * 100) / 100
     : 0;
+  const avaliacaoPorCodigo = new Map(assessments.map((assessment) => [assessment.codigo_acesso, assessment]));
   const questaoPorCodigo = new Map(questoes.map((questao) => [questao.codigo, questao]));
   const descritorPorCodigo = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
   const competenciaPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
+  const questionCodesInScope = new Set(respostasEscopo.flatMap((resposta) => resposta.ordem_questoes));
+  const questoesEscopo = questoes.filter((questao) => questionCodesInScope.has(questao.codigo));
+  const descriptorCodesInScope = new Set(questoesEscopo.map((questao) => questao.descritor_codigo));
+  const descritoresEscopo = descritores.filter((descritor) => descriptorCodesInScope.has(descritor.codigo));
+  const competenciaCodesInScope = new Set(descritoresEscopo.map((descritor) => descritor.competencia_codigo));
+  const competenciasEscopo = competencias.filter((competencia) => competenciaCodesInScope.has(competencia.codigo));
+  const canExportFullPedagogicalBase = currentUser.role === "administrador" || currentUser.role === "seduc";
+  const selectedAssessment = assessments.find((assessment) => assessment.codigo_acesso === selectedAssessmentCode) ?? assessments[0];
+  const selectedStudentResponse = respostasEscopo.find((resposta) => resposta.id === selectedResponseId) ?? respostasEscopo[0];
+  const respostasDaAvaliacaoSelecionada = selectedAssessment
+    ? respostasEscopo.filter((resposta) => resposta.avaliacao_codigo === selectedAssessment.codigo_acesso)
+    : [];
+  const selectedStudentAssessment = selectedStudentResponse ? avaliacaoPorCodigo.get(selectedStudentResponse.avaliacao_codigo) : undefined;
+  const mediaAvaliacaoSelecionada = respostasDaAvaliacaoSelecionada.length
+    ? Math.round((respostasDaAvaliacaoSelecionada.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasDaAvaliacaoSelecionada.length) * 100) / 100
+    : 0;
+  const scopeLabel =
+    currentUser.role === "administrador"
+      ? "rede completa, cadastros, avaliações, respostas e manutenção técnica"
+      : currentUser.role === "seduc"
+        ? "rede estadual completa, com relatórios consolidados"
+        : currentUser.role === "regional"
+          ? "somente escolas vinculadas à sua CREDE/SEFOR"
+          : currentUser.role === "gestao_escolar"
+            ? "somente dados da escola do usuário"
+            : "somente avaliações criadas pelo professor logado";
+  const avaliacoesSemTurma = assessments.filter((assessment) => !assessment.turma_codigo.trim()).length;
+  const respostasSemVinculo = respostasEscopo.filter((resposta) => !avaliacaoPorCodigo.has(resposta.avaliacao_codigo)).length;
 
   const linhasAlunos = respostasEscopo
     .slice()
     .sort((a, b) => b.enviado_em.localeCompare(a.enviado_em))
-    .map((resposta) => [
-      resposta.estudante_nome,
-      resposta.avaliacao_codigo,
-      resposta.turma_codigo,
-      `${resposta.acertos}/${resposta.total_questoes}`,
-      `${resposta.percentual_bruto}%`,
-      new Date(resposta.enviado_em).toLocaleString("pt-BR"),
-    ]);
+    .map((resposta) => {
+      const assessment = avaliacaoPorCodigo.get(resposta.avaliacao_codigo);
+      const turma = resposta.turma_codigo || assessment?.turma_codigo || "-";
+      return [
+        resposta.estudante_nome,
+        resposta.avaliacao_codigo,
+        turma,
+        assessment?.titulo ?? resposta.avaliacao_titulo,
+        `${resposta.acertos}/${resposta.total_questoes}`,
+        `${resposta.percentual_bruto}%`,
+        formatDateTime(assessment?.codigo_bloqueado_em ?? assessment?.inicio_em),
+        formatDateTime(resposta.enviado_em),
+      ];
+    });
 
   const linhasTurmas = assessments.map((assessment) => {
     const respostasDaAvaliacao = respostasEscopo.filter((resposta) => resposta.avaliacao_codigo === assessment.codigo_acesso);
@@ -4117,15 +4621,19 @@ function Reports({
     return [
       assessment.codigo_acesso,
       assessment.turma_codigo,
+      assessment.titulo,
       assessment.status ?? "rascunho",
       String(respostasDaAvaliacao.length),
       `${media}%`,
+      formatDateTime(assessment.codigo_bloqueado_em ?? assessment.inicio_em),
+      formatDateTime(assessment.fim_em),
     ];
   });
 
   const descritorResumo = new Map<string, { acertos: number; total: number }>();
   const componenteResumo = new Map<string, { acertos: number; total: number }>();
   const competenciaResumo = new Map<string, { acertos: number; total: number }>();
+  const descritorResumoAvaliacao = new Map<string, { acertos: number; total: number }>();
 
   respostasEscopo.forEach((resposta) => {
     resposta.ordem_questoes.forEach((codigoQuestao) => {
@@ -4153,8 +4661,401 @@ function Reports({
     });
   });
 
+  respostasDaAvaliacaoSelecionada.forEach((resposta) => {
+    resposta.ordem_questoes.forEach((codigoQuestao) => {
+      const questao = questaoPorCodigo.get(codigoQuestao);
+      if (!questao) return;
+      const correta = resposta.respostas[codigoQuestao] === questao.gabarito;
+      const descritor = descritorResumoAvaliacao.get(questao.descritor_codigo) ?? { acertos: 0, total: 0 };
+      descritor.total += 1;
+      if (correta) descritor.acertos += 1;
+      descritorResumoAvaliacao.set(questao.descritor_codigo, descritor);
+    });
+  });
+
   function percent(item: { acertos: number; total: number }) {
     return item.total ? `${Math.round((item.acertos / item.total) * 10000) / 100}%` : "0%";
+  }
+
+  function percentNumber(item: { acertos: number; total: number }) {
+    return item.total ? Math.round((item.acertos / item.total) * 10000) / 100 : 0;
+  }
+
+  function slugReport(value: string) {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "relatorio";
+  }
+
+  function markdownTable(headers: string[], rows: string[][]) {
+    if (!rows.length) return "_Nenhum registro encontrado._";
+    const clean = (value: string) => String(value ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+      `| ${headers.map(clean).join(" | ")} |`,
+      `| ${headers.map(() => "---").join(" | ")} |`,
+      ...rows.map((row) => `| ${row.map(clean).join(" | ")} |`),
+    ].join("\n");
+  }
+
+  function htmlTable(headers: string[], rows: string[][]) {
+    if (!rows.length) return "<p><em>Nenhum registro encontrado.</em></p>";
+    return `
+      <table>
+        <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function reportHtml(title: string, sections: string[]) {
+    const generatedAt = formatDateTime(new Date().toISOString());
+    return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #08295c; margin: 28px; line-height: 1.45; }
+    header { border-bottom: 4px solid #0b8f57; margin-bottom: 22px; padding-bottom: 14px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    h2 { margin-top: 26px; color: #06336f; page-break-after: avoid; }
+    h3 { margin: 18px 0 8px; color: #0b6f4f; page-break-after: avoid; }
+    p { margin: 6px 0; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+    .metric { border: 1px solid #c9d7e8; background: #f6faf8; padding: 10px; }
+    .metric strong { display: block; font-size: 22px; color: #06336f; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 22px; font-size: 12px; }
+    th, td { border: 1px solid #dbe5ef; padding: 7px; text-align: left; vertical-align: top; }
+    th { background: #f0f7f3; color: #06336f; }
+    .question { border: 1px solid #dbe5ef; border-left: 5px solid #0b8f57; padding: 12px; margin: 12px 0; page-break-inside: avoid; }
+    .question.wrong { border-left-color: #f97316; }
+    @media print { body { margin: 15mm; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(title)}</h1>
+    <p>SIDEP-CE · ${escapeHtml(authRoleLabel(currentUser.role))} · gerado em ${escapeHtml(generatedAt)}</p>
+    <p>${escapeHtml(scopeLabel)}</p>
+  </header>
+  ${sections.join("\n")}
+</body>
+</html>`;
+  }
+
+  function exportReport(filename: string, title: string, markdown: string, htmlSections: string[], format: "md" | "pdf") {
+    const suffix = new Date().toISOString().slice(0, 10);
+    if (format === "md") {
+      downloadTextFile(`${filename}-${suffix}.md`, markdown, "text/markdown;charset=utf-8");
+      return;
+    }
+    const opened = openPrintableHtml(reportHtml(title, htmlSections));
+    setMessage(opened ? "Relatório aberto para impressão/PDF." : "O navegador bloqueou a janela de impressão. Libere pop-ups para exportar em PDF.");
+  }
+
+  const statusResumo = ["rascunho", "agendada", "aberta", "encerrada", "corrigida"].map((status) => ({
+    label: status,
+    total: assessments.filter((assessment) => (assessment.status ?? "rascunho") === status).length,
+  }));
+  const componentesChart = Array.from(componenteResumo.entries())
+    .map(([componente, resumo]) => ({ label: componente, value: percentNumber(resumo), detalhe: `${resumo.acertos}/${resumo.total}` }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  const descritoresCriticos = Array.from(descritorResumo.entries())
+    .map(([codigo, resumo]) => ({
+      codigo,
+      descricao: descritorPorCodigo.get(codigo)?.descricao ?? "",
+      value: percentNumber(resumo),
+      detalhe: `${resumo.acertos}/${resumo.total}`,
+    }))
+    .sort((a, b) => a.value - b.value)
+    .slice(0, 8);
+  const descritoresFortes = Array.from(descritorResumo.entries())
+    .map(([codigo, resumo]) => ({
+      codigo,
+      descricao: descritorPorCodigo.get(codigo)?.descricao ?? "",
+      value: percentNumber(resumo),
+      detalhe: `${resumo.acertos}/${resumo.total}`,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+  const competenciasChart = Array.from(competenciaResumo.entries())
+    .map(([codigo, resumo]) => ({
+      codigo,
+      descricao: competenciaPorCodigo.get(codigo)?.descricao ?? "",
+      value: percentNumber(resumo),
+      detalhe: `${resumo.acertos}/${resumo.total}`,
+    }))
+    .sort((a, b) => a.value - b.value)
+    .slice(0, 8);
+  const prioridadePedagogica = descritoresCriticos[0];
+  const componenteMaisFragil = componentesChart.slice().sort((a, b) => a.value - b.value)[0];
+  const competenciaMaisFragil = competenciasChart[0];
+  const descritoresCriticosAvaliacao = Array.from(descritorResumoAvaliacao.entries())
+    .map(([codigo, resumo]) => ({
+      codigo,
+      descricao: descritorPorCodigo.get(codigo)?.descricao ?? "",
+      value: percentNumber(resumo),
+      detalhe: `${resumo.acertos}/${resumo.total}`,
+    }))
+    .sort((a, b) => a.value - b.value)
+    .slice(0, 8);
+  const linhasAlunosAvaliacao = linhasAlunos.filter((linha) => selectedAssessment && linha[1] === selectedAssessment.codigo_acesso);
+  const linhasAvaliacoesRecentes = linhasTurmas.slice(0, 8);
+  const componentesAluno = selectedStudentResponse
+    ? Object.entries(selectedStudentResponse.desempenho_por_componente)
+      .map(([componente, resumo]) => ({ label: componente, value: resumo.percentual, detalhe: `${resumo.acertos}/${resumo.total}` }))
+      .sort((a, b) => b.value - a.value)
+    : [];
+  const descritoresAluno = selectedStudentResponse
+    ? Object.entries(selectedStudentResponse.desempenho_por_descritor)
+      .map(([codigo, resumo]) => ({
+        codigo,
+        label: `${codigo} - ${descritorPorCodigo.get(codigo)?.descricao ?? "Descritor não localizado"}`,
+        value: resumo.percentual,
+        detalhe: `${resumo.acertos}/${resumo.total}`,
+      }))
+      .sort((a, b) => a.value - b.value)
+    : [];
+  const melhorComponenteAluno = componentesAluno[0];
+  const maiorDificuldadeAluno = descritoresAluno[0];
+  const questoesCorrigidasAluno = selectedStudentResponse
+    ? selectedStudentResponse.ordem_questoes.map((codigoQuestao, index) => {
+      const questao = questaoPorCodigo.get(codigoQuestao);
+      if (!questao) return null;
+      const respostaAluno = selectedStudentResponse.respostas[codigoQuestao];
+      const acertou = respostaAluno === questao.gabarito;
+      const descritor = descritorPorCodigo.get(questao.descritor_codigo);
+      const alternativaTexto: Record<AlternativaKey, string> = {
+        A: questao.alternativa_a,
+        B: questao.alternativa_b,
+        C: questao.alternativa_c,
+        D: questao.alternativa_d,
+        E: questao.alternativa_e,
+      };
+      return {
+        index: index + 1,
+        questao,
+        descritor,
+        respostaAluno,
+        acertou,
+        alternativaTexto,
+      };
+    }).filter((item): item is NonNullable<typeof item> => item !== null)
+    : [];
+
+  function exportarVisaoGeral(format: "md" | "pdf") {
+    const title = "SIDEP-CE - Relatório Geral";
+    const metrics = [
+      ["Escolas", String(schools.length)],
+      ["Professores", String(teachers.length)],
+      ["Avaliações", String(assessments.length)],
+      ["Respostas", String(respostasEscopo.length)],
+      ["Média geral", `${mediaGeral}%`],
+    ];
+    const statusRows = statusResumo.map((item) => [item.label, String(item.total)]);
+    const componentRows = componentesChart.map((item) => [item.label, item.detalhe, `${item.value}%`]);
+    const criticalRows = descritoresCriticos.map((item) => [item.codigo, item.descricao, item.detalhe, `${item.value}%`]);
+    const markdown = [
+      `# ${title}`,
+      "",
+      `Gerado em ${formatDateTime(new Date().toISOString())}.`,
+      "",
+      `**Escopo:** ${scopeLabel}`,
+      "",
+      "## Indicadores",
+      markdownTable(["Indicador", "Valor"], metrics),
+      "",
+      "## Status das avaliações",
+      markdownTable(["Status", "Total"], statusRows),
+      "",
+      "## Desempenho por componente",
+      markdownTable(["Componente", "Acertos", "Resultado"], componentRows),
+      "",
+      "## Descritores críticos",
+      markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows),
+      "",
+      "## Avaliações recentes",
+      markdownTable(["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes),
+    ].join("\n");
+    const htmlSections = [
+      `<section><h2>Indicadores</h2><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
+      `<section><h2>Status das avaliações</h2>${htmlTable(["Status", "Total"], statusRows)}</section>`,
+      `<section><h2>Desempenho por componente</h2>${htmlTable(["Componente", "Acertos", "Resultado"], componentRows)}</section>`,
+      `<section><h2>Descritores críticos</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
+      `<section><h2>Avaliações recentes</h2>${htmlTable(["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes)}</section>`,
+    ];
+    exportReport("sidep-ce-relatorio-geral", title, markdown, htmlSections, format);
+  }
+
+  function exportarAvaliacao(format: "md" | "pdf") {
+    if (!selectedAssessment) {
+      setMessage("Selecione uma avaliação para exportar.");
+      return;
+    }
+    const title = `SIDEP-CE - Relatório da Avaliação ${selectedAssessment.codigo_acesso}`;
+    const metrics = [
+      ["Código", selectedAssessment.codigo_acesso],
+      ["Turma", selectedAssessment.turma_codigo],
+      ["Status", selectedAssessment.status ?? "rascunho"],
+      ["Respostas", String(respostasDaAvaliacaoSelecionada.length)],
+      ["Média", `${mediaAvaliacaoSelecionada}%`],
+      ["Criada/Aberta", formatDateTime(selectedAssessment.codigo_bloqueado_em ?? selectedAssessment.inicio_em)],
+    ];
+    const criticalRows = descritoresCriticosAvaliacao.map((item) => [item.codigo, item.descricao, item.detalhe, `${item.value}%`]);
+    const markdown = [
+      `# ${title}`,
+      "",
+      `**Título:** ${selectedAssessment.titulo}`,
+      `**Curso:** ${selectedAssessment.curso_tecnico}`,
+      `**Componentes:** ${selectedAssessment.componentes}`,
+      "",
+      "## Indicadores",
+      markdownTable(["Campo", "Valor"], metrics),
+      "",
+      "## Descritores críticos da avaliação",
+      markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows),
+      "",
+      "## Alunos da avaliação",
+      markdownTable(["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao),
+    ].join("\n");
+    const htmlSections = [
+      `<section><h2>Dados da avaliação</h2><p><strong>Título:</strong> ${escapeHtml(selectedAssessment.titulo)}</p><p><strong>Curso:</strong> ${escapeHtml(selectedAssessment.curso_tecnico)}</p><p><strong>Componentes:</strong> ${escapeHtml(selectedAssessment.componentes)}</p><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
+      `<section><h2>Descritores críticos da avaliação</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
+      `<section><h2>Alunos da avaliação</h2>${htmlTable(["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao)}</section>`,
+    ];
+    exportReport(`sidep-ce-avaliacao-${slugReport(selectedAssessment.codigo_acesso)}`, title, markdown, htmlSections, format);
+  }
+
+  function exportarIndividual(format: "md" | "pdf") {
+    if (!selectedStudentResponse) {
+      setMessage("Selecione uma resposta de aluno para exportar.");
+      return;
+    }
+    const title = `SIDEP-CE - Relatório Individual - ${selectedStudentResponse.estudante_nome}`;
+    const metrics = [
+      ["Aluno", selectedStudentResponse.estudante_nome],
+      ["Turma", selectedStudentResponse.turma_codigo],
+      ["Avaliação", selectedStudentResponse.avaliacao_codigo],
+      ["Resultado", `${selectedStudentResponse.percentual_bruto}%`],
+      ["Acertos", `${selectedStudentResponse.acertos}/${selectedStudentResponse.total_questoes}`],
+      ["Envio", formatDateTime(selectedStudentResponse.enviado_em)],
+    ];
+    const componentRows = componentesAluno.map((item) => [item.label, item.detalhe, `${item.value}%`]);
+    const descriptorRows = descritoresAluno.map((item) => [item.codigo, item.label.replace(`${item.codigo} - `, ""), item.detalhe, `${item.value}%`]);
+    const questionRows = questoesCorrigidasAluno.map((item) => [
+      String(item.index),
+      item.questao.codigo,
+      item.questao.componente_curricular,
+      item.questao.descritor_codigo,
+      item.respostaAluno,
+      item.questao.gabarito,
+      item.acertou ? "Acertou" : "Errou",
+    ]);
+    const questionsMarkdown = questoesCorrigidasAluno.map((item) => [
+      `### ${item.index}. ${item.questao.codigo} - ${item.acertou ? "Acertou" : "Errou"}`,
+      item.questao.enunciado,
+      "",
+      `- A) ${item.alternativaTexto.A}`,
+      `- B) ${item.alternativaTexto.B}`,
+      `- C) ${item.alternativaTexto.C}`,
+      `- D) ${item.alternativaTexto.D}`,
+      `- E) ${item.alternativaTexto.E}`,
+      `- Resposta do aluno: ${item.respostaAluno}`,
+      `- Gabarito: ${item.questao.gabarito}`,
+      `- Descritor: ${item.descritor?.descricao ?? item.questao.descritor_codigo}`,
+    ].join("\n")).join("\n\n");
+    const questionsHtml = questoesCorrigidasAluno.map((item) => `
+      <article class="question ${item.acertou ? "" : "wrong"}">
+        <h3>${item.index}. ${escapeHtml(item.questao.codigo)} - ${item.acertou ? "Acertou" : "Errou"}</h3>
+        <p>${escapeHtml(item.questao.enunciado)}</p>
+        <p><strong>A)</strong> ${escapeHtml(item.alternativaTexto.A)}</p>
+        <p><strong>B)</strong> ${escapeHtml(item.alternativaTexto.B)}</p>
+        <p><strong>C)</strong> ${escapeHtml(item.alternativaTexto.C)}</p>
+        <p><strong>D)</strong> ${escapeHtml(item.alternativaTexto.D)}</p>
+        <p><strong>E)</strong> ${escapeHtml(item.alternativaTexto.E)}</p>
+        <p><strong>Resposta do aluno:</strong> ${escapeHtml(item.respostaAluno)} · <strong>Gabarito:</strong> ${escapeHtml(item.questao.gabarito)}</p>
+        <p><strong>Descritor:</strong> ${escapeHtml(item.descritor?.descricao ?? item.questao.descritor_codigo)}</p>
+      </article>
+    `).join("");
+    const markdown = [
+      `# ${title}`,
+      "",
+      "## Síntese",
+      markdownTable(["Campo", "Valor"], metrics),
+      "",
+      "## Melhor desempenho por componente",
+      markdownTable(["Componente", "Acertos", "Resultado"], componentRows),
+      "",
+      "## Dificuldades por descritor",
+      markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], descriptorRows),
+      "",
+      "## Prova corrigida",
+      markdownTable(["Nº", "Questão", "Componente", "Descritor", "Resposta", "Gabarito", "Situação"], questionRows),
+      "",
+      questionsMarkdown,
+    ].join("\n");
+    const htmlSections = [
+      `<section><h2>Síntese</h2><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
+      `<section><h2>Melhor desempenho por componente</h2>${htmlTable(["Componente", "Acertos", "Resultado"], componentRows)}</section>`,
+      `<section><h2>Dificuldades por descritor</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], descriptorRows)}</section>`,
+      `<section><h2>Prova corrigida</h2>${htmlTable(["Nº", "Questão", "Componente", "Descritor", "Resposta", "Gabarito", "Situação"], questionRows)}${questionsHtml}</section>`,
+    ];
+    exportReport(`sidep-ce-individual-${slugReport(selectedStudentResponse.estudante_nome)}`, title, markdown, htmlSections, format);
+  }
+
+  function exportarPedagogico(format: "md" | "pdf") {
+    const title = "SIDEP-CE - Relatório Pedagógico";
+    const priorityRows = [
+      ["Prioridade imediata", prioridadePedagogica ? `${prioridadePedagogica.codigo} - ${prioridadePedagogica.descricao}` : "Sem dado suficiente"],
+      ["Componente mais frágil", componenteMaisFragil ? `${componenteMaisFragil.label} (${componenteMaisFragil.value}%)` : "Sem dado suficiente"],
+      ["Competência crítica", competenciaMaisFragil ? `${competenciaMaisFragil.codigo} - ${competenciaMaisFragil.descricao}` : "Sem dado suficiente"],
+      ["Descritores analisados", String(descritorResumo.size)],
+    ];
+    const criticalRows = descritoresCriticos.map((item) => [item.codigo, item.descricao, item.detalhe, `${item.value}%`]);
+    const strongRows = descritoresFortes.map((item) => [item.codigo, item.descricao, item.detalhe, `${item.value}%`]);
+    const componentRows = componentesChart.map((item) => [item.label, item.detalhe, `${item.value}%`]);
+    const competenceRows = competenciasChart.map((item) => [item.codigo, item.descricao, item.detalhe, `${item.value}%`]);
+    const markdown = [
+      `# ${title}`,
+      "",
+      `**Escopo:** ${scopeLabel}`,
+      "",
+      "## Síntese pedagógica",
+      markdownTable(["Leitura", "Resultado"], priorityRows),
+      "",
+      "## Ação sugerida",
+      "1. Reensinar com foco no descritor de menor desempenho.",
+      "2. Aplicar prática curta no componente mais frágil.",
+      "3. Reavaliar evidência com novos itens do mesmo descritor.",
+      "",
+      "## Descritores que exigem intervenção",
+      markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows),
+      "",
+      "## Descritores consolidados",
+      markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], strongRows),
+      "",
+      "## Componentes curriculares",
+      markdownTable(["Componente", "Acertos", "Resultado"], componentRows),
+      "",
+      "## Competências amplas",
+      markdownTable(["Competência", "Descrição", "Acertos", "Resultado"], competenceRows),
+    ].join("\n");
+    const htmlSections = [
+      `<section><h2>Síntese pedagógica</h2>${htmlTable(["Leitura", "Resultado"], priorityRows)}</section>`,
+      `<section><h2>Ação sugerida</h2><ol><li>Reensinar com foco no descritor de menor desempenho.</li><li>Aplicar prática curta no componente mais frágil.</li><li>Reavaliar evidência com novos itens do mesmo descritor.</li></ol></section>`,
+      `<section><h2>Descritores que exigem intervenção</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
+      `<section><h2>Descritores consolidados</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], strongRows)}</section>`,
+      `<section><h2>Componentes curriculares</h2>${htmlTable(["Componente", "Acertos", "Resultado"], componentRows)}</section>`,
+      `<section><h2>Competências amplas</h2>${htmlTable(["Competência", "Descrição", "Acertos", "Resultado"], competenceRows)}</section>`,
+    ];
+    exportReport("sidep-ce-relatorio-pedagogico", title, markdown, htmlSections, format);
   }
 
   function exportarBackupSemanal() {
@@ -4178,16 +5079,16 @@ function Reports({
         professores: teachers.length,
         avaliacoes: assessments.length,
         respostas: respostasEscopo.length,
-        questoes: questoes.length,
+        questoes: canExportFullPedagogicalBase ? questoes.length : questoesEscopo.length,
       },
       dados: {
         escolas: schools,
         professores: teachers,
         avaliacoes: assessments,
         respostas: respostasEscopo,
-        competencias,
-        descritores,
-        questoes,
+        competencias: canExportFullPedagogicalBase ? competencias : competenciasEscopo,
+        descritores: canExportFullPedagogicalBase ? descritores : descritoresEscopo,
+        questoes: canExportFullPedagogicalBase ? questoes : questoesEscopo,
       },
     };
 
@@ -4273,62 +5174,569 @@ function Reports({
 
   return (
     <section className="panel">
-      <h2>Relatórios e Learning Analytics</h2>
-      <p>Área exclusiva de professor e gestão para diagnóstico individual, turma, escola, CREDE/SEFOR e rede.</p>
+      <div className="dashboard-hero subtab-banner">
+        <div>
+          <span className="eyebrow">Relatórios e Learning Analytics</span>
+          <h2>Indicadores por aluno, turma e percurso formativo</h2>
+          <p>Diagnóstico individual e consolidado com recorte automático por professor, escola, CREDE/SEFOR, SEDUC ou administrador.</p>
+        </div>
+        <div className="dashboard-scope">
+          <span>Escopo</span>
+          <strong>{authRoleLabel(currentUser.role)}</strong>
+        </div>
+      </div>
       <div className="notice">
-        Escopo da sessão: <strong>{authRoleLabel(currentUser.role)}</strong>
+        <strong>Permissão aplicada:</strong> {scopeLabel}
         {currentUser.regional_codigo && <span> · {currentUser.regional_codigo}</span>}
         {currentUser.escola_inep && <span> · INEP {currentUser.escola_inep}</span>}.
-        Os números abaixo já respeitam esse recorte de acesso.
+        Os números abaixo já respeitam esse recorte de acesso e não misturam dados de outra escola, regional ou professor.
       </div>
       <div className="notice">
-        <strong>Estratégia gratuita do piloto:</strong> respostas consolidadas em JSON por aluno/prova,
-        relatórios calculados sob demanda e backup semanal exportável.
-        <button className="secondary small inline-action" type="button" onClick={exportarBackupSemanal}>
-          Baixar backup semanal JSON
-        </button>
-        {currentUser.role === "administrador" && (
-          <button className="secondary small inline-action" type="button" onClick={subirBaseLocalParaSupabase} disabled={syncing}>
-            {syncing ? "Subindo..." : "Subir base local para Supabase"}
-          </button>
-        )}
+        <strong>Como a turma fica vinculada:</strong> a avaliação grava o código da turma no momento da criação.
+        Quando o estudante envia a prova, a resposta registra o mesmo código da avaliação, a turma, o estudante e o horário de envio.
+        O relatório cruza resposta e avaliação pelo código da prova, preservando rastreabilidade por turma e por aluno.
       </div>
-      <div className="kpis">
-        <article className="kpi"><span>Escolas cadastradas</span><strong>{schools.length}</strong></article>
-        <article className="kpi"><span>Professores cadastrados</span><strong>{teachers.length}</strong></article>
-        <article className="kpi"><span>Avaliações criadas</span><strong>{assessments.length}</strong></article>
-        <article className="kpi"><span>Respostas recebidas</span><strong>{respostasEscopo.length}</strong></article>
-        <article className="kpi"><span>Média geral</span><strong>{mediaGeral}%</strong></article>
+      {(avaliacoesSemTurma > 0 || respostasSemVinculo > 0) && (
+        <div className="notice warning">
+          <strong>Atenção aos vínculos:</strong> {avaliacoesSemTurma} avaliação(ões) sem turma informada e {respostasSemVinculo} resposta(s) sem avaliação encontrada neste escopo.
+          Revise esses registros antes de usar os dados em decisão pedagógica.
+        </div>
+      )}
+      <div className="item-bank-tabs report-tabs" role="tablist" aria-label="Subabas de relatórios">
+        <button className={activeReportTab === "geral" ? "active" : ""} onClick={() => setActiveReportTab("geral")}>Visão Geral</button>
+        <button className={activeReportTab === "avaliacao" ? "active" : ""} onClick={() => setActiveReportTab("avaliacao")}>Por Avaliação</button>
+        <button className={activeReportTab === "individual" ? "active" : ""} onClick={() => setActiveReportTab("individual")}>Individual</button>
+        <button className={activeReportTab === "pedagogico" ? "active" : ""} onClick={() => setActiveReportTab("pedagogico")}>Pedagógico</button>
+        <button className={activeReportTab === "exportacoes" ? "active" : ""} onClick={() => setActiveReportTab("exportacoes")}>Exportações</button>
       </div>
-      <DataTable headers={["Aluno", "Avaliação", "Turma", "Acertos", "Resultado", "Envio"]} rows={linhasAlunos} />
-      <DataTable headers={["Avaliação", "Turma", "Status", "Respostas", "Média"]} rows={linhasTurmas} />
-      <DataTable
-        headers={["Descritor", "Descrição", "Acertos", "Resultado"]}
-        rows={Array.from(descritorResumo.entries()).map(([codigo, resumo]) => [
-          codigo,
-          descritorPorCodigo.get(codigo)?.descricao ?? "",
-          `${resumo.acertos}/${resumo.total}`,
-          percent(resumo),
-        ])}
-      />
-      <DataTable
-        headers={["Componente", "Acertos", "Resultado"]}
-        rows={Array.from(componenteResumo.entries()).map(([componente, resumo]) => [
-          componente,
-          `${resumo.acertos}/${resumo.total}`,
-          percent(resumo),
-        ])}
-      />
-      <DataTable
-        headers={["Competência", "Descrição", "Acertos", "Resultado"]}
-        rows={Array.from(competenciaResumo.entries()).map(([codigo, resumo]) => [
-          codigo,
-          competenciaPorCodigo.get(codigo)?.descricao ?? "",
-          `${resumo.acertos}/${resumo.total}`,
-          percent(resumo),
-        ])}
-      />
+
+      {activeReportTab === "geral" && (
+        <div className="report-tab-content">
+          <div className="dashboard-kpis">
+            <article className="dashboard-kpi"><span>Escolas</span><strong>{schools.length}</strong><small>unidades dentro do escopo</small></article>
+            <article className="dashboard-kpi"><span>Professores</span><strong>{teachers.length}</strong><small>profissionais vinculados</small></article>
+            <article className="dashboard-kpi"><span>Avaliações</span><strong>{assessments.length}</strong><small>aplicações criadas</small></article>
+            <article className="dashboard-kpi"><span>Respostas</span><strong>{respostasEscopo.length}</strong><small>envios recebidos</small></article>
+            <article className="dashboard-kpi"><span>Média geral</span><strong>{mediaGeral}%</strong><small>resultado bruto consolidado</small></article>
+          </div>
+
+          <div className="dashboard-grid two">
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Desempenho por componente</h3>
+                <span className="tag">acertos</span>
+              </div>
+              <MiniBarList items={componentesChart} empty="Ainda não há respostas para montar o gráfico por componente." />
+            </section>
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Status das avaliações</h3>
+                <span className="tag">aplicações</span>
+              </div>
+              <MiniBarList
+                items={statusResumo.map((item) => ({
+                  label: item.label,
+                  value: assessments.length ? Math.round((item.total / assessments.length) * 10000) / 100 : 0,
+                  detalhe: `${item.total} avaliação(ões)`,
+                }))}
+                empty="Nenhuma avaliação criada neste escopo."
+              />
+            </section>
+          </div>
+
+          <section className="dashboard-card">
+            <div className="card-heading">
+              <h3>Descritores críticos do escopo</h3>
+              <span className="tag">prioridade pedagógica</span>
+            </div>
+            <MiniBarList
+              items={descritoresCriticos.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
+              empty="Ainda não há respostas suficientes para apontar descritores críticos."
+              inverted
+            />
+          </section>
+
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Avaliações recentes</h3>
+                <p>Resumo operacional para acompanhar aplicações abertas, encerradas e corrigidas.</p>
+              </div>
+            </div>
+            <DataTable
+              headers={["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"]}
+              rows={linhasAvaliacoesRecentes}
+            />
+          </section>
+        </div>
+      )}
+
+      {activeReportTab === "avaliacao" && (
+        <div className="report-tab-content">
+          <div className="toolbar report-filter">
+            <label>
+              Avaliação
+              <select value={selectedAssessment?.codigo_acesso ?? ""} onChange={(event) => setSelectedAssessmentCode(event.target.value)}>
+                {assessments.map((assessment) => (
+                  <option key={assessment.codigo_acesso} value={assessment.codigo_acesso}>
+                    {assessment.codigo_acesso} - {assessment.turma_codigo} - {assessment.titulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {selectedAssessment ? (
+            <>
+              <div className="dashboard-kpis">
+                <article className="dashboard-kpi"><span>Código</span><strong>{selectedAssessment.codigo_acesso}</strong><small>identificador fixo da aplicação</small></article>
+                <article className="dashboard-kpi"><span>Turma</span><strong>{selectedAssessment.turma_codigo}</strong><small>{selectedAssessment.curso_tecnico}</small></article>
+                <article className="dashboard-kpi"><span>Respostas</span><strong>{respostasDaAvaliacaoSelecionada.length}</strong><small>alunos que enviaram</small></article>
+                <article className="dashboard-kpi"><span>Média</span><strong>{mediaAvaliacaoSelecionada}%</strong><small>resultado bruto da aplicação</small></article>
+                <article className="dashboard-kpi"><span>Status</span><strong>{selectedAssessment.status ?? "rascunho"}</strong><small>{formatDateTime(selectedAssessment.codigo_bloqueado_em ?? selectedAssessment.inicio_em)}</small></article>
+              </div>
+
+              <div className="dashboard-grid two">
+                <section className="dashboard-card">
+                  <div className="card-heading">
+                    <h3>Descritores críticos da avaliação</h3>
+                    <span className="tag">intervenção</span>
+                  </div>
+                  <MiniBarList
+                    items={descritoresCriticosAvaliacao.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
+                    empty="Esta avaliação ainda não possui respostas suficientes para análise por descritor."
+                    inverted
+                  />
+                </section>
+                <section className="dashboard-card">
+                  <div className="card-heading">
+                    <h3>Dados da aplicação</h3>
+                    <span className="tag">auditoria</span>
+                  </div>
+                  <div className="report-facts">
+                    <p><strong>Título:</strong> {selectedAssessment.titulo}</p>
+                    <p><strong>Componentes:</strong> {selectedAssessment.componentes}</p>
+                    <p><strong>Questões:</strong> {selectedAssessment.questoes_codigos?.length ?? selectedAssessment.quantidade_questoes}</p>
+                    <p><strong>Criada/aberta:</strong> {formatDateTime(selectedAssessment.codigo_bloqueado_em ?? selectedAssessment.inicio_em)}</p>
+                    <p><strong>Encerrada/corrigida:</strong> {formatDateTime(selectedAssessment.fim_em)}</p>
+                  </div>
+                </section>
+              </div>
+
+              <section className="subpanel wide report-block">
+                <div className="section-heading">
+                  <div>
+                    <h3>Alunos desta avaliação</h3>
+                    <p>Lista individual da aplicação selecionada, com envio e resultado bruto.</p>
+                  </div>
+                </div>
+                <DataTable
+                  headers={["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
+                  rows={linhasAlunosAvaliacao}
+                />
+              </section>
+            </>
+          ) : (
+            <p className="empty">Nenhuma avaliação encontrada neste escopo.</p>
+          )}
+        </div>
+      )}
+
+      {activeReportTab === "individual" && (
+        <div className="report-tab-content">
+          <div className="toolbar report-filter">
+            <label>
+              Aluno e avaliação respondida
+              <select value={selectedStudentResponse?.id ?? ""} onChange={(event) => setSelectedResponseId(event.target.value)}>
+                {respostasEscopo.map((resposta) => (
+                  <option key={resposta.id} value={resposta.id}>
+                    {resposta.estudante_nome} - {resposta.turma_codigo} - {resposta.avaliacao_codigo} - {formatDateTime(resposta.enviado_em)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {selectedStudentResponse ? (
+            <>
+              <div className="dashboard-kpis">
+                <article className="dashboard-kpi"><span>Aluno</span><strong>{selectedStudentResponse.estudante_nome}</strong><small>{selectedStudentResponse.turma_codigo}</small></article>
+                <article className="dashboard-kpi"><span>Avaliação</span><strong>{selectedStudentResponse.avaliacao_codigo}</strong><small>{selectedStudentAssessment?.titulo ?? selectedStudentResponse.avaliacao_titulo}</small></article>
+                <article className="dashboard-kpi"><span>Resultado</span><strong>{selectedStudentResponse.percentual_bruto}%</strong><small>{selectedStudentResponse.acertos}/{selectedStudentResponse.total_questoes} acertos</small></article>
+                <article className="dashboard-kpi"><span>Melhor desempenho</span><strong>{melhorComponenteAluno?.value ?? 0}%</strong><small>{melhorComponenteAluno?.label ?? "Sem dado suficiente"}</small></article>
+                <article className="dashboard-kpi"><span>Maior dificuldade</span><strong>{maiorDificuldadeAluno?.value ?? 0}%</strong><small>{maiorDificuldadeAluno?.codigo ?? "Sem dado suficiente"}</small></article>
+              </div>
+
+              <div className="dashboard-grid two">
+                <section className="dashboard-card">
+                  <div className="card-heading">
+                    <h3>Onde o aluno foi melhor</h3>
+                    <span className="tag">componentes</span>
+                  </div>
+                  <MiniBarList items={componentesAluno} empty="Sem dados por componente para este aluno." />
+                </section>
+                <section className="dashboard-card">
+                  <div className="card-heading">
+                    <h3>Onde precisa de recomposição</h3>
+                    <span className="tag">descritores</span>
+                  </div>
+                  <MiniBarList items={descritoresAluno} empty="Sem dados por descritor para este aluno." inverted />
+                </section>
+              </div>
+
+              <section className="subpanel wide report-block">
+                <div className="section-heading">
+                  <div>
+                    <h3>Prova respondida e corrigida</h3>
+                    <p>Conferência item a item com resposta marcada, gabarito, descritor e componente curricular.</p>
+                  </div>
+                </div>
+                <div className="corrected-question-list">
+                  {questoesCorrigidasAluno.map((item) => (
+                    <article className={item.acertou ? "corrected-question correct" : "corrected-question wrong"} key={item.questao.codigo}>
+                      <div className="corrected-question-head">
+                        <div>
+                          <strong>{item.index}. {item.questao.codigo}</strong>
+                          <span>{item.questao.componente_curricular} · {item.questao.descritor_codigo}</span>
+                        </div>
+                        <span className={item.acertou ? "result-chip correct" : "result-chip wrong"}>
+                          {item.acertou ? "Acertou" : "Errou"}
+                        </span>
+                      </div>
+                      <p>{item.questao.enunciado}</p>
+                      <div className="answer-grid">
+                        {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((alternativa) => (
+                          <div
+                            className={[
+                              "answer-option",
+                              alternativa === item.questao.gabarito ? "is-key" : "",
+                              alternativa === item.respostaAluno ? "is-selected" : "",
+                            ].filter(Boolean).join(" ")}
+                            key={alternativa}
+                          >
+                            <strong>{alternativa}</strong>
+                            <span>{item.alternativaTexto[alternativa]}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="correction-foot">
+                        <span>Resposta do aluno: <strong>{item.respostaAluno}</strong></span>
+                        <span>Gabarito: <strong>{item.questao.gabarito}</strong></span>
+                        <span>Descritor: <strong>{item.descritor?.descricao ?? item.questao.descritor_codigo}</strong></span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="subpanel wide report-block">
+                <div className="section-heading">
+                  <div>
+                    <h3>Histórico individual no escopo</h3>
+                    <p>Lista completa das respostas visíveis para conferência e auditoria.</p>
+                  </div>
+                </div>
+                <DataTable
+                  headers={["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
+                  rows={linhasAlunos}
+                />
+              </section>
+            </>
+          ) : (
+            <section className="subpanel wide report-block">
+              <div className="section-heading">
+                <div>
+                  <h3>Relatório individual por aluno</h3>
+                  <p>Nenhuma resposta foi encontrada neste escopo.</p>
+                </div>
+              </div>
+              <p className="empty">Quando os estudantes enviarem avaliações, a prova corrigida aparecerá aqui.</p>
+            </section>
+          )}
+        </div>
+      )}
+
+      {activeReportTab === "pedagogico" && (
+        <div className="report-tab-content">
+          <div className="dashboard-kpis">
+            <article className="dashboard-kpi">
+              <span>Prioridade imediata</span>
+              <strong>{prioridadePedagogica?.codigo ?? "-"}</strong>
+              <small>{prioridadePedagogica?.descricao ?? "Aguardando respostas para análise por descritor."}</small>
+            </article>
+            <article className="dashboard-kpi">
+              <span>Componente mais frágil</span>
+              <strong>{componenteMaisFragil?.value ?? 0}%</strong>
+              <small>{componenteMaisFragil?.label ?? "Sem dado suficiente"}</small>
+            </article>
+            <article className="dashboard-kpi">
+              <span>Competência crítica</span>
+              <strong>{competenciaMaisFragil?.codigo ?? "-"}</strong>
+              <small>{competenciaMaisFragil?.descricao ?? "Sem dado suficiente"}</small>
+            </article>
+            <article className="dashboard-kpi">
+              <span>Descritores analisados</span>
+              <strong>{descritorResumo.size}</strong>
+              <small>com respostas registradas no escopo</small>
+            </article>
+          </div>
+
+          <section className="dashboard-card pedagogy-action-card">
+            <div className="card-heading">
+              <h3>Leitura pedagógica sugerida</h3>
+              <span className="tag">ação docente</span>
+            </div>
+            {prioridadePedagogica ? (
+              <div className="pedagogy-actions">
+                <article>
+                  <strong>1. Reensinar com foco</strong>
+                  <span>Comece pelo descritor {prioridadePedagogica.codigo}, pois ele apresenta o menor desempenho dentro do escopo atual.</span>
+                </article>
+                <article>
+                  <strong>2. Aplicar prática curta</strong>
+                  <span>Use uma atividade contextualizada do componente {componenteMaisFragil?.label ?? "mais frágil"} para verificar se a dificuldade é conceitual ou procedimental.</span>
+                </article>
+                <article>
+                  <strong>3. Reavaliar evidência</strong>
+                  <span>Depois da intervenção, aplique novos itens do mesmo descritor para comparar evolução diagnóstica, formativa e final.</span>
+                </article>
+              </div>
+            ) : (
+              <p className="empty">Quando houver respostas, o sistema sugerirá prioridades pedagógicas com base nos descritores de menor desempenho.</p>
+            )}
+          </section>
+
+          <div className="dashboard-grid two">
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Descritores que exigem intervenção</h3>
+                <span className="tag">menor desempenho</span>
+              </div>
+              <MiniBarList
+                items={descritoresCriticos.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
+                empty="Ainda não há respostas suficientes para apontar descritores críticos."
+                inverted
+              />
+            </section>
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Descritores consolidados</h3>
+                <span className="tag">pontos fortes</span>
+              </div>
+              <MiniBarList
+                items={descritoresFortes.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
+                empty="Ainda não há respostas suficientes para apontar pontos fortes."
+              />
+            </section>
+          </div>
+
+          <div className="dashboard-grid two">
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Componentes curriculares</h3>
+                <span className="tag">planejamento</span>
+              </div>
+              <MiniBarList items={componentesChart} empty="Ainda não há respostas por componente." />
+            </section>
+            <section className="dashboard-card">
+              <div className="card-heading">
+                <h3>Competências amplas</h3>
+                <span className="tag">matriz</span>
+              </div>
+              <MiniBarList
+                items={competenciasChart.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
+                empty="Ainda não há respostas por competência."
+                inverted
+              />
+            </section>
+          </div>
+
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Detalhamento por descritor</h3>
+                <p>Tabela de conferência para auditoria pedagógica e análise fina das habilidades.</p>
+              </div>
+            </div>
+            <DataTable
+              headers={["Descritor", "Descrição", "Acertos", "Resultado"]}
+              rows={Array.from(descritorResumo.entries()).map(([codigo, resumo]) => [
+                codigo,
+                descritorPorCodigo.get(codigo)?.descricao ?? "",
+                `${resumo.acertos}/${resumo.total}`,
+                percent(resumo),
+              ])}
+            />
+          </section>
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Detalhamento por componente</h3>
+                <p>Base para planejamento por disciplina/componente técnico.</p>
+              </div>
+            </div>
+            <DataTable
+              headers={["Componente", "Acertos", "Resultado"]}
+              rows={Array.from(componenteResumo.entries()).map(([componente, resumo]) => [
+                componente,
+                `${resumo.acertos}/${resumo.total}`,
+                percent(resumo),
+              ])}
+            />
+          </section>
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Detalhamento por competência</h3>
+                <p>Consolidação curricular para leitura da matriz por competência ampla.</p>
+              </div>
+            </div>
+            <DataTable
+              headers={["Competência", "Descrição", "Acertos", "Resultado"]}
+              rows={Array.from(competenciaResumo.entries()).map(([codigo, resumo]) => [
+                codigo,
+                competenciaPorCodigo.get(codigo)?.descricao ?? "",
+                `${resumo.acertos}/${resumo.total}`,
+                percent(resumo),
+              ])}
+            />
+          </section>
+        </div>
+      )}
+
+      {activeReportTab === "exportacoes" && (
+        <div className="report-tab-content">
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Exportações dos relatórios</h3>
+                <p>Gere arquivos em Markdown ou abra a versão imprimível para salvar em PDF. Todas as opções respeitam o escopo e os filtros selecionados.</p>
+              </div>
+            </div>
+            <div className="notice">
+              O arquivo exportado respeita o perfil do usuário. Professor, escola e CREDE/SEFOR não exportam dados fora de sua autorização.
+            </div>
+          </section>
+
+          <div className="export-grid">
+            <section className="dashboard-card export-card">
+              <div className="card-heading">
+                <h3>Visão Geral</h3>
+                <span className="tag">escopo atual</span>
+              </div>
+              <p>Exporta indicadores gerais, status das avaliações, componentes, descritores críticos e avaliações recentes.</p>
+              <div className="export-actions">
+                <button className="secondary small" type="button" onClick={() => exportarVisaoGeral("md")}>Exportar MD</button>
+                <button className="secondary small" type="button" onClick={() => exportarVisaoGeral("pdf")}>Exportar PDF</button>
+              </div>
+            </section>
+
+            <section className="dashboard-card export-card">
+              <div className="card-heading">
+                <h3>Por Avaliação</h3>
+                <span className="tag">filtro</span>
+              </div>
+              <label>
+                Avaliação
+                <select value={selectedAssessment?.codigo_acesso ?? ""} onChange={(event) => setSelectedAssessmentCode(event.target.value)}>
+                  {assessments.map((assessment) => (
+                    <option key={assessment.codigo_acesso} value={assessment.codigo_acesso}>
+                      {assessment.codigo_acesso} - {assessment.turma_codigo} - {assessment.titulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p>Exporta dados da aplicação, alunos respondentes e descritores críticos da avaliação selecionada.</p>
+              <div className="export-actions">
+                <button className="secondary small" type="button" onClick={() => exportarAvaliacao("md")}>Exportar MD</button>
+                <button className="secondary small" type="button" onClick={() => exportarAvaliacao("pdf")}>Exportar PDF</button>
+              </div>
+            </section>
+
+            <section className="dashboard-card export-card">
+              <div className="card-heading">
+                <h3>Individual</h3>
+                <span className="tag">aluno</span>
+              </div>
+              <label>
+                Aluno e avaliação respondida
+                <select value={selectedStudentResponse?.id ?? ""} onChange={(event) => setSelectedResponseId(event.target.value)}>
+                  {respostasEscopo.map((resposta) => (
+                    <option key={resposta.id} value={resposta.id}>
+                      {resposta.estudante_nome} - {resposta.turma_codigo} - {resposta.avaliacao_codigo} - {formatDateTime(resposta.enviado_em)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p>Exporta síntese individual, pontos fortes, dificuldades por descritor e prova corrigida do aluno selecionado.</p>
+              <div className="export-actions">
+                <button className="secondary small" type="button" onClick={() => exportarIndividual("md")}>Exportar MD</button>
+                <button className="secondary small" type="button" onClick={() => exportarIndividual("pdf")}>Exportar PDF</button>
+              </div>
+            </section>
+
+            <section className="dashboard-card export-card">
+              <div className="card-heading">
+                <h3>Pedagógico</h3>
+                <span className="tag">intervenção</span>
+              </div>
+              <p>Exporta prioridade pedagógica, ação sugerida, descritores críticos, descritores consolidados, componentes e competências.</p>
+              <div className="export-actions">
+                <button className="secondary small" type="button" onClick={() => exportarPedagogico("md")}>Exportar MD</button>
+                <button className="secondary small" type="button" onClick={() => exportarPedagogico("pdf")}>Exportar PDF</button>
+              </div>
+            </section>
+
+            <section className="dashboard-card export-card">
+              <div className="card-heading">
+                <h3>Backup técnico</h3>
+                <span className="tag">JSON</span>
+              </div>
+              <p>Exporta backup semanal em JSON com respostas consolidadas por aluno/prova e dados permitidos pelo escopo.</p>
+              <div className="export-actions">
+                <button className="secondary small" type="button" onClick={exportarBackupSemanal}>Baixar backup JSON</button>
+                {currentUser.role === "administrador" && (
+                  <button className="secondary small" type="button" onClick={subirBaseLocalParaSupabase} disabled={syncing}>
+                    {syncing ? "Subindo..." : "Subir base local para Supabase"}
+                  </button>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function MiniBarList({
+  items,
+  empty,
+  inverted = false,
+}: {
+  items: Array<{ label: string; value: number; detalhe: string }>;
+  empty: string;
+  inverted?: boolean;
+}) {
+  if (!items.length) return <p className="empty">{empty}</p>;
+
+  return (
+    <div className="mini-bar-list">
+      {items.map((item) => (
+        <div className="mini-bar-row" key={item.label}>
+          <div className="mini-bar-meta">
+            <strong>{item.label}</strong>
+            <span>{item.detalhe} · {item.value}%</span>
+          </div>
+          <div className="mini-bar-track" aria-hidden="true">
+            <span
+              className={inverted ? "mini-bar-fill warning" : "mini-bar-fill"}
+              style={{ width: `${Math.max(4, Math.min(100, item.value))}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -4380,16 +5788,21 @@ function Field({
   value,
   onChange,
   placeholder,
+  readOnly = false,
+  helper,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
+  helper?: string;
 }) {
   return (
     <label>
       {label}
-      <input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+      <input value={value} placeholder={placeholder} readOnly={readOnly} onChange={(event) => onChange(event.target.value)} />
+      {helper && <small className="field-helper">{helper}</small>}
     </label>
   );
 }

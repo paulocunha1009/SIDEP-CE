@@ -105,6 +105,7 @@ export interface QuestaoDraft {
   alternativa_e: string;
   gabarito: AlternativaKey;
   justificativa: string;
+  imagem_url?: string;
   dificuldade_inicial: number;
   status: "rascunho" | "em_revisao" | "validada";
 }

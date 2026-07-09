@@ -1,7 +1,7 @@
 # SIDEP-CE - Metodologia de Mestrado e Regras de Negocio
 
-Versao: 0.7 - MVP online, governanca do banco, exportacao curricular e controle anti-repeticao  
-Atualizado em: 08/07/2026
+Versao: 0.8 - multcurso, governanca de avaliacoes, imagem opcional e escopo institucional  
+Atualizado em: 09/07/2026
 
 ## 1. Tese Central
 
@@ -142,8 +142,22 @@ Assim, a comunicacao correta do projeto e: o SIDEP-CE organiza a avaliacao por c
 14. Apos aberta a avaliacao, o codigo de acesso torna-se chave imutavel da aplicacao, vinculando respostas, auditoria, investigacao pedagogica e relatorios.
 15. Avaliacao criada por engano pode ser excluida somente se ainda nao possuir respostas registradas.
 16. Ao excluir uma avaliacao sem respostas, o codigo de acesso deve permanecer bloqueado e nao pode ser reaproveitado em nova aplicacao.
+17. Cada curso possui sua propria sequencia pedagogica de competencias, descritores e questoes.
+18. Competencias e descritores podem aparecer na interface como `C01`, `C02`, `D01`, `D02`, mas internamente devem ser escopados por curso quando necessario para evitar colisao no banco.
+19. Questoes tambem devem possuir sequencia propria por curso. O codigo e gerado automaticamente a partir da ultima questao cadastrada no curso, impedindo sobrescrita manual e reduzindo risco de quebra de chave.
+20. No cadastro de questao, o fluxo correto e: curso tecnico, componente curricular, descritor vinculado, enunciado, imagem opcional, alternativas, gabarito, justificativa, dificuldade inicial e status.
+21. Ao selecionar um componente curricular, o sistema deve exibir apenas os descritores daquele componente, preservando coerencia entre matriz, item e relatorio.
+22. Imagens em questoes sao opcionais. Sua ausencia nao altera a validade do item. Sua presenca deve estar pedagogicamente vinculada ao enunciado, como figura, diagrama, tabela, mapa, captura de tela ou situacao-problema visual.
 
-### 6.1 Status de Curadoria dos Itens
+### 6.1.1 Governanca Multcurso
+
+A evolucao do MVP incorporou uma regra multcurso para preparar o SIDEP-CE para outros cursos tecnicos da rede estadual. Essa regra evita que codigos pedagogicos iguais gerem conflito no banco de dados.
+
+Na interface, o professor continua lendo codigos simples, como `C01`, `D01` e `Q001`. Internamente, quando necessario, o sistema associa esses codigos ao curso tecnico. Assim, `C01` de Informatica e `C01` de Administracao podem coexistir, desde que cada um esteja vinculado ao seu curso, componentes e descritores.
+
+Essa decisao e relevante metodologicamente porque preserva a linguagem pedagogica simples para o professor e, ao mesmo tempo, garante consistencia tecnica para expansao estadual do banco de itens.
+
+### 6.2 Status de Curadoria dos Itens
 
 O MVP do SIDEP-CE passou a operar com tres situacoes principais para as questoes:
 
@@ -153,7 +167,7 @@ O MVP do SIDEP-CE passou a operar com tres situacoes principais para as questoes
 
 A regra pedagogica central e que apenas questoes `validada` podem ser usadas em avaliacoes. Questao em revisao ou rascunho permanece no banco para estudo, reescrita, validacao posterior ou descarte, mas nao deve chegar ao estudante.
 
-### 6.2 Fluxo de Validacao Docente
+### 6.3 Fluxo de Validacao Docente
 
 O fluxo de validacao implementado no MVP segue a seguinte ordem:
 
@@ -166,7 +180,7 @@ O fluxo de validacao implementado no MVP segue a seguinte ordem:
 
 Esse fluxo reforca a governanca pedagogica do banco, pois impede que itens gerados ou importados sejam aplicados sem leitura humana qualificada.
 
-### 6.3 Cobertura por Competencia e Descritor
+### 6.4 Cobertura por Competencia e Descritor
 
 O MVP tambem passou a exibir a cobertura do banco de itens por competencia e por descritor, com total de questoes, questoes validadas, questoes em revisao e rascunhos.
 
@@ -179,7 +193,7 @@ Essa leitura tem quatro finalidades:
 
 Para fins de aplicacao real, cada descritor prioritario deve possuir quantidade suficiente de itens validados, com diversidade de dificuldade, linguagem contextualizada e aderencia ao componente curricular.
 
-### 6.4 Controle de Acesso e Perfis Institucionais
+### 6.5 Controle de Acesso e Perfis Institucionais
 
 O SIDEP-CE passou a adotar uma logica de acesso por usuario e senha, substituindo o seletor livre de perfis do prototipo. A regra de negocio do MVP ficou definida da seguinte forma:
 
@@ -194,7 +208,7 @@ O SIDEP-CE passou a adotar uma logica de acesso por usuario e senha, substituind
 
 No primeiro acesso, escola e professor devem alterar a senha inicial. A redefinicao de senha e uma acao restrita ao Administrador. Quando a senha da escola e redefinida, volta para o INEP. Quando a senha do professor e redefinida, volta para o CPF cadastrado.
 
-### 6.5 Escopo de Permissao
+### 6.6 Escopo de Permissao
 
 As permissoes seguem o principio do menor acesso necessario:
 
@@ -207,7 +221,19 @@ As permissoes seguem o principio do menor acesso necessario:
 
 Essa separacao prepara o sistema para uso institucional, reduz exposicao indevida de dados e organiza a futura implementacao com autenticacao real, logs de auditoria e politicas de permissao no banco.
 
-### 6.6 Rastreabilidade da Avaliacao e Codigo de Aplicacao
+### 6.7 Escopo das Avaliacoes Criadas
+
+A visualizacao das avaliacoes criadas segue a mesma hierarquia institucional do sistema:
+
+- professor visualiza somente as provas criadas por ele;
+- gestao escolar visualiza as provas da propria escola;
+- CREDE/SEFOR visualiza as provas das escolas da sua regional;
+- SEDUC visualiza todas as provas da rede;
+- Administrador visualiza todas as provas e pode executar rotinas administrativas.
+
+Essa regra e essencial para proteger dados pedagogicos, evitar exposicao indevida entre escolas e manter coerencia entre autoria docente, acompanhamento escolar, gestao regional e monitoramento de rede.
+
+### 6.8 Rastreabilidade da Avaliacao e Codigo de Aplicacao
 
 No SIDEP-CE, o codigo de acesso nao e apenas uma senha temporaria para o estudante. Ele funciona como identificador operacional da aplicacao avaliativa. Por esse motivo, sua governanca precisa ser tratada como requisito metodologico, tecnico e psicometrico.
 
@@ -224,7 +250,7 @@ Regras adotadas no MVP:
 
 Essa regra fortalece a rastreabilidade da aplicacao, evita colisao de dados entre turmas, impede reaproveitamento indevido de codigos e preserva a integridade dos relatorios pedagogicos. Para a pesquisa de mestrado, esse controle contribui para a confiabilidade da base empirica, pois garante que cada conjunto de respostas esteja associado a uma aplicacao unica, identificavel e auditavel.
 
-### 6.7 Persistencia Online e Migracao da Base Local
+### 6.9 Persistencia Online e Migracao da Base Local
 
 O MVP passou a contar com persistencia online via Supabase/PostgreSQL. A base local criada no navegador pode ser migrada para o banco online por uma rotina administrativa, disponivel ao perfil Administrador.
 
@@ -242,7 +268,7 @@ A migracao envia:
 
 Do ponto de vista metodologico, essa etapa e importante porque permite sair de uma demonstracao isolada e iniciar um ciclo de aplicacao real. A partir da persistencia online, respostas de diferentes turmas e escolas podem compor uma base comum para acompanhamento longitudinal da aprendizagem tecnica.
 
-### 6.8 Estrategia de Armazenamento das Respostas
+### 6.10 Estrategia de Armazenamento das Respostas
 
 Para preservar a viabilidade do piloto gratuito, cada envio de avaliacao gera um registro consolidado por estudante e avaliacao, em formato JSON. O sistema nao grava cada alternativa como uma linha separada.
 
@@ -258,6 +284,17 @@ Essa decisao reduz custo, simplifica backup e mantem informacoes essenciais:
 - desempenho por componente.
 
 Essa modelagem e suficiente para relatorios diagnosticos iniciais e para a futura reconstrucao da matriz de respostas quando houver volume para analise estatistica mais avancada.
+
+### 6.11 Imagens em Itens e Uso do Supabase Gratuito
+
+O MVP passou a admitir imagem opcional na questao. Esse recurso amplia a validade ecologica dos itens tecnicos, pois permite avaliar leitura de diagramas, interfaces, tabelas, fluxogramas, estruturas de rede, telas de sistemas, esquemas eletricos, pecas, plantas, mapas e outros elementos visuais proprios da Educacao Profissional.
+
+Do ponto de vista de infraestrutura, ha duas formas possiveis:
+
+- URL publica ou base64 no piloto local, adequada apenas para testes e poucas imagens;
+- Supabase Storage no ambiente online, salvando no banco apenas o caminho ou URL da imagem.
+
+Para uso gratuito, a segunda opcao e mais adequada. O plano gratuito do Supabase possui cotas limitadas de banco e Storage. Salvar imagens grandes em base64 no PostgreSQL consome rapidamente a cota de banco, enquanto o Storage foi projetado para arquivos. Assim, a regra tecnica recomendada para expansao e: imagem no Storage, metadados no banco e exibicao responsiva no frontend.
 
 ## 7. Regras de Governanca Pedagogica
 

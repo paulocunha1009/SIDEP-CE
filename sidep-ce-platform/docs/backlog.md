@@ -1,6 +1,6 @@
 # SIDEP-CE - Backlog Tecnico e Pedagogico
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
 
 ## Visao do Produto
 
@@ -67,7 +67,13 @@ Entregas:
 - codigo imutavel apos abertura da avaliacao;
 - checagem contra questoes duplicadas na mesma prova;
 - checagem contra questoes de contexto muito semelhante na mesma prova;
-- pre-visualizacao como aluno.
+- pre-visualizacao como aluno;
+- selecao de curso por perfil institucional;
+- professor visualiza apenas cursos vinculados ao seu cadastro;
+- gestao escolar visualiza cursos da escola;
+- CREDE/SEFOR visualiza provas das escolas da regional;
+- SEDUC e Administrador visualizam todas as provas;
+- listagem de aplicacoes criadas organizada por escopo de acesso.
 
 ## Sprint 5 - Aplicacao do estudante e relatorios
 
@@ -111,9 +117,27 @@ Entregas:
 - selecao de "Todos os cursos" ou curso especifico antes da exportacao;
 - documentacao do fluxo de curadoria e exportacao para uso pedagogico e academico.
 
+## Sprint 6.2 - Multcurso, questoes por curso e imagem opcional
+
+Status: implementada no MVP local; pronta para deploy online controlado.
+
+Entregas:
+
+- selecao de curso nas subtelas de competencias, descritores e questoes;
+- regra multcurso para evitar choque entre codigos `C01`, `D01` e sequencias de questoes;
+- codigo de questao gerado automaticamente por curso;
+- sincronizacao curso -> componente -> descritor -> questao;
+- ao escolher componente no cadastro de questao, aparecem apenas descritores daquele componente;
+- campo opcional de imagem da questao;
+- previa da imagem no cadastro;
+- exibicao da imagem na prova do estudante;
+- exibicao da imagem no modal de validacao docente;
+- preservacao da responsividade para questoes com ou sem imagem;
+- documentacao da estrategia recomendada: Supabase Storage para arquivos e URL/metadados no banco.
+
 ## Sprint 7 - Seguranca institucional
 
-Status: proxima prioridade.
+Status: proxima prioridade apos deploy das melhorias da Sprint 6.2.
 
 Objetivo:
 
@@ -130,6 +154,9 @@ Historias:
 - permitir Administrador com acesso total;
 - registrar logs de auditoria mais completos;
 - criar rotina de recuperacao/redefinicao de senha com seguranca.
+- criar bucket Supabase Storage para imagens do banco de itens;
+- adicionar coluna/campo persistente para URL da imagem da questao no banco online;
+- definir politicas de upload/leitura de imagens por perfil institucional.
 
 Observacao: as rotinas de login e permissao ja existem no MVP, mas a proxima etapa deve levar essa regra para Supabase Auth e RLS real, evitando dependencia de validacao apenas no frontend.
 

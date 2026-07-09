@@ -143,9 +143,11 @@ export async function salvarQuestao(questao: QuestaoDraft): Promise<ResultadoAca
 
   if (!supabaseConfigured || !supabase) return { data: questaoLimpa, modo: "local" };
 
+  const questaoSupabase = { ...questaoLimpa };
+  delete questaoSupabase.imagem_url;
   const { error } = await supabase.from("questao_mvp").upsert(
     {
-      ...questaoLimpa,
+      ...questaoSupabase,
       atualizada_em: new Date().toISOString(),
     },
     { onConflict: "codigo" },

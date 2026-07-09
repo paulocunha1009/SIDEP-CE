@@ -1,6 +1,6 @@
 # Manual de Uso - SIDEP-CE v0.7
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
 
 ## 1. Finalidade do sistema
 
@@ -121,6 +121,12 @@ Questao e o item que mede um descritor. Cada questao deve ter:
 - dificuldade inicial;
 - status de curadoria.
 
+O codigo da questao e gerado automaticamente por curso. No curso Tecnico em Informatica, preserva-se o padrao historico `Q-INF-0001`, `Q-INF-0002` etc. Nos demais cursos, o sistema usa prefixo tecnico interno do curso para evitar choque no banco, mantendo a sequencia propria de cada curso.
+
+O campo "Imagem da questao" e opcional. Quando preenchido, a imagem aparece abaixo do enunciado na prova do estudante e no modal "Ver questao" da curadoria docente. Quando vazio, a questao funciona normalmente sem qualquer alteracao.
+
+No piloto local, a imagem pode ser informada por URL publica ou base64. Para uso online estadual, a recomendacao e armazenar o arquivo no Supabase Storage e gravar no banco apenas a URL/metadados, evitando consumo excessivo da cota do banco.
+
 ## 5. Status das questoes
 
 ### Rascunho
@@ -185,13 +191,32 @@ Na area do professor, o usuario cria avaliacao informando:
 
 Regras:
 
+- professor visualiza apenas os cursos vinculados ao seu cadastro;
+- gestao escolar visualiza os cursos vinculados a escola;
+- CREDE/SEFOR visualiza cursos e aplicacoes das escolas da sua regional;
+- SEDUC e Administrador visualizam a rede;
 - a avaliacao deve ter no minimo 20 questoes;
 - a avaliacao deve ter no maximo 80 questoes;
 - somente questoes validadas entram na prova;
+- a escolha ocorre por curso, componente, descritor e quantidade;
 - o codigo da avaliacao e gerado automaticamente pelo sistema;
 - o codigo nao deve ser digitado manualmente;
 - apos aberta a avaliacao, o codigo fica imutavel;
 - codigo usado ou excluido nunca pode ser reaproveitado.
+
+Na montagem da avaliacao, o professor seleciona os componentes disponiveis no curso e define quantas questoes entrarao de cada componente. Em seguida, pode selecionar descritores especificos ou deixar todos desmarcados para usar todos os descritores elegiveis dos componentes escolhidos. A tela informa quantas questoes validadas existem por descritor, apoiando a decisao pedagogica antes da abertura da prova.
+
+## 8.1 Visualizacao das provas criadas por perfil
+
+A lista de aplicacoes criadas respeita a hierarquia institucional:
+
+- professor ve somente as provas criadas por ele;
+- gestao escolar ve as provas da propria escola;
+- CREDE/SEFOR ve as provas das escolas vinculadas a regional;
+- SEDUC ve todas as provas da rede;
+- Administrador ve todas as provas e pode executar rotinas administrativas.
+
+Cada card de aplicacao exibe codigo, titulo, curso, turma, status, quantidade de questoes, componentes, escola/INEP e professor/matricula, reforcando rastreabilidade pedagogica e auditoria.
 
 ## 9. Checagem anti-duplicidade na prova
 
@@ -238,6 +263,15 @@ O sistema calcula:
 Na fase atual, esses resultados sao pre-TRI. A TRI plena depende de volume maior de respostas e calibracao psicometrica posterior.
 
 ## 12. Uso online com Supabase
+
+No plano gratuito do Supabase, o projeto pode usar banco PostgreSQL e Storage dentro das cotas do plano. Para imagens em questoes, a estrategia recomendada e:
+
+1. criar um bucket de Storage para imagens do banco de itens;
+2. enviar a imagem para o bucket;
+3. salvar na questao apenas a URL publica ou caminho controlado do arquivo;
+4. evitar salvar imagens base64 grandes no PostgreSQL.
+
+Base64 pode funcionar tecnicamente, mas aumenta muito o tamanho do registro e consome rapidamente a cota de banco. Para piloto com poucas imagens, URL publica e aceitavel. Para uso estadual, Supabase Storage e a solucao correta.
 
 Quando o Supabase esta configurado, o sistema salva dados online. Quando nao esta configurado, o sistema usa o modo local como fallback.
 
