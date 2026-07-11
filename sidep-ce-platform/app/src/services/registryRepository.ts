@@ -180,6 +180,7 @@ export async function carregarProfessores(): Promise<ProfessorDraft[]> {
     telefone: row.telefone ?? "",
     email_institucional: row.email_institucional,
     escola_inep: row.escola?.codigo_inep ?? "",
+    escolas_inep: row.escola?.codigo_inep ? [row.escola.codigo_inep] : [],
     curso_responsavel: row.area_formacao ?? "",
     componentes_responsaveis: "",
     perfil_acesso: row.perfil_acesso,
@@ -190,40 +191,48 @@ export async function carregarProfessores(): Promise<ProfessorDraft[]> {
 }
 
 export function carregarProfessoresLocais() {
-  return readLocal<ProfessorDraft>(STORAGE_KEYS.professores);
+  return readLocal<ProfessorDraft>(STORAGE_KEYS.professores).map((professor) => ({
+    ...professor,
+    escolas_inep: Array.from(new Set([professor.escola_inep, ...(professor.escolas_inep ?? [])].filter(Boolean) as string[])),
+  }));
 }
 
 export async function salvarProfessor(professor: ProfessorDraft): Promise<ResultadoAcao<ProfessorDraft>> {
+  const normalizedProfessor: ProfessorDraft = {
+    ...professor,
+    escolas_inep: Array.from(new Set([professor.escola_inep, ...(professor.escolas_inep ?? [])].filter(Boolean) as string[])),
+  };
+
   if (!supabaseConfigured || !supabase) {
     const professores = readLocal<ProfessorDraft>(STORAGE_KEYS.professores).filter(
-      (item) => item.matricula !== professor.matricula,
+      (item) => item.matricula !== normalizedProfessor.matricula,
     );
-    writeLocal(STORAGE_KEYS.professores, [...professores, professor]);
-    return { data: professor, modo: "local" };
+    writeLocal(STORAGE_KEYS.professores, [...professores, normalizedProfessor]);
+    return { data: normalizedProfessor, modo: "local" };
   }
 
   try {
-    const escolaId = await findEscolaIdByInep(professor.escola_inep);
+    const escolaId = await findEscolaIdByInep(normalizedProfessor.escola_inep);
     const { error } = await supabase.from("professor").upsert(
       {
-        matricula: professor.matricula,
-        nome_completo: professor.nome_completo,
-        cpf: professor.cpf || null,
-        telefone: professor.telefone || null,
-        email_institucional: professor.email_institucional.toLowerCase(),
+        matricula: normalizedProfessor.matricula,
+        nome_completo: normalizedProfessor.nome_completo,
+        cpf: normalizedProfessor.cpf || null,
+        telefone: normalizedProfessor.telefone || null,
+        email_institucional: normalizedProfessor.email_institucional.toLowerCase(),
         escola_lotacao_id: escolaId,
-        perfil_acesso: professor.perfil_acesso,
-        area_formacao: professor.curso_responsavel || null,
-        senha_inicial_hash: professor.senha_acesso || professor.cpf || null,
-        alterar_senha_primeiro_login: professor.alterar_senha_primeiro_login ?? true,
-        status: professor.status ?? "ativo",
+        perfil_acesso: normalizedProfessor.perfil_acesso,
+        area_formacao: normalizedProfessor.curso_responsavel || null,
+        senha_inicial_hash: normalizedProfessor.senha_acesso || normalizedProfessor.cpf || null,
+        alterar_senha_primeiro_login: normalizedProfessor.alterar_senha_primeiro_login ?? true,
+        status: normalizedProfessor.status ?? "ativo",
         atualizado_em: new Date().toISOString(),
       },
       { onConflict: "matricula" },
     );
 
     if (error) throw error;
-    return { data: professor, modo: "supabase" };
+    return { data: normalizedProfessor, modo: "supabase" };
   } catch (error) {
     return { erro: error instanceof Error ? error.message : "Falha ao salvar professor.", modo: "supabase" };
   }
@@ -260,6 +269,7 @@ export async function carregarAvaliacoes(): Promise<AvaliacaoDraft[]> {
     status: row.status,
     professor_matricula: row.professor_matricula ?? undefined,
     escola_inep: row.escola_inep ?? undefined,
+    regional_codigo: row.regional_codigo ?? undefined,
     inicio_em: row.inicio_em ?? undefined,
     fim_em: row.fim_em ?? undefined,
     codigo_bloqueado_em: row.codigo_bloqueado_em ?? undefined,

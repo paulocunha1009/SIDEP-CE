@@ -79,6 +79,7 @@ type AuthUser = {
   email: string;
   role: AuthRole;
   escola_inep?: string;
+  escolas_inep?: string[];
   regional_codigo?: string;
   professor_matricula?: string;
   senha_acesso: string;
@@ -218,6 +219,27 @@ function authRoleFromPerfil(perfil: PerfilAcesso): AuthRole {
   if (perfil === "crede") return "regional";
   if (perfil === "coordenador_escolar") return "gestao_escolar";
   return "professor";
+}
+
+function uniqueNonEmpty(values: Array<string | undefined | null>) {
+  return Array.from(new Set(values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))));
+}
+
+function teacherSchoolIds(teacher?: ProfessorDraft | null) {
+  if (!teacher) return [];
+  return uniqueNonEmpty([teacher.escola_inep, ...(teacher.escolas_inep ?? [])]);
+}
+
+function userSchoolIds(user?: AuthUser | null) {
+  if (!user) return [];
+  return uniqueNonEmpty([user.escola_inep, ...(user.escolas_inep ?? [])]);
+}
+
+function schoolNamesByIds(ids: string[], schools: EscolaDraft[]) {
+  if (!ids.length) return "nenhuma escola vinculada";
+  return ids
+    .map((id) => schools.find((school) => school.codigo_inep === id)?.nome_oficial ?? `INEP ${id}`)
+    .join("; ");
 }
 
 function normalizeCourseName(value: string) {
@@ -794,6 +816,141 @@ function getAssessmentQuestions(assessment: AvaliacaoDraft, questoes: QuestaoDra
     .filter((questao): questao is QuestaoDraft => Boolean(questao));
 }
 
+function buildPrintableAssessmentHtml(
+  assessment: AvaliacaoDraft,
+  assessmentQuestions: QuestaoDraft[],
+  school?: EscolaDraft,
+) {
+  const generatedAt = formatDateTime(new Date().toISOString());
+  const alternativas: AlternativaKey[] = ["A", "B", "C", "D", "E"];
+
+  const questionBlocks = assessmentQuestions
+    .map((questao, index) => {
+      const imageBlock = questao.imagem_url
+        ? `<figure><img src="${escapeHtml(questao.imagem_url)}" alt="Imagem de apoio da questão ${index + 1}" /></figure>`
+        : "";
+      return `
+        <article class="question">
+          <h3>Questão ${index + 1}</h3>
+          <p>${escapeHtml(questao.enunciado)}</p>
+          ${imageBlock}
+          <ol type="A">
+            <li>${escapeHtml(questao.alternativa_a)}</li>
+            <li>${escapeHtml(questao.alternativa_b)}</li>
+            <li>${escapeHtml(questao.alternativa_c)}</li>
+            <li>${escapeHtml(questao.alternativa_d)}</li>
+            <li>${escapeHtml(questao.alternativa_e)}</li>
+          </ol>
+        </article>
+      `;
+    })
+    .join("");
+
+  const answerRows = assessmentQuestions
+    .map(
+      (_, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          ${alternativas.map((alternativa) => `<td><span class="bubble">${alternativa}</span></td>`).join("")}
+        </tr>
+      `,
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(assessment.codigo_acesso)} - versão impressa</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    body { font-family: Arial, sans-serif; color: #10213f; margin: 0; line-height: 1.35; font-size: 11px; }
+    header { border-bottom: 3px solid #0b6f4f; padding-bottom: 8px; margin-bottom: 10px; }
+    .print-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .sidep-brand { display: flex; align-items: center; gap: 8px; color: #08295c; font-weight: 800; }
+    .sidep-mark { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #06336f, #0b8f54); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+    .sidep-brand span { display: block; font-size: 17px; letter-spacing: 0; }
+    .sidep-brand small { display: block; color: #53657d; font-size: 8px; text-transform: uppercase; }
+    .header-logo { max-height: 34px; max-width: 120px; object-fit: contain; }
+    h1 { color: #08295c; margin: 0 0 6px; font-size: 18px; }
+    h2 { color: #0b6f4f; margin-top: 18px; font-size: 15px; }
+    h3 { color: #08295c; margin: 0 0 6px; font-size: 13px; }
+    .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 10px; font-size: 9px; }
+    .student-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin: 12px 0; font-size: 10px; }
+    .line { border-bottom: 1px solid #10213f; min-height: 30px; }
+    .questions { column-count: 2; column-gap: 18px; column-rule: 1px solid #d6e2ef; }
+    .question { break-inside: avoid; page-break-inside: avoid; border-bottom: 1px solid #d6e2ef; padding: 7px 0 9px; display: inline-block; width: 100%; }
+    figure { margin: 6px 0; }
+    .question img { max-width: 100%; max-height: 170px; object-fit: contain; }
+    .question p { margin: 0 0 6px; }
+    .question ol { margin: 0 0 0 18px; padding-left: 8px; }
+    li { margin: 3px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #b7c7d9; padding: 5px; text-align: center; }
+    .bubble { display: inline-flex; width: 24px; height: 24px; border: 1px solid #10213f; border-radius: 999px; align-items: center; justify-content: center; font-size: 12px; }
+    footer { border-top: 1px solid #d6e2ef; margin-top: 14px; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #53657d; font-size: 9px; }
+    .footer-logo { max-height: 38px; max-width: 180px; object-fit: contain; }
+    .no-print { margin: 16px 0; }
+    @media print {
+      .no-print { display: none; }
+      .answer-sheet { page-break-before: always; }
+    }
+    @media screen and (max-width: 760px) {
+      body { margin: 12px; }
+      .print-brand, footer { align-items: flex-start; flex-direction: column; }
+      .meta { grid-template-columns: repeat(2, 1fr); }
+      .questions { column-count: 1; }
+    }
+  </style>
+</head>
+<body>
+  <button class="no-print" onclick="window.print()">Imprimir novamente</button>
+  <header>
+    <div class="print-brand">
+      <div class="sidep-brand">
+        <span class="sidep-mark">CE</span>
+        <div>
+          <span>SIDEP-CE</span>
+          <small>Diagnóstico da Educação Profissional</small>
+        </div>
+      </div>
+      <img class="header-logo" src="${logoCentec}" alt="Instituto Centec" />
+    </div>
+    <h1>${escapeHtml(assessment.titulo)}</h1>
+    <div class="meta">
+      <span><strong>Código:</strong> ${escapeHtml(assessment.codigo_acesso)}</span>
+      <span><strong>Etapa:</strong> ${escapeHtml(assessment.etapa)}</span>
+      <span><strong>Curso:</strong> ${escapeHtml(assessment.curso_tecnico)}</span>
+      <span><strong>Turma:</strong> ${escapeHtml(assessment.turma_codigo)}</span>
+      <span><strong>Escola:</strong> ${escapeHtml(school?.nome_oficial ?? assessment.escola_inep ?? "não informada")}</span>
+      <span><strong>CREDE/SEFOR:</strong> ${escapeHtml(assessment.regional_codigo ?? school?.regional_codigo ?? "não informada")}</span>
+      <span><strong>Questões:</strong> ${assessmentQuestions.length}</span>
+      <span><strong>Gerada em:</strong> ${escapeHtml(generatedAt)}</span>
+    </div>
+  </header>
+  <section class="student-fields">
+    <label>Nome completo do estudante<div class="line"></div></label>
+    <label>Data<div class="line"></div></label>
+  </section>
+  <main class="questions">
+    ${questionBlocks}
+  </main>
+  <section class="answer-sheet">
+    <h2>Folha de respostas</h2>
+    <p>Preencha apenas uma alternativa por questão.</p>
+    <table>
+      <thead><tr><th>Questão</th>${alternativas.map((alternativa) => `<th>${alternativa}</th>`).join("")}</tr></thead>
+      <tbody>${answerRows}</tbody>
+    </table>
+  </section>
+  <footer>
+    <img class="footer-logo" src="${logoSeduc}" alt="Governo do Estado do Ceará - Secretaria da Educação" />
+    <span>SIDEP-CE · Avaliação diagnóstica, curadoria docente e gestão pedagógica da Educação Profissional.</span>
+  </footer>
+</body>
+</html>`;
+}
+
 function questaoStatusLabel(status: QuestaoDraft["status"]) {
   const labels: Record<QuestaoDraft["status"], string> = {
     rascunho: "Rascunho",
@@ -948,7 +1105,9 @@ export function App() {
       ...teachers
         .filter((teacher) => (teacher.status ?? "ativo") === "ativo")
         .map((teacher) => {
-          const school = schools.find((item) => item.codigo_inep === teacher.escola_inep);
+          const escolasAtuacao = teacherSchoolIds(teacher);
+          const escolaPrincipal = teacher.escola_inep || escolasAtuacao[0];
+          const school = schools.find((item) => item.codigo_inep === escolaPrincipal);
           const authRole = authRoleFromPerfil(teacher.perfil_acesso);
 
           return {
@@ -957,7 +1116,8 @@ export function App() {
             nome: teacher.nome_completo,
             email: teacher.email_institucional,
             role: authRole,
-            escola_inep: teacher.escola_inep,
+            escola_inep: escolaPrincipal,
+            escolas_inep: escolasAtuacao,
             regional_codigo: authRole === "regional" ? school?.regional_codigo : undefined,
             professor_matricula: teacher.matricula,
             senha_acesso: !teacher.senha_acesso || teacher.senha_acesso === DEFAULT_ACCESS_PASSWORD ? teacher.cpf || DEFAULT_TEACHER_CPF : teacher.senha_acesso,
@@ -984,7 +1144,8 @@ export function App() {
     }
     if (currentUser.role === "seduc" || currentUser.role === "administrador") return schools;
     if (currentUser.role === "professor") {
-      return schools.filter((school) => school.codigo_inep === currentUser.escola_inep);
+      const ids = new Set(userSchoolIds(currentUser));
+      return schools.filter((school) => ids.has(school.codigo_inep));
     }
     return [];
   }, [currentUser, schools]);
@@ -995,7 +1156,10 @@ export function App() {
     if (currentUser.role === "professor") {
       return teachers.filter((teacher) => teacher.matricula === currentUser.professor_matricula || teacher.email_institucional === currentUser.email);
     }
-    return teachers.filter((teacher) => !teacher.escola_inep || visibleSchoolIds.has(teacher.escola_inep));
+    return teachers.filter((teacher) => {
+      const ids = teacherSchoolIds(teacher);
+      return !ids.length || ids.some((id) => visibleSchoolIds.has(id));
+    });
   }, [currentUser, scopedSchools, teachers]);
 
   const scopedAssessments = useMemo(() => {
@@ -1237,6 +1401,7 @@ export function App() {
               setAssessments={setAssessments}
               currentUser={currentUser}
               teachers={scopedTeachers}
+              schools={scopedSchools}
               visibleSchoolIds={scopedSchools.map((school) => school.codigo_inep)}
               competencias={competencias}
               descritores={descritores}
@@ -2263,6 +2428,7 @@ function Teachers({
     telefone: "",
     email_institucional: "",
     escola_inep: "",
+    escolas_inep: [],
     curso_responsavel: "",
     componentes_responsaveis: "",
     perfil_acesso: "professor_tecnico",
@@ -2271,6 +2437,23 @@ function Teachers({
     alterar_senha_primeiro_login: true,
   });
   const forcedSchoolInep = currentUser.role === "gestao_escolar" ? currentUser.escola_inep : undefined;
+  const draftSchoolIds = teacherSchoolIds(draft);
+  const effectiveDraftSchoolIds = forcedSchoolInep ? [forcedSchoolInep] : draftSchoolIds;
+  const effectiveSchoolOptions = forcedSchoolInep
+    ? schools.filter((school) => school.codigo_inep === forcedSchoolInep)
+    : schools;
+
+  function toggleTeacherSchool(codigoInep: string) {
+    const selected = new Set(draftSchoolIds);
+    if (selected.has(codigoInep)) selected.delete(codigoInep);
+    else selected.add(codigoInep);
+    const escolasSelecionadas = Array.from(selected);
+    setDraft({
+      ...draft,
+      escola_inep: draft.escola_inep && escolasSelecionadas.includes(draft.escola_inep) ? draft.escola_inep : escolasSelecionadas[0] ?? "",
+      escolas_inep: escolasSelecionadas,
+    });
+  }
 
   async function save() {
     if (!draft.matricula || !draft.nome_completo || !draft.email_institucional || !draft.curso_responsavel) {
@@ -2281,6 +2464,9 @@ function Teachers({
     const normalized: ProfessorDraft = {
       ...draft,
       escola_inep: forcedSchoolInep ?? draft.escola_inep,
+      escolas_inep: forcedSchoolInep
+        ? [forcedSchoolInep]
+        : uniqueNonEmpty([draft.escola_inep, ...(draft.escolas_inep ?? [])]),
       status: draft.status ?? "ativo",
       senha_acesso: draft.senha_acesso || draft.cpf || DEFAULT_TEACHER_CPF,
       alterar_senha_primeiro_login: draft.alterar_senha_primeiro_login ?? true,
@@ -2301,6 +2487,8 @@ function Teachers({
       cpf: "",
       telefone: "",
       email_institucional: "",
+      escola_inep: "",
+      escolas_inep: [],
       curso_responsavel: "",
       componentes_responsaveis: "",
       senha_acesso: "",
@@ -2309,7 +2497,7 @@ function Teachers({
   }
 
   async function editTeacher(teacher: ProfessorDraft) {
-    setDraft({ ...teacher, status: teacher.status ?? "ativo" });
+    setDraft({ ...teacher, escolas_inep: teacherSchoolIds(teacher), status: teacher.status ?? "ativo" });
     setMessage(`Editando cadastro de ${teacher.nome_completo}.`);
   }
 
@@ -2350,16 +2538,28 @@ function Teachers({
         <Field label="Telefone" value={draft.telefone ?? ""} onChange={(value) => setDraft({ ...draft, telefone: value })} />
         <Field label="E-mail institucional" value={draft.email_institucional} onChange={(value) => setDraft({ ...draft, email_institucional: value })} />
         <label>
-          Escola de lotação
-          <select value={forcedSchoolInep ?? draft.escola_inep} disabled={currentUser.role === "gestao_escolar"} onChange={(event) => setDraft({ ...draft, escola_inep: event.target.value })}>
+          Escola principal
+          <select
+            value={forcedSchoolInep ?? draft.escola_inep}
+            disabled={currentUser.role === "gestao_escolar"}
+            onChange={(event) => {
+              const escolaInep = event.target.value;
+              setDraft({
+                ...draft,
+                escola_inep: escolaInep,
+                escolas_inep: uniqueNonEmpty([escolaInep, ...(draft.escolas_inep ?? [])]),
+              });
+            }}
+          >
             <option value="">Selecione</option>
             {forcedSchoolInep && !schools.some((school) => school.codigo_inep === forcedSchoolInep) && (
               <option value={forcedSchoolInep}>Escola vinculada à sessão · INEP {forcedSchoolInep}</option>
             )}
-            {schools.map((school) => (
+            {effectiveSchoolOptions.map((school) => (
               <option key={school.codigo_inep} value={school.codigo_inep}>{school.nome_oficial}</option>
             ))}
           </select>
+          <small>Escola principal usada como referência inicial de acesso e auditoria.</small>
         </label>
         <label>
           Perfil
@@ -2378,6 +2578,34 @@ function Teachers({
         />
         <Field label="Senha inicial do professor" value={draft.senha_acesso ?? ""} onChange={(value) => setDraft({ ...draft, senha_acesso: value, alterar_senha_primeiro_login: true })} placeholder="Se vazio, o sistema usa o CPF" />
       </div>
+      <section className="subpanel wide">
+        <div className="section-heading compact">
+          <div>
+            <h3>Escolas de atuação</h3>
+            <p>Marque todas as escolas onde este profissional pode atuar, criar avaliações e acompanhar aplicações.</p>
+          </div>
+          <span className="count-chip">{effectiveDraftSchoolIds.length} vínculo(s)</span>
+        </div>
+        <div className="check-grid">
+          {effectiveSchoolOptions.map((school) => (
+            <label className="check-row" key={school.codigo_inep}>
+              <input
+                type="checkbox"
+                checked={effectiveDraftSchoolIds.includes(school.codigo_inep)}
+                disabled={currentUser.role === "gestao_escolar"}
+                onChange={() => toggleTeacherSchool(school.codigo_inep)}
+              />
+              <span>
+                {school.nome_oficial}
+                <small>INEP {school.codigo_inep} · {school.regional_codigo}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+        {currentUser.role === "gestao_escolar" && (
+          <p className="helper">A gestão escolar cadastra profissionais apenas para a própria escola. Vinculação em múltiplas escolas fica para CREDE/SEFOR, SEDUC ou administrador.</p>
+        )}
+      </section>
       <div className="method-note">
         <strong>Como preencher o vínculo na EPT</strong>
         <p>
@@ -2396,7 +2624,7 @@ function Teachers({
           teacher.nome_completo,
           perfilAcessoLabel(teacher.perfil_acesso),
           teacher.email_institucional,
-          schools.find((school) => school.codigo_inep === teacher.escola_inep)?.nome_oficial ?? "",
+          schoolNamesByIds(teacherSchoolIds(teacher), schools),
           teacher.curso_responsavel,
           teacher.componentes_responsaveis,
           teacher.status ?? "ativo",
@@ -2415,6 +2643,7 @@ function Teachers({
                 <em>{perfilAcessoLabel(teacher.perfil_acesso)} · {teacher.status ?? "ativo"}</em>
                 <span>{teacher.email_institucional}</span>
                 <small>{teacher.curso_responsavel} · {teacher.componentes_responsaveis || "vínculo EPT não informado"}</small>
+                <small>Escolas: {schoolNamesByIds(teacherSchoolIds(teacher), schools)}</small>
               </div>
               <button className="secondary small" onClick={() => editTeacher(teacher)}>Editar</button>
               <button className="secondary small" onClick={() => deactivateTeacher(teacher)}>
@@ -3933,6 +4162,7 @@ function AssessmentsV2({
   setAssessments,
   currentUser,
   teachers,
+  schools,
   visibleSchoolIds,
   competencias,
   descritores,
@@ -3945,6 +4175,7 @@ function AssessmentsV2({
   setAssessments: (assessments: AvaliacaoDraft[]) => void;
   currentUser: AuthUser;
   teachers: ProfessorDraft[];
+  schools: EscolaDraft[];
   visibleSchoolIds: string[];
   competencias: CompetenciaDraft[];
   descritores: DescritorDraft[];
@@ -3954,6 +4185,7 @@ function AssessmentsV2({
   setMessage: (message: string) => void;
 }) {
   const [blockedAssessmentCodes, setBlockedAssessmentCodes] = useState<string[]>(() => carregarCodigosAvaliacaoBloqueados());
+  const defaultSchoolInep = currentUser.role === "professor" ? userSchoolIds(currentUser)[0] : currentUser.escola_inep || visibleSchoolIds[0] || "";
   const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean))).sort((a, b) => a.localeCompare(b));
   const professorLogado = teachers.find(
     (teacher) => teacher.matricula === currentUser.professor_matricula || teacher.email_institucional === currentUser.email,
@@ -4001,8 +4233,14 @@ function AssessmentsV2({
     descritores_selecionados: [],
     questoes_codigos: [],
     status: "rascunho",
+    escola_inep: defaultSchoolInep,
+    regional_codigo: schools.find((school) => school.codigo_inep === defaultSchoolInep)?.regional_codigo,
   }));
   const [previewAssessment, setPreviewAssessment] = useState<AvaliacaoDraft | null>(null);
+  const [paperEntryAssessment, setPaperEntryAssessment] = useState<AvaliacaoDraft | null>(null);
+  const [paperStudentName, setPaperStudentName] = useState("");
+  const [paperAnswers, setPaperAnswers] = useState<Record<string, AlternativaKey>>({});
+  const selectedSchool = schools.find((school) => school.codigo_inep === draft.escola_inep);
 
   useEffect(() => {
     carregarCodigosAvaliacaoBloqueadosOnline()
@@ -4011,6 +4249,16 @@ function AssessmentsV2({
         setMessage(error instanceof Error ? error.message : "Não foi possível carregar códigos bloqueados.");
       });
   }, [setMessage]);
+
+  useEffect(() => {
+    if (!defaultSchoolInep || draft.escola_inep) return;
+    const school = schools.find((item) => item.codigo_inep === defaultSchoolInep);
+    setDraft((current) => ({
+      ...current,
+      escola_inep: defaultSchoolInep,
+      regional_codigo: school?.regional_codigo,
+    }));
+  }, [defaultSchoolInep, draft.escola_inep, schools]);
 
   useEffect(() => {
     if (cursosPermitidos.some((curso) => normalizeCourseName(curso) === normalizeCourseName(draft.curso_tecnico))) return;
@@ -4193,6 +4441,15 @@ function AssessmentsV2({
     });
   }
 
+  function trocarEscolaAvaliacao(codigoInep: string) {
+    const school = schools.find((item) => item.codigo_inep === codigoInep);
+    setDraft({
+      ...draft,
+      escola_inep: codigoInep,
+      regional_codigo: school?.regional_codigo,
+    });
+  }
+
   function regenerateAccessCode() {
     setDraft({
       ...draft,
@@ -4207,6 +4464,10 @@ function AssessmentsV2({
     }
     if (!componentesSelecionados.length) {
       setMessage("Selecione pelo menos um componente curricular para montar a avaliação.");
+      return;
+    }
+    if (!draft.escola_inep) {
+      setMessage("Selecione a escola avaliada antes de abrir a aplicação.");
       return;
     }
     if (!quantidadeValida) {
@@ -4256,7 +4517,8 @@ function AssessmentsV2({
       inicio_em: createdAt,
       codigo_bloqueado_em: createdAt,
       professor_matricula: currentUser.professor_matricula,
-      escola_inep: currentUser.escola_inep,
+      escola_inep: draft.escola_inep,
+      regional_codigo: selectedSchool?.regional_codigo ?? draft.regional_codigo,
     };
     const result = await salvarAvaliacao(avaliacao);
     if (result.erro) {
@@ -4327,6 +4589,79 @@ function AssessmentsV2({
       codigo_acesso: generateAssessmentAccessCode(nextAssessments, draft.curso_tecnico, draft.etapa, nextBlockedCodes),
     });
     setMessage(`Avaliação ${assessment.codigo_acesso} excluída em modo ${result.modo}. O código foi bloqueado e não será reutilizado.`);
+  }
+
+  function abrirVersaoImpressa(assessment: AvaliacaoDraft) {
+    const assessmentQuestions = getAssessmentQuestions(assessment, questoes);
+    if (!assessmentQuestions.length) {
+      setMessage("Não foi possível gerar impressão: a avaliação não possui questões vinculadas.");
+      return;
+    }
+    const school = schools.find((item) => item.codigo_inep === assessment.escola_inep);
+    const opened = openPrintableHtml(buildPrintableAssessmentHtml(assessment, assessmentQuestions, school));
+    setMessage(opened ? `Versão impressa da avaliação ${assessment.codigo_acesso} aberta.` : "O navegador bloqueou a janela de impressão.");
+  }
+
+  function iniciarLancamentoImpresso(assessment: AvaliacaoDraft) {
+    const assessmentQuestions = getAssessmentQuestions(assessment, questoes);
+    if (!assessmentQuestions.length) {
+      setMessage("Não é possível lançar respostas: a avaliação não possui questões vinculadas.");
+      return;
+    }
+    setPaperEntryAssessment(assessment);
+    setPaperStudentName("");
+    setPaperAnswers({});
+    setMessage(`Lançamento manual aberto para a avaliação ${assessment.codigo_acesso}.`);
+  }
+
+  async function salvarLancamentoImpresso() {
+    if (!paperEntryAssessment) return;
+    const assessmentQuestions = getAssessmentQuestions(paperEntryAssessment, questoes);
+    const nome = paperStudentName.trim();
+    if (!nome) {
+      setMessage("Informe o nome completo do estudante para lançar a prova impressa.");
+      return;
+    }
+    if (assessmentQuestions.some((questao) => !paperAnswers[questao.codigo])) {
+      setMessage("Preencha uma alternativa para todas as questões da prova impressa.");
+      return;
+    }
+
+    const estudanteChave = studentAttemptKey(paperEntryAssessment.codigo_acesso, nome);
+    const result = calculateStudentResult(paperEntryAssessment, assessmentQuestions, paperAnswers);
+    const resposta: RespostaAvaliacaoDraft = {
+      id: `impresso-${normalizeKey(estudanteChave)}`,
+      avaliacao_codigo: paperEntryAssessment.codigo_acesso,
+      avaliacao_titulo: paperEntryAssessment.titulo,
+      estudante_nome: nome,
+      estudante_chave: estudanteChave,
+      turma_codigo: paperEntryAssessment.turma_codigo,
+      curso_tecnico: paperEntryAssessment.curso_tecnico,
+      escola_inep: paperEntryAssessment.escola_inep,
+      professor_matricula: paperEntryAssessment.professor_matricula ?? currentUser.professor_matricula,
+      etapa: paperEntryAssessment.etapa,
+      ordem_questoes: assessmentQuestions.map((questao) => questao.codigo),
+      respostas: paperAnswers,
+      acertos: result.acertos,
+      total_questoes: result.total_questoes,
+      percentual_bruto: result.percentual_bruto,
+      desempenho_por_descritor: result.desempenho_por_descritor,
+      desempenho_por_componente: result.desempenho_por_componente,
+      enviado_em: new Date().toISOString(),
+      origem: "local",
+    };
+
+    const saveResult = await salvarRespostaAvaliacao(resposta);
+    if (saveResult.erro) {
+      setMessage(saveResult.erro);
+      return;
+    }
+
+    setRespostas([...respostas.filter((item) => item.id !== resposta.id), saveResult.data ?? resposta]);
+    setPaperEntryAssessment(null);
+    setPaperStudentName("");
+    setPaperAnswers({});
+    setMessage(`Resposta impressa lançada em modo ${saveResult.modo}: ${resposta.acertos}/${resposta.total_questoes} acertos.`);
   }
 
   if (previewAssessment) {
@@ -4416,7 +4751,27 @@ function AssessmentsV2({
               ? "Professor visualiza apenas o curso vinculado ao seu cadastro."
               : currentUser.role === "gestao_escolar"
                 ? "Gestão visualiza os cursos vinculados à escola."
-                : "Acesso institucional com visão ampliada dos cursos disponíveis."}
+              : "Acesso institucional com visão ampliada dos cursos disponíveis."}
+          </small>
+        </label>
+        <label>
+          Escola avaliada
+          <select
+            value={draft.escola_inep ?? ""}
+            disabled={currentUser.role === "gestao_escolar" && schools.length === 1}
+            onChange={(event) => trocarEscolaAvaliacao(event.target.value)}
+          >
+            <option value="">Selecione a escola da aplicação</option>
+            {schools.map((school) => (
+              <option key={school.codigo_inep} value={school.codigo_inep}>
+                {school.nome_oficial} · {school.regional_codigo}
+              </option>
+            ))}
+          </select>
+          <small>
+            {selectedSchool
+              ? `Regional vinculada: ${selectedSchool.regional_codigo}. Esse vínculo alimenta relatórios por escola e CREDE/SEFOR.`
+              : "A avaliação precisa informar a escola onde será aplicada."}
           </small>
         </label>
         <Field label="Turma" value={draft.turma_codigo} onChange={(value) => setDraft({ ...draft, turma_codigo: value })} />
@@ -4542,6 +4897,75 @@ function AssessmentsV2({
       </div>
 
       <button className="primary" onClick={save} disabled={!podePublicar}>Abrir avaliação</button>
+      {paperEntryAssessment && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setPaperEntryAssessment(null)}>
+          <section
+            className="question-modal paper-entry-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="paper-entry-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <span className="tag">Lançamento impresso</span>
+                <h3 id="paper-entry-title">{paperEntryAssessment.codigo_acesso}</h3>
+                <p>Transcreva a folha de respostas. Cada questão deve ter apenas uma alternativa marcada.</p>
+              </div>
+              <button className="icon-close" type="button" aria-label="Fechar lançamento impresso" onClick={() => setPaperEntryAssessment(null)}>
+                ×
+              </button>
+            </div>
+
+            <div className="paper-entry-summary">
+              <span><strong>Avaliação:</strong> {paperEntryAssessment.titulo}</span>
+              <span><strong>Turma:</strong> {paperEntryAssessment.turma_codigo}</span>
+              <span><strong>Questões:</strong> {getAssessmentQuestions(paperEntryAssessment, questoes).length}</span>
+              <span><strong>Preenchidas:</strong> {Object.keys(paperAnswers).length}</span>
+            </div>
+
+            <Field
+              label="Nome completo do estudante"
+              value={paperStudentName}
+              onChange={setPaperStudentName}
+              placeholder="Digite o nome igual ao preenchido na prova impressa"
+            />
+
+            <div className="paper-answer-grid checkbox-mode">
+              {getAssessmentQuestions(paperEntryAssessment, questoes).map((questao, index) => (
+                <article className="paper-answer-card" key={questao.codigo}>
+                  <div>
+                    <strong>Questão {index + 1}</strong>
+                    <small>{questao.codigo}</small>
+                  </div>
+                  <div className="paper-option-row" role="radiogroup" aria-label={`Resposta da questão ${index + 1}`}>
+                    {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((alternativa) => (
+                      <label className={paperAnswers[questao.codigo] === alternativa ? "paper-option selected" : "paper-option"} key={alternativa}>
+                        <input
+                          type="checkbox"
+                          checked={paperAnswers[questao.codigo] === alternativa}
+                          onChange={() =>
+                            setPaperAnswers({
+                              ...paperAnswers,
+                              [questao.codigo]: alternativa,
+                            })
+                          }
+                        />
+                        <span>{alternativa}</span>
+                      </label>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="modal-actions">
+              <button className="primary" type="button" onClick={salvarLancamentoImpresso}>Salvar respostas impressas</button>
+              <button className="secondary" type="button" onClick={() => setPaperEntryAssessment(null)}>Cancelar</button>
+            </div>
+          </section>
+        </div>
+      )}
       <DataTable
         headers={["Código", "Título", "Curso", "Turma", "Questões", "Status"]}
         rows={avaliacoesVisiveis.map((assessment) => [
@@ -4570,10 +4994,14 @@ function AssessmentsV2({
                 <span>{assessment.curso_tecnico}</span>
                 <span>{assessment.componentes}</span>
                 <small>
-                  Escola: {assessment.escola_inep ?? "não informada"} · Professor: {assessment.professor_matricula ?? "não informado"} · Código bloqueado para relatórios.
+                  Escola: {schools.find((school) => school.codigo_inep === assessment.escola_inep)?.nome_oficial ?? assessment.escola_inep ?? "não informada"} ·
+                  Regional: {assessment.regional_codigo ?? schools.find((school) => school.codigo_inep === assessment.escola_inep)?.regional_codigo ?? "não informada"} ·
+                  Professor: {assessment.professor_matricula ?? "não informado"} · Código bloqueado para relatórios.
                 </small>
               </div>
               <button className="secondary small" onClick={() => setPreviewAssessment(assessment)}>Pré-visualizar como aluno</button>
+              <button className="secondary small" onClick={() => abrirVersaoImpressa(assessment)}>Versão impressa</button>
+              <button className="secondary small" onClick={() => iniciarLancamentoImpresso(assessment)}>Lançar prova impressa</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "agendada")}>Agendar</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "aberta")}>Abrir</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "encerrada")}>Encerrar</button>

@@ -1,7 +1,7 @@
 # SIDEP-CE - Metodologia de Mestrado e Regras de Negocio
 
-Versao: 0.8 - multcurso, governanca de avaliacoes, imagem opcional e escopo institucional  
-Atualizado em: 09/07/2026
+Versao: 0.9 - vinculo multi-escola, escola avaliada e contingencia impressa  
+Atualizado em: 11/07/2026
 
 ## 1. Tese Central
 
@@ -38,6 +38,24 @@ Em 07/07/2026, o SIDEP-CE avancou de um MVP local para um MVP online em piloto c
 - rotina de migracao da base local para o Supabase.
 
 Esse marco e relevante para a pesquisa porque transforma o projeto de uma proposta conceitual em produto tecnico-tecnologico testavel em contexto escolar. A plataforma passa a permitir coleta de respostas reais, armazenamento centralizado, relatorios por escopo e construcao progressiva de uma base empirica para analise classica de itens e futura calibracao TRI.
+
+## 2.2 Governanca de Aplicacao e Contingencia Offline
+
+A aplicacao da avaliacao deve preservar rastreabilidade institucional. Por isso, cada avaliacao precisa registrar:
+
+- professor responsavel;
+- escola avaliada;
+- CREDE/SEFOR vinculada;
+- curso tecnico;
+- turma;
+- etapa da avaliacao;
+- codigo unico e imutavel da aplicacao.
+
+O modelo tambem admite que um professor atue em mais de uma escola, mantendo uma escola principal e uma lista de escolas de atuacao. Essa regra evita duplicidade de cadastro docente e permite que o mesmo profissional aplique avaliacoes em unidades diferentes sem perder rastreabilidade.
+
+Como condicao real de aplicacao nas escolas publicas, o SIDEP-CE incorpora uma rotina de contingencia sem internet. A avaliacao pode gerar uma versao impressa, sem exposicao de gabarito, com folha de respostas. Posteriormente, o professor transcreve as alternativas marcadas pelo estudante. O lancamento manual usa o mesmo motor de correcao da avaliacao online, mantendo comparabilidade pedagogica por estudante, turma, componente e descritor.
+
+Essa decisao e relevante para a pesquisa de mestrado porque reduz dependencia de infraestrutura no momento da aplicacao, amplia viabilidade de campo e preserva a coleta de evidencias mesmo em contextos escolares com conectividade instavel.
 
 ## 3. Diferenca Entre Competencia, Descritor e Indicador
 

@@ -1,6 +1,6 @@
 # Manual de Uso - SIDEP-CE v0.7
 
-Atualizado em: 09/07/2026
+Atualizado em: 11/07/2026
 
 ## 1. Finalidade do sistema
 
@@ -27,7 +27,11 @@ O professor acessa a area pedagogica vinculada as suas avaliacoes. Ele pode:
 - validar, revisar ou devolver questoes para rascunho;
 - criar avaliacoes;
 - pre-visualizar a prova como aluno;
+- gerar versao impressa da avaliacao;
+- lancar respostas de prova impressa quando a escola nao tiver internet no dia da aplicacao;
 - acompanhar relatorios das suas aplicacoes.
+
+Um mesmo professor pode atuar em mais de uma escola. Nesse caso, o cadastro deve manter uma escola principal e marcar todas as escolas de atuacao do profissional.
 
 ### Coordenador/professor tecnico
 
@@ -41,6 +45,8 @@ A gestao escolar acessa dados da propria escola. Pode:
 - acompanhar avaliacoes da escola;
 - visualizar relatorios institucionais;
 - apoiar recomposicoes por turma, curso, componente, competencia e descritor.
+
+Uma escola pode ter mais de um professor tecnico cadastrado. A gestao escolar visualiza apenas os professores vinculados a sua unidade.
 
 ### CREDE/SEFOR
 
@@ -184,6 +190,7 @@ Na area do professor, o usuario cria avaliacao informando:
 
 - titulo;
 - curso tecnico;
+- escola avaliada;
 - turma;
 - etapa: diagnostica, formativa ou final;
 - componentes avaliados;
@@ -192,9 +199,11 @@ Na area do professor, o usuario cria avaliacao informando:
 Regras:
 
 - professor visualiza apenas os cursos vinculados ao seu cadastro;
+- professor vinculado a mais de uma escola escolhe em qual escola a avaliacao sera aplicada;
 - gestao escolar visualiza os cursos vinculados a escola;
 - CREDE/SEFOR visualiza cursos e aplicacoes das escolas da sua regional;
 - SEDUC e Administrador visualizam a rede;
+- a avaliacao deve registrar escola e CREDE/SEFOR avaliada;
 - a avaliacao deve ter no minimo 20 questoes;
 - a avaliacao deve ter no maximo 80 questoes;
 - somente questoes validadas entram na prova;
@@ -217,6 +226,26 @@ A lista de aplicacoes criadas respeita a hierarquia institucional:
 - Administrador ve todas as provas e pode executar rotinas administrativas.
 
 Cada card de aplicacao exibe codigo, titulo, curso, turma, status, quantidade de questoes, componentes, escola/INEP e professor/matricula, reforcando rastreabilidade pedagogica e auditoria.
+
+## 8.2 Prova impressa e contingencia sem internet
+
+Quando a escola nao tiver internet no dia da aplicacao, o professor pode usar a rotina de contingencia:
+
+1. abrir a avaliacao ja criada;
+2. clicar em `Versao impressa`;
+3. imprimir a prova e a folha de respostas;
+4. aplicar a prova em papel;
+5. voltar ao sistema quando houver internet;
+6. clicar em `Lancar prova impressa`;
+7. informar o nome completo do estudante;
+8. transcrever as alternativas marcadas;
+9. salvar as respostas.
+
+A versao impressa nao exibe gabarito. O lancamento manual usa o mesmo calculo da avaliacao online, permitindo manter relatorios por estudante, turma, componente e descritor.
+
+A impressao possui cabeçalho institucional com identificacao SIDEP-CE e Centec, alem de rodape com Governo do Estado do Ceara/SEDUC. As questoes sao organizadas em duas colunas na folha A4 para reduzir consumo de papel, mantendo uma coluna em telas pequenas.
+
+O lancamento manual abre em janela pop-up/modal. O professor informa o nome do estudante e marca uma unica alternativa por questao em botoes A, B, C, D ou E. O modal mostra a quantidade de questoes e quantas respostas ja foram preenchidas antes de salvar.
 
 ## 9. Checagem anti-duplicidade na prova
 

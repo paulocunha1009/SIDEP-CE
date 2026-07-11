@@ -49,6 +49,7 @@ export interface ProfessorDraft {
   telefone?: string;
   email_institucional: string;
   escola_inep?: string;
+  escolas_inep?: string[];
   curso_responsavel: string;
   componentes_responsaveis: string;
   perfil_acesso: PerfilAcesso;
@@ -71,6 +72,7 @@ export interface AvaliacaoDraft {
   status?: "rascunho" | "agendada" | "aberta" | "encerrada" | "corrigida";
   professor_matricula?: string;
   escola_inep?: string;
+  regional_codigo?: string;
   inicio_em?: string;
   fim_em?: string;
   codigo_bloqueado_em?: string;
