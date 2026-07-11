@@ -33,6 +33,8 @@ O professor acessa a area pedagogica vinculada as suas avaliacoes. Ele pode:
 
 Um mesmo professor pode atuar em mais de uma escola. Nesse caso, o cadastro deve manter uma escola principal e marcar todas as escolas de atuacao do profissional.
 
+No Supabase, esse vinculo multiplo e persistido na tabela `professor_vinculo`. A escola principal continua em `professor.escola_lotacao_id` para compatibilidade com as rotinas antigas.
+
 ### Coordenador/professor tecnico
 
 Possui uso semelhante ao professor tecnico, com responsabilidade ampliada sobre curso, curadoria e acompanhamento pedagogico.
@@ -325,6 +327,18 @@ Para usar online:
 3. executar as migracoes SQL no Supabase;
 4. subir a base local pelo perfil Administrador;
 5. testar login, criacao de avaliacao, resposta de aluno e relatorio.
+
+Para habilitar professor em mais de uma escola no ambiente online, execute tambem:
+
+`sidep-ce-platform/database/migration_2026_07_11_professor_vinculo_multi_escola.sql`
+
+Depois valide:
+
+- cadastro de professor com mais de uma escola de atuacao;
+- login do professor;
+- visao de escolas permitidas;
+- criacao de avaliacao para cada escola vinculada;
+- relatorio por escola e CREDE/SEFOR.
 
 ## 13. Backup
 

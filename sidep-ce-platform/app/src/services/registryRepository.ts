@@ -57,6 +57,101 @@ async function findEscolaIdByInep(codigoInep?: string) {
   return data?.id ?? null;
 }
 
+function uniqueNonEmpty(values: Array<string | undefined | null>) {
+  return Array.from(new Set(values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))));
+}
+
+function normalizeProfessorSchoolIds(professor: ProfessorDraft) {
+  return uniqueNonEmpty([professor.escola_inep, ...(professor.escolas_inep ?? [])]);
+}
+
+async function carregarVinculosEscolasProfessores() {
+  if (!supabaseConfigured || !supabase) return new Map<string, string[]>();
+
+  const { data, error } = await supabase
+    .from("professor_vinculo")
+    .select("professor:professor_id(matricula),escola:escola_id(codigo_inep),ativo")
+    .eq("ativo", true);
+
+  if (error) {
+    console.warn("Vinculos professor-escola indisponiveis; usando escola principal.", error.message);
+    return new Map<string, string[]>();
+  }
+
+  const vinculos = new Map<string, string[]>();
+  (data ?? []).forEach((row: any) => {
+    const matricula = row.professor?.matricula;
+    const codigoInep = row.escola?.codigo_inep;
+    if (!matricula || !codigoInep) return;
+    const current = vinculos.get(matricula) ?? [];
+    vinculos.set(matricula, uniqueNonEmpty([...current, codigoInep]));
+  });
+
+  return vinculos;
+}
+
+async function sincronizarVinculosProfessorEscolas(professor: ProfessorDraft) {
+  if (!supabaseConfigured || !supabase) return;
+
+  try {
+    const escolasInep = normalizeProfessorSchoolIds(professor);
+    const { data: professorRow, error: professorError } = await supabase
+      .from("professor")
+      .select("id")
+      .eq("matricula", professor.matricula)
+      .maybeSingle();
+
+    if (professorError) throw professorError;
+    if (!professorRow?.id) return;
+
+    const anoLetivo = new Date().getFullYear();
+
+    const { error: deactivateError } = await supabase
+      .from("professor_vinculo")
+      .update({ ativo: false })
+      .eq("professor_id", professorRow.id)
+      .eq("ano_letivo", anoLetivo);
+
+    if (deactivateError) throw deactivateError;
+
+    if (!escolasInep.length) return;
+
+    const { data: escolasRows, error: escolasError } = await supabase
+      .from("escola")
+      .select("id,codigo_inep")
+      .in("codigo_inep", escolasInep);
+
+    if (escolasError) throw escolasError;
+
+    if (!escolasRows?.length) return;
+
+    const papel =
+      professor.perfil_acesso === "coordenador_professor_tecnico"
+        ? "coordenador_curso"
+        : professor.perfil_acesso === "coordenador_escolar"
+          ? "gestor_pedagogico"
+          : "professor";
+
+    const { error: upsertError } = await supabase.from("professor_vinculo").upsert(
+      escolasRows.map((escola: any) => ({
+        professor_id: professorRow.id,
+        escola_id: escola.id,
+        ano_letivo: anoLetivo,
+        papel,
+        ativo: true,
+      })),
+      { onConflict: "professor_id,escola_id,ano_letivo,papel" },
+    );
+
+    if (upsertError) throw upsertError;
+  } catch (error) {
+    console.warn(
+      "Vinculos professor-escola nao foram sincronizados. Rode a migracao professor_vinculo para habilitar N:N.",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 export async function carregarEscolas(): Promise<EscolaDraft[]> {
   if (!supabaseConfigured || !supabase) return readLocal<EscolaDraft>(STORAGE_KEYS.escolas);
 
@@ -166,28 +261,37 @@ export async function salvarEscola(escola: EscolaDraft): Promise<ResultadoAcao<E
 export async function carregarProfessores(): Promise<ProfessorDraft[]> {
   if (!supabaseConfigured || !supabase) return readLocal<ProfessorDraft>(STORAGE_KEYS.professores);
 
-  const { data, error } = await supabase
+  const [vinculosPorMatricula, professoresResult] = await Promise.all([
+    carregarVinculosEscolasProfessores(),
+    supabase
     .from("professor")
     .select("matricula,nome_completo,cpf,telefone,email_institucional,perfil_acesso,area_formacao,senha_inicial_hash,alterar_senha_primeiro_login,status,escola:escola_lotacao_id(codigo_inep)")
-    .order("nome_completo");
+      .order("nome_completo"),
+  ]);
 
+  const { data, error } = professoresResult;
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    matricula: row.matricula,
-    nome_completo: row.nome_completo,
-    cpf: row.cpf ?? "",
-    telefone: row.telefone ?? "",
-    email_institucional: row.email_institucional,
-    escola_inep: row.escola?.codigo_inep ?? "",
-    escolas_inep: row.escola?.codigo_inep ? [row.escola.codigo_inep] : [],
-    curso_responsavel: row.area_formacao ?? "",
-    componentes_responsaveis: "",
-    perfil_acesso: row.perfil_acesso,
-    status: row.status === "inativo" || row.status === "removido" || row.status === "afastado" ? "inativo" : "ativo",
-    senha_acesso: row.senha_inicial_hash ?? "",
-    alterar_senha_primeiro_login: row.alterar_senha_primeiro_login ?? true,
-  }));
+  return (data ?? []).map((row: any) => {
+    const escolaPrincipal = row.escola?.codigo_inep ?? "";
+    const escolasAtuacao = uniqueNonEmpty([escolaPrincipal, ...(vinculosPorMatricula.get(row.matricula) ?? [])]);
+
+    return {
+      matricula: row.matricula,
+      nome_completo: row.nome_completo,
+      cpf: row.cpf ?? "",
+      telefone: row.telefone ?? "",
+      email_institucional: row.email_institucional,
+      escola_inep: escolaPrincipal || escolasAtuacao[0] || "",
+      escolas_inep: escolasAtuacao,
+      curso_responsavel: row.area_formacao ?? "",
+      componentes_responsaveis: "",
+      perfil_acesso: row.perfil_acesso,
+      status: row.status === "inativo" || row.status === "removido" || row.status === "afastado" ? "inativo" : "ativo",
+      senha_acesso: row.senha_inicial_hash ?? "",
+      alterar_senha_primeiro_login: row.alterar_senha_primeiro_login ?? true,
+    };
+  });
 }
 
 export function carregarProfessoresLocais() {
@@ -232,6 +336,7 @@ export async function salvarProfessor(professor: ProfessorDraft): Promise<Result
     );
 
     if (error) throw error;
+    await sincronizarVinculosProfessorEscolas(normalizedProfessor);
     return { data: normalizedProfessor, modo: "supabase" };
   } catch (error) {
     return { erro: error instanceof Error ? error.message : "Falha ao salvar professor.", modo: "supabase" };

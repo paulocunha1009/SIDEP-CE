@@ -65,13 +65,18 @@ Nova rotina:
 
 ## Observação para Supabase
 
-Esta sprint foi aplicada para validação local. Para persistência estadual online completa, será necessária uma migração criando vínculo N:N entre professor e escola, por exemplo:
+Esta sprint foi aplicada primeiro para validação local. Para persistência estadual online completa, foi preparada a migração:
 
-- `professor_escola_vinculo`
-- `professor_id`
-- `escola_id`
-- `tipo_vinculo`
-- `principal`
-- `status`
+- `sidep-ce-platform/database/migration_2026_07_11_professor_vinculo_multi_escola.sql`
 
-Também será necessário persistir `regional_codigo` em `avaliacao_mvp` ou recuperar a regional por relacionamento com a escola no momento do relatório.
+A solução usa a tabela ampla `professor_vinculo`, já prevista no modelo do projeto, para evitar duplicar estrutura. A escola principal continua em `professor.escola_lotacao_id`, enquanto as escolas de atuação ficam em `professor_vinculo`.
+
+Cuidados de implantação:
+
+- rodar a migração no SQL Editor do Supabase antes de exigir vínculo multi-escola online;
+- conferir se professores já cadastrados ganharam vínculo automático a partir de `escola_lotacao_id`;
+- testar cadastro de professor com duas escolas;
+- testar login do professor e criação de avaliação para cada escola;
+- não importar base local por cima do banco online.
+
+Também será necessário persistir `regional_codigo` em `avaliacao_mvp` em sprint futura ou recuperar a regional por relacionamento com a escola no momento do relatório.
