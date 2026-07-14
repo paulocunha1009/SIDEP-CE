@@ -17,6 +17,13 @@ import { regionaisSeed } from "./data/mock";
 import { competenciasNorteadoras, descritoresNorteadores, questoesNorteadoras } from "./data/norteadoresSeed";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import {
+  atualizarSenhaInstitucional,
+  carregarPerfilAutenticado,
+  signInInstitucional,
+  signOutInstitucional,
+  type PerfilInstitucional,
+} from "./services/authRepository";
+import {
   carregarCompetencias,
   carregarCompetenciasLocais,
   carregarDescritores,
@@ -84,7 +91,7 @@ type AuthUser = {
   professor_matricula?: string;
   senha_acesso: string;
   alterar_senha_primeiro_login?: boolean;
-  origem: "sistema" | "escola" | "professor";
+  origem: "sistema" | "escola" | "professor" | "supabase";
 };
 
 const tipoEscolaOptions: TipoEscola[] = [
@@ -360,6 +367,23 @@ function carregarMasterUser() {
 function salvarMasterUser(user: AuthUser) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(MASTER_USER_STORAGE_KEY, JSON.stringify(user));
+}
+
+function authUserFromPerfil(perfil: PerfilInstitucional): AuthUser {
+  return {
+    id: perfil.id,
+    usuario: perfil.email,
+    nome: perfil.nome,
+    email: perfil.email,
+    role: perfil.perfil,
+    escola_inep: perfil.escola_inep ?? undefined,
+    escolas_inep: perfil.escola_inep ? [perfil.escola_inep] : [],
+    regional_codigo: perfil.regional_codigo ?? undefined,
+    professor_matricula: perfil.professor_matricula ?? undefined,
+    senha_acesso: "",
+    alterar_senha_primeiro_login: perfil.alterar_senha_primeiro_login ?? false,
+    origem: "supabase",
+  };
 }
 
 
@@ -1041,41 +1065,59 @@ export function App() {
   const [message, setMessage] = useState("Preparando ambiente do MVP.");
   const [masterUser, setMasterUser] = useState<AuthUser>(() => carregarMasterUser());
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [escolas, professores, avaliacoesOnline, respostasOnline, competenciasBase, descritoresBase, questoesBase] = await Promise.all([
-          carregarEscolas(),
-          carregarProfessores(),
-          carregarAvaliacoes(),
-          carregarRespostasAvaliacao(),
-          carregarCompetencias(),
-          carregarDescritores(),
-          carregarQuestoes(),
-        ]);
-        const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
-        const banco = precisaSanearBanco
-          ? montarBancoNorteadorAtualizado(competenciasBase, descritoresBase, questoesBase)
-          : { competencias: competenciasBase, descritores: descritoresBase, questoes: questoesBase };
+  async function loadApplicationData(successMessage?: string) {
+    const [escolas, professores, avaliacoesOnline, respostasOnline, competenciasBase, descritoresBase, questoesBase] = await Promise.all([
+      carregarEscolas(),
+      carregarProfessores(),
+      carregarAvaliacoes(),
+      carregarRespostasAvaliacao(),
+      carregarCompetencias(),
+      carregarDescritores(),
+      carregarQuestoes(),
+    ]);
+    const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
+    const banco = precisaSanearBanco
+      ? montarBancoNorteadorAtualizado(competenciasBase, descritoresBase, questoesBase)
+      : { competencias: competenciasBase, descritores: descritoresBase, questoes: questoesBase };
 
-        if (precisaSanearBanco) {
-          substituirBancoItensLocal(banco);
+    if (precisaSanearBanco) {
+      substituirBancoItensLocal(banco);
+    }
+
+    setSchools(escolas);
+    setTeachers(professores);
+    setCompetencias(banco.competencias);
+    setDescritores(banco.descritores);
+    setQuestoes(banco.questoes);
+    setAssessments(avaliacoesOnline);
+    setRespostas(respostasOnline);
+    setMessage(
+      precisaSanearBanco
+        ? "Banco local saneado: removi competências/descritores legados e apliquei a nomenclatura C/D."
+        : successMessage ?? (supabaseConfigured
+          ? "Sessão online segura iniciada. Os dados exibidos respeitam o perfil institucional."
+          : "Modo local ativo. Configure o Supabase para persistência estadual online."),
+    );
+  }
+
+  useEffect(() => {
+    async function init() {
+      try {
+        if (supabaseConfigured && supabase) {
+          const perfil = await carregarPerfilAutenticado();
+          if (!perfil) {
+            setMessage("Ambiente online seguro. Entre pelo acesso institucional para carregar os dados autorizados.");
+            return;
+          }
+
+          const user = authUserFromPerfil(perfil);
+          setCurrentUser(user);
+          setForcePasswordChange(!!user.alterar_senha_primeiro_login);
+          await loadApplicationData(`Sessão restaurada como ${user.nome}.`);
+          return;
         }
 
-        setSchools(escolas);
-        setTeachers(professores);
-        setCompetencias(banco.competencias);
-        setDescritores(banco.descritores);
-        setQuestoes(banco.questoes);
-        setAssessments(avaliacoesOnline);
-        setRespostas(respostasOnline);
-        setMessage(
-          precisaSanearBanco
-            ? "Banco local saneado: removi competências/descritores legados e apliquei a nomenclatura C/D."
-            : supabaseConfigured
-            ? "Conectado ao Supabase. Cadastros institucionais serão persistidos no banco."
-            : "Modo local ativo. Configure o Supabase para persistência estadual online.",
-        );
+        await loadApplicationData();
       } catch (error) {
         setMessage(error instanceof Error ? error.message : "Não foi possível carregar os dados.");
       } finally {
@@ -1083,7 +1125,7 @@ export function App() {
       }
     }
 
-    load();
+    init();
   }, []);
 
   const authUsers = useMemo<AuthUser[]>(
@@ -1189,16 +1231,69 @@ export function App() {
     );
   }
 
-  function logout() {
+  async function handleSecureLogin(username: string, password: string) {
+    if (!username.trim() || !password) {
+      setMessage("Informe e-mail institucional e senha.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signInInstitucional(username, password);
+      const perfil = await carregarPerfilAutenticado();
+      if (!perfil) {
+        await signOutInstitucional();
+        setMessage("Login autenticado, mas sem perfil ativo no SIDEP-CE. Cadastre o usuário em sidep_usuario_perfil.");
+        return;
+      }
+
+      const user = authUserFromPerfil(perfil);
+      setCurrentUser(user);
+      setForcePasswordChange(!!user.alterar_senha_primeiro_login);
+      setView("home");
+      await loadApplicationData(`Sessão iniciada como ${user.nome}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível iniciar sessão institucional.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function logout() {
+    if (supabaseConfigured) {
+      await signOutInstitucional();
+    }
     setCurrentUser(null);
     setForcePasswordChange(false);
     setView("home");
+    if (supabaseConfigured) {
+      setSchools([]);
+      setTeachers([]);
+      setCompetencias([]);
+      setDescritores([]);
+      setQuestoes([]);
+      setAssessments([]);
+      setRespostas([]);
+      setMessage("Sessão encerrada. Entre novamente pelo acesso institucional.");
+    }
   }
 
   async function updateCurrentUserPassword(newPassword: string) {
     if (!currentUser) return;
     if (newPassword.length < 8) {
       setMessage("A nova senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    if (currentUser.origem === "supabase") {
+      try {
+        await atualizarSenhaInstitucional(newPassword);
+        setCurrentUser({ ...currentUser, alterar_senha_primeiro_login: false });
+        setForcePasswordChange(false);
+        setMessage("Senha institucional alterada com sucesso.");
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Não foi possível alterar a senha institucional.");
+      }
       return;
     }
 
@@ -1252,6 +1347,8 @@ export function App() {
         respostas={respostas}
         setRespostas={setRespostas}
         onLogin={handleLogin}
+        onSecureLogin={handleSecureLogin}
+        secureInstitutionalLogin={supabaseConfigured}
         loading={loading}
         message={message}
         setMessage={setMessage}
@@ -1463,6 +1560,8 @@ function LoginScreen({
   respostas,
   setRespostas,
   onLogin,
+  onSecureLogin,
+  secureInstitutionalLogin,
   loading,
   message,
   setMessage,
@@ -1473,6 +1572,8 @@ function LoginScreen({
   respostas: RespostaAvaliacaoDraft[];
   setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
   onLogin: (user: AuthUser, password: string) => void;
+  onSecureLogin: (username: string, password: string) => Promise<void>;
+  secureInstitutionalLogin: boolean;
   loading: boolean;
   message: string;
   setMessage: (message: string) => void;
@@ -1486,7 +1587,11 @@ function LoginScreen({
   const selectedUser = users.find((user) => normalizeKey(user.usuario) === normalizeKey(username));
   const regionalName = selectedUser?.regional_codigo ? ` · ${selectedUser.regional_codigo}` : "";
   const studentAssessment = assessments.find((item) => item.codigo_acesso === studentCode.trim().toUpperCase());
-  function submitLogin() {
+  async function submitLogin() {
+    if (secureInstitutionalLogin) {
+      await onSecureLogin(username, password);
+      return;
+    }
     if (!selectedUser) return;
     onLogin(selectedUser, password);
   }
@@ -1601,17 +1706,28 @@ function LoginScreen({
               <input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                placeholder="INEP, e-mail institucional ou MASTER"
+                placeholder={secureInstitutionalLogin ? "E-mail institucional cadastrado no Supabase" : "INEP, e-mail institucional ou MASTER"}
               />
             </label>
 
             <label>
               Senha
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Escola: INEP · Professor: CPF · Master: senha definida" />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={secureInstitutionalLogin ? "Senha do Supabase Auth" : "Escola: INEP · Professor: CPF · Master: senha definida"}
+              />
             </label>
 
             <div className="login-scope">
-              {selectedUser ? (
+              {secureInstitutionalLogin ? (
+                <>
+                  <strong>Acesso online seguro</strong>
+                  <span>Entre com o e-mail e a senha criados em Authentication no Supabase.</span>
+                  <span>O perfil e o escopo serão carregados após o login.</span>
+                </>
+              ) : selectedUser ? (
                 <>
                   <strong>{authRoleLabel(selectedUser.role)}{regionalName}</strong>
                   <span>Usuário: {selectedUser.usuario}</span>
@@ -1626,7 +1742,7 @@ function LoginScreen({
               )}
             </div>
 
-            <button className="primary" onClick={submitLogin} disabled={loading || !selectedUser}>
+            <button className="primary" onClick={submitLogin} disabled={loading || (secureInstitutionalLogin ? !username || !password : !selectedUser)}>
               Entrar no sistema
             </button>
           </>
