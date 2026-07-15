@@ -35,6 +35,7 @@ O script foi feito para ser idempotente:
 - se o perfil já existe com o mesmo e-mail e mesmo papel, ele apenas atualiza o vínculo;
 - se o e-mail aparece duplicado nos cadastros institucionais, o segundo registro é ignorado e aparece no relatório;
 - se o e-mail já está vinculado como `administrador`, `seduc` ou `regional`, o perfil é preservado;
+- se o e-mail estiver em `SIDEP_MASTER_EMAILS`, ele nunca será tratado pelo bootstrap automático;
 - se o e-mail já tem um perfil diferente, o script preserva o perfil existente e pede revisão manual.
 
 Existe a opção `--overwrite-profiles`, mas ela só deve ser usada depois de auditoria, porque pode trocar o papel de um usuário existente.
@@ -47,6 +48,7 @@ No PowerShell, dentro da pasta `sidep-ce-platform/app`, rode:
 $env:SUPABASE_URL="https://SEU-PROJETO.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="COLE_A_SERVICE_ROLE_KEY"
 $env:SIDEP_INITIAL_PASSWORD="AGzzcso1$"
+$env:SIDEP_MASTER_EMAILS="email.master@dominio.com"
 npm run auth:bootstrap
 ```
 

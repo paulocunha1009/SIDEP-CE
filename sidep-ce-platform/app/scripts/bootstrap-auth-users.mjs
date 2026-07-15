@@ -8,6 +8,12 @@ const include = includeArg?.split("=")[1] ?? "all";
 const passwordMode = process.env.SIDEP_PASSWORD_MODE ?? "fixed";
 const fallbackPassword = process.env.SIDEP_INITIAL_PASSWORD ?? "AGzzcso1$";
 const protectedProfiles = new Set(["administrador", "seduc", "regional"]);
+const protectedEmails = new Set(
+  String(process.env.SIDEP_MASTER_EMAILS ?? "")
+    .split(/[;,]/)
+    .map((email) => normalizeEmail(email))
+    .filter(Boolean),
+);
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -260,6 +266,12 @@ async function main() {
     seen.add(candidate.email);
 
     try {
+      if (protectedEmails.has(candidate.email)) {
+        summary.skippedExistingProfile += 1;
+        console.warn(`EMAIL MASTER PRESERVADO | ${candidate.kind} | ${candidate.email} | tratado fora do bootstrap automatico`);
+        continue;
+      }
+
       const existingProfileByEmail = existingProfiles.profilesByEmail.get(candidate.email);
       if (existingProfileByEmail && protectedProfiles.has(existingProfileByEmail.perfil) && !overwriteProfiles) {
         summary.skippedExistingProfile += 1;
