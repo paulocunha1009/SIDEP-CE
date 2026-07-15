@@ -61,6 +61,8 @@ import {
   sincronizarRegionaisSupabase,
 } from "./services/registryRepository";
 import { enviarRespostaPublicaAluno, obterAvaliacaoPublicaAluno } from "./services/studentRepository";
+import { sincronizarUsuarioInstitucionalAuth } from "./services/institutionalUserRepository";
+import type { PerfilUsuarioInstitucional } from "./services/institutionalUserRepository";
 import type {
   AlternativaKey,
   AvaliacaoDraft,
@@ -229,6 +231,12 @@ function authRoleFromPerfil(perfil: PerfilAcesso): AuthRole {
   if (perfil === "crede") return "regional";
   if (perfil === "coordenador_escolar") return "gestao_escolar";
   return "professor";
+}
+
+function institutionalProfileFromPerfil(perfil: PerfilAcesso): PerfilUsuarioInstitucional {
+  const role = authRoleFromPerfil(perfil);
+  if (role === "aluno") return "professor";
+  return role;
 }
 
 function uniqueNonEmpty(values: Array<string | undefined | null>) {
@@ -2446,12 +2454,18 @@ function Schools({
       setMessage("Preencha INEP, nome oficial, município e e-mail institucional da escola.");
       return;
     }
+    if (supabaseConfigured && !draft.email_principal.includes("@")) {
+      setMessage("Informe um e-mail institucional válido para criar o usuário Auth da gestão escolar.");
+      return;
+    }
 
+    const existingSchool = allSchools.find((school) => school.codigo_inep === draft.codigo_inep);
+    const initialPassword = draft.senha_acesso || draft.codigo_inep;
     const normalized: EscolaDraft = {
       ...draft,
       regional_codigo: canChooseRegional ? draft.regional_codigo : currentUser.regional_codigo ?? draft.regional_codigo,
       status: draft.status ?? "ativa",
-      senha_acesso: draft.senha_acesso || draft.codigo_inep,
+      senha_acesso: initialPassword,
       alterar_senha_primeiro_login: draft.alterar_senha_primeiro_login ?? true,
     };
 
@@ -2462,7 +2476,25 @@ function Schools({
     }
 
     setSchools([...allSchools.filter((school) => school.codigo_inep !== normalized.codigo_inep), normalized]);
-    setMessage(`Escola salva em modo ${result.modo}.`);
+    let authMessage = "";
+    if (result.modo === "supabase") {
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: normalized.email_principal,
+          password: !existingSchool || draft.senha_acesso ? initialPassword : undefined,
+          nome: normalized.nome_oficial,
+          perfil: "gestao_escolar",
+          escola_inep: normalized.codigo_inep,
+          regional_codigo: normalized.regional_codigo,
+          ativo: (normalized.status ?? "ativa") === "ativa",
+          alterar_senha_primeiro_login: normalized.alterar_senha_primeiro_login ?? true,
+        });
+        authMessage = " Usuário Auth da gestão escolar sincronizado.";
+      } catch (error) {
+        authMessage = ` Cadastro salvo, mas o usuário Auth não foi sincronizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`;
+      }
+    }
+    setMessage(`Escola salva em modo ${result.modo}.${authMessage}`);
     setDraft({
       ...draft,
       codigo_inep: "",
@@ -2487,6 +2519,23 @@ function Schools({
       setMessage(result.erro);
       return;
     }
+    if (result.modo === "supabase") {
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: updated.email_principal,
+          password: updated.codigo_inep,
+          nome: updated.nome_oficial,
+          perfil: "gestao_escolar",
+          escola_inep: updated.codigo_inep,
+          regional_codigo: updated.regional_codigo,
+          ativo: (updated.status ?? "ativa") === "ativa",
+          alterar_senha_primeiro_login: true,
+        });
+      } catch (error) {
+        setMessage(`Senha local redefinida, mas o Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);
+        return;
+      }
+    }
     setSchools([...allSchools.filter((item) => item.codigo_inep !== updated.codigo_inep), updated]);
     setMessage(`Senha da gestão escolar de ${updated.nome_oficial} redefinida para o INEP da escola.`);
   }
@@ -2502,6 +2551,22 @@ function Schools({
     if (result.erro) {
       setMessage(result.erro);
       return;
+    }
+    if (result.modo === "supabase") {
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: updated.email_principal,
+          nome: updated.nome_oficial,
+          perfil: "gestao_escolar",
+          escola_inep: updated.codigo_inep,
+          regional_codigo: updated.regional_codigo,
+          ativo: (updated.status ?? "ativa") === "ativa",
+          alterar_senha_primeiro_login: updated.alterar_senha_primeiro_login ?? true,
+        });
+      } catch (error) {
+        setMessage(`Status da escola salvo, mas o perfil Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);
+        return;
+      }
     }
     setSchools([...allSchools.filter((item) => item.codigo_inep !== updated.codigo_inep), updated]);
     setMessage(`${updated.nome_oficial} marcada como ${updated.status}.`);
@@ -2539,7 +2604,7 @@ function Schools({
         <Field label="Senha inicial da gestão escolar" value={draft.senha_acesso ?? ""} onChange={(value) => setDraft({ ...draft, senha_acesso: value, alterar_senha_primeiro_login: true })} placeholder="Se vazio, o sistema usa o INEP" />
       </div>
       <div className="notice">
-        Regra recomendada: usuário da escola = <strong>código INEP</strong> e senha inicial = <strong>código INEP</strong>. No primeiro acesso, a gestão deverá alterar a senha.
+        Regra online: acesso Auth da escola pelo <strong>e-mail institucional principal</strong>, vinculado ao <strong>INEP</strong> no SIDEP-CE. Senha inicial recomendada: <strong>código INEP</strong>.
       </div>
       <button className="primary" onClick={save}>Salvar escola</button>
       <DataTable
@@ -2641,7 +2706,17 @@ function Teachers({
       setMessage("Preencha matrícula, nome, e-mail institucional e curso técnico de atuação.");
       return;
     }
+    if (supabaseConfigured && !draft.email_institucional.includes("@")) {
+      setMessage("Informe um e-mail institucional válido para criar o usuário Auth do profissional.");
+      return;
+    }
+    if (supabaseConfigured && !draft.escola_inep && !forcedSchoolInep) {
+      setMessage("Vincule o profissional a uma escola principal antes de criar o usuário Auth.");
+      return;
+    }
 
+    const existingTeacher = allTeachers.find((teacher) => teacher.matricula === draft.matricula);
+    const initialPassword = draft.senha_acesso || draft.cpf || DEFAULT_TEACHER_CPF;
     const normalized: ProfessorDraft = {
       ...draft,
       escola_inep: forcedSchoolInep ?? draft.escola_inep,
@@ -2649,7 +2724,7 @@ function Teachers({
         ? [forcedSchoolInep]
         : uniqueNonEmpty([draft.escola_inep, ...(draft.escolas_inep ?? [])]),
       status: draft.status ?? "ativo",
-      senha_acesso: draft.senha_acesso || draft.cpf || DEFAULT_TEACHER_CPF,
+      senha_acesso: initialPassword,
       alterar_senha_primeiro_login: draft.alterar_senha_primeiro_login ?? true,
     };
 
@@ -2660,7 +2735,27 @@ function Teachers({
     }
 
     setTeachers([...allTeachers.filter((teacher) => teacher.matricula !== normalized.matricula), normalized]);
-    setMessage(`Profissional salvo em modo ${result.modo}.`);
+    let authMessage = "";
+    if (result.modo === "supabase") {
+      const school = schools.find((item) => item.codigo_inep === normalized.escola_inep);
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: normalized.email_institucional,
+          password: !existingTeacher || draft.senha_acesso ? initialPassword : undefined,
+          nome: normalized.nome_completo,
+          perfil: institutionalProfileFromPerfil(normalized.perfil_acesso),
+          escola_inep: normalized.escola_inep,
+          regional_codigo: school?.regional_codigo,
+          professor_matricula: normalized.matricula,
+          ativo: (normalized.status ?? "ativo") === "ativo",
+          alterar_senha_primeiro_login: normalized.alterar_senha_primeiro_login ?? true,
+        });
+        authMessage = " Usuário Auth do profissional sincronizado.";
+      } catch (error) {
+        authMessage = ` Cadastro salvo, mas o usuário Auth não foi sincronizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`;
+      }
+    }
+    setMessage(`Profissional salvo em modo ${result.modo}.${authMessage}`);
     setDraft({
       ...draft,
       matricula: "",
@@ -2689,6 +2784,24 @@ function Teachers({
       setMessage(result.erro);
       return;
     }
+    if (result.modo === "supabase") {
+      const school = schools.find((item) => item.codigo_inep === updated.escola_inep);
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: updated.email_institucional,
+          nome: updated.nome_completo,
+          perfil: institutionalProfileFromPerfil(updated.perfil_acesso),
+          escola_inep: updated.escola_inep,
+          regional_codigo: school?.regional_codigo,
+          professor_matricula: updated.matricula,
+          ativo: (updated.status ?? "ativo") === "ativo",
+          alterar_senha_primeiro_login: updated.alterar_senha_primeiro_login ?? true,
+        });
+      } catch (error) {
+        setMessage(`Status do profissional salvo, mas o perfil Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);
+        return;
+      }
+    }
     setTeachers([...allTeachers.filter((item) => item.matricula !== updated.matricula), updated]);
     setMessage(`${updated.nome_completo} marcado como ${updated.status}.`);
   }
@@ -2703,6 +2816,25 @@ function Teachers({
     if (result.erro) {
       setMessage(result.erro);
       return;
+    }
+    if (result.modo === "supabase") {
+      const school = schools.find((item) => item.codigo_inep === updated.escola_inep);
+      try {
+        await sincronizarUsuarioInstitucionalAuth({
+          email: updated.email_institucional,
+          password: updated.senha_acesso,
+          nome: updated.nome_completo,
+          perfil: institutionalProfileFromPerfil(updated.perfil_acesso),
+          escola_inep: updated.escola_inep,
+          regional_codigo: school?.regional_codigo,
+          professor_matricula: updated.matricula,
+          ativo: (updated.status ?? "ativo") === "ativo",
+          alterar_senha_primeiro_login: true,
+        });
+      } catch (error) {
+        setMessage(`Senha local redefinida, mas o Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);
+        return;
+      }
     }
     setTeachers([...allTeachers.filter((item) => item.matricula !== updated.matricula), updated]);
     setMessage(`Senha de ${updated.nome_completo} redefinida para o CPF cadastrado.`);
@@ -2795,7 +2927,7 @@ function Teachers({
         </p>
       </div>
       <div className="notice">
-        Regra recomendada: usuário do professor = <strong>e-mail institucional</strong> e senha inicial = <strong>CPF</strong>. O professor deverá alterar a senha no primeiro acesso.
+        Regra online: usuário Auth do profissional = <strong>e-mail institucional</strong> e senha inicial recomendada = <strong>CPF</strong>. O perfil fica vinculado à matrícula, escola e curso no SIDEP-CE.
       </div>
       <button className="primary" onClick={save}>Salvar profissional</button>
       <DataTable

@@ -72,3 +72,12 @@ Ela só deve ser usada em terminal local controlado ou em backend/Edge Function 
 
 Base segura para criação administrativa de usuários Auth + `sidep_usuario_perfil`.
 Ela exige usuário autenticado e valida escopo antes de criar perfil.
+O frontend chama esta função ao salvar escola/professor, redefinir senha e ativar/inativar perfil institucional.
+
+Para produção, publique a função no projeto Supabase antes de depender do cadastro automático:
+
+```bash
+supabase functions deploy admin-create-user --project-ref qmfrxrvsoiwsfbjlwkfa
+```
+
+Configure também `SUPABASE_SERVICE_ROLE_KEY` como secret da função. Essa chave nunca deve ir para o Vercel nem para o código React.

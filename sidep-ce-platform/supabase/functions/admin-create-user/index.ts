@@ -10,6 +10,8 @@ type Payload = {
   escola_inep?: string;
   regional_codigo?: string;
   professor_matricula?: string;
+  ativo?: boolean;
+  alterar_senha_primeiro_login?: boolean;
 };
 
 const corsHeaders = {
@@ -27,6 +29,21 @@ function json(body: unknown, status = 200) {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+async function findAuthUserByEmail(adminClient: ReturnType<typeof createClient>, email: string) {
+  const target = normalizeEmail(email);
+
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+
+    const found = data.users.find((user) => normalizeEmail(user.email ?? "") === target);
+    if (found) return found;
+    if (data.users.length < 1000) return null;
+  }
+
+  return null;
 }
 
 function canCreateProfile(
@@ -97,28 +114,49 @@ Deno.serve(async (request) => {
 
   const password = payload.password && payload.password.length >= 8
     ? payload.password
-    : crypto.randomUUID().replaceAll("-", "").slice(0, 12) + "Aa1!";
+    : undefined;
 
-  const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-    email: payload.email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      nome: payload.nome,
-      perfil: payload.perfil,
-      origem: "sidep_admin_create_user",
-    },
-  });
-
-  if (createError && !createError.message.toLowerCase().includes("already")) {
-    return json({ error: createError.message }, 400);
+  let existingUser;
+  try {
+    existingUser = await findAuthUserByEmail(adminClient, payload.email);
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "Falha ao consultar usuários Auth." }, 500);
   }
 
-  let authUserId = created.user?.id;
+  let authUserId = existingUser?.id;
+  let generatedPassword: string | undefined;
+
   if (!authUserId) {
-    const { data: users, error: listError } = await adminClient.auth.admin.listUsers();
-    if (listError) return json({ error: listError.message }, 500);
-    authUserId = users.users.find((user) => normalizeEmail(user.email ?? "") === payload.email)?.id;
+    generatedPassword = password ? undefined : crypto.randomUUID().replaceAll("-", "").slice(0, 12) + "Aa1!";
+    const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+      email: payload.email,
+      password: password ?? generatedPassword,
+      email_confirm: true,
+      user_metadata: {
+        nome: payload.nome,
+        perfil: payload.perfil,
+        origem: "sidep_admin_create_user",
+      },
+    });
+
+    if (createError) return json({ error: createError.message }, 400);
+    authUserId = created.user?.id;
+  } else {
+    const updatePayload: {
+      password?: string;
+      user_metadata: Record<string, string>;
+    } = {
+      user_metadata: {
+        nome: payload.nome,
+        perfil: payload.perfil,
+        origem: "sidep_admin_create_user",
+      },
+    };
+
+    if (password) updatePayload.password = password;
+
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(authUserId, updatePayload);
+    if (updateError) return json({ error: updateError.message }, 400);
   }
 
   if (!authUserId) return json({ error: "Usuario Auth nao localizado apos criacao." }, 500);
@@ -132,8 +170,8 @@ Deno.serve(async (request) => {
       escola_inep: payload.escola_inep ?? null,
       regional_codigo: payload.regional_codigo ?? null,
       professor_matricula: payload.professor_matricula ?? null,
-      ativo: true,
-      alterar_senha_primeiro_login: true,
+      ativo: payload.ativo ?? true,
+      alterar_senha_primeiro_login: payload.alterar_senha_primeiro_login ?? Boolean(password || generatedPassword),
       atualizado_em: new Date().toISOString(),
     },
     { onConflict: "email" },
@@ -143,12 +181,14 @@ Deno.serve(async (request) => {
 
   await adminClient.from("log_auditoria").insert({
     usuario_tipo: actor.perfil,
-    acao: "usuario_auth_criado_edge_function",
+    acao: existingUser ? "usuario_auth_sincronizado_edge_function" : "usuario_auth_criado_edge_function",
     entidade: "sidep_usuario_perfil",
     entidade_id: authUserId,
     metadados: {
       email: payload.email,
       perfil: payload.perfil,
+      ativo: payload.ativo ?? true,
+      senha_atualizada: Boolean(password || generatedPassword),
       criado_por: authData.user.id,
     },
   });
@@ -158,7 +198,7 @@ Deno.serve(async (request) => {
     auth_user_id: authUserId,
     email: payload.email,
     perfil: payload.perfil,
-    senha_inicial_gerada: !payload.password,
-    senha_inicial: payload.password ? undefined : password,
+    senha_inicial_gerada: Boolean(generatedPassword),
+    senha_inicial: generatedPassword,
   });
 });

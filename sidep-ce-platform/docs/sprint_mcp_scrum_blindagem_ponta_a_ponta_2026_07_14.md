@@ -131,3 +131,35 @@ Resultado:
 - Admin continua vendo escopo completo.
 - Professor/gestão continuam respeitando RLS.
 - Storage não aceita upload anônimo.
+
+## Incremento complementar - Cadastro Auth automatico
+
+Arquivos:
+
+- `app/src/services/institutionalUserRepository.ts`
+- `app/src/App.tsx`
+- `supabase/functions/admin-create-user/index.ts`
+
+Resultado:
+
+- cadastro de escola continua salvando a escola normalmente e, no modo Supabase, tambem sincroniza o usuario Auth da gestao escolar;
+- cadastro de professor/profissional continua salvando o professor normalmente e, no modo Supabase, tambem sincroniza o usuario Auth e o perfil institucional;
+- redefinicao de senha de escola/professor passa a atualizar o Auth quando a Edge Function estiver publicada;
+- inativacao/reativacao sincroniza `sidep_usuario_perfil.ativo`, bloqueando login quando o perfil ficar inativo;
+- se a Edge Function nao estiver publicada, o cadastro principal nao quebra, mas o sistema informa que a sincronizacao Auth falhou.
+
+Regra operacional:
+
+- escola acessa pelo e-mail institucional principal no Supabase Auth, vinculada ao INEP no SIDEP-CE;
+- professor acessa pelo e-mail institucional no Supabase Auth, vinculado a matricula funcional no SIDEP-CE;
+- senha inicial recomendada da escola: codigo INEP;
+- senha inicial recomendada do professor: CPF;
+- primeiro login continua exigindo troca de senha quando `alterar_senha_primeiro_login` estiver ativo.
+
+Backlog atualizado:
+
+1. Publicar/atualizar a Edge Function `admin-create-user` no projeto Supabase online.
+2. Refinar a policy de Storage para restringir alteracao/exclusao ao autor/admin.
+3. Criar auditoria para abertura/encerramento de avaliacao e lancamento impresso.
+4. Rodar `cleanup_2026_07_14_senhas_legadas_pos_auth.sql` somente apos todos os usuarios migrarem para Auth.
+5. Testar RPC do aluno em producao com avaliacao aberta real.
