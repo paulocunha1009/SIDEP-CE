@@ -157,7 +157,7 @@ export async function carregarEscolas(): Promise<EscolaDraft[]> {
 
   const { data, error } = await supabase
     .from("escola")
-    .select("codigo_inep,nome_oficial,tipo,municipio,email_principal,telefone,diretor_nome,coordenador_ep_nome,senha_inicial_hash,alterar_senha_primeiro_login,status,regional(codigo)")
+    .select("codigo_inep,nome_oficial,tipo,municipio,email_principal,telefone,diretor_nome,coordenador_ep_nome,alterar_senha_primeiro_login,status,regional(codigo)")
     .order("nome_oficial");
 
   if (error) throw error;
@@ -174,7 +174,7 @@ export async function carregarEscolas(): Promise<EscolaDraft[]> {
     diretor_nome: row.diretor_nome ?? "",
     coordenador_ep_nome: row.coordenador_ep_nome ?? "",
     status: row.status === "inativa" ? "inativa" : "ativa",
-    senha_acesso: row.senha_inicial_hash ?? "",
+    senha_acesso: "",
     alterar_senha_primeiro_login: row.alterar_senha_primeiro_login ?? true,
   }));
 }
@@ -227,7 +227,6 @@ export async function salvarEscola(escola: EscolaDraft): Promise<ResultadoAcao<E
           telefone: escola.telefone || null,
           diretor_nome: escola.diretor_nome || null,
           coordenador_ep_nome: escola.coordenador_ep_nome || null,
-          senha_inicial_hash: escola.senha_acesso || escola.codigo_inep,
           alterar_senha_primeiro_login: escola.alterar_senha_primeiro_login ?? true,
           status: escola.status ?? "ativa",
           atualizado_em: new Date().toISOString(),
@@ -265,7 +264,7 @@ export async function carregarProfessores(): Promise<ProfessorDraft[]> {
     carregarVinculosEscolasProfessores(),
     supabase
     .from("professor")
-    .select("matricula,nome_completo,cpf,telefone,email_institucional,perfil_acesso,area_formacao,senha_inicial_hash,alterar_senha_primeiro_login,status,escola:escola_lotacao_id(codigo_inep)")
+    .select("matricula,nome_completo,cpf,telefone,email_institucional,perfil_acesso,area_formacao,alterar_senha_primeiro_login,status,escola:escola_lotacao_id(codigo_inep)")
       .order("nome_completo"),
   ]);
 
@@ -288,7 +287,7 @@ export async function carregarProfessores(): Promise<ProfessorDraft[]> {
       componentes_responsaveis: "",
       perfil_acesso: row.perfil_acesso,
       status: row.status === "inativo" || row.status === "removido" || row.status === "afastado" ? "inativo" : "ativo",
-      senha_acesso: row.senha_inicial_hash ?? "",
+      senha_acesso: "",
       alterar_senha_primeiro_login: row.alterar_senha_primeiro_login ?? true,
     };
   });
@@ -327,7 +326,6 @@ export async function salvarProfessor(professor: ProfessorDraft): Promise<Result
         escola_lotacao_id: escolaId,
         perfil_acesso: normalizedProfessor.perfil_acesso,
         area_formacao: normalizedProfessor.curso_responsavel || null,
-        senha_inicial_hash: normalizedProfessor.senha_acesso || normalizedProfessor.cpf || null,
         alterar_senha_primeiro_login: normalizedProfessor.alterar_senha_primeiro_login ?? true,
         status: normalizedProfessor.status ?? "ativo",
         atualizado_em: new Date().toISOString(),
