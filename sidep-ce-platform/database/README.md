@@ -13,12 +13,18 @@ Ele consolida:
 - criação de `sidep_usuario_perfil`;
 - policies por perfil institucional;
 - escopo por professor, escola, CREDE/SEFOR, SEDUC e administrador.
+- RPC segura para o aluno acessar/enviar prova por código sem ler tabelas diretamente;
+- policies de Storage para imagem com upload autenticado.
 
 ## Arquivos de reparo
 
 `fix_2026_07_14_reparar_master_admin.sql`
 
 Use apenas se o usuário master/admin aparecer como professor, gestão ou outro perfil incorreto.
+
+`cleanup_2026_07_14_senhas_legadas_pos_auth.sql`
+
+Use apenas depois de confirmar que professores e gestões escolares já acessam pelo Supabase Auth.
 
 ## Arquivos históricos do piloto
 
@@ -59,3 +65,10 @@ npm run auth:bootstrap -- --execute
 - código React.
 
 Ela só deve ser usada em terminal local controlado ou em backend/Edge Function segura.
+
+## Edge Functions
+
+`supabase/functions/admin-create-user`
+
+Base segura para criação administrativa de usuários Auth + `sidep_usuario_perfil`.
+Ela exige usuário autenticado e valida escopo antes de criar perfil.

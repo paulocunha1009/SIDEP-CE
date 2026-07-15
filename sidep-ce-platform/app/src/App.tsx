@@ -16,6 +16,7 @@ import logoSeduc from "./assets/logo-seduc-transparent.png";
 import { regionaisSeed } from "./data/mock";
 import { competenciasNorteadoras, descritoresNorteadores, questoesNorteadoras } from "./data/norteadoresSeed";
 import { supabase, supabaseConfigured } from "./lib/supabase";
+import { registrarAuditoria } from "./services/auditRepository";
 import {
   atualizarSenhaInstitucional,
   carregarPerfilAutenticado,
@@ -59,9 +60,11 @@ import {
   salvarRespostaAvaliacao,
   sincronizarRegionaisSupabase,
 } from "./services/registryRepository";
+import { enviarRespostaPublicaAluno, obterAvaliacaoPublicaAluno } from "./services/studentRepository";
 import type {
   AlternativaKey,
   AvaliacaoDraft,
+  QuestaoPublica,
   CompetenciaDraft,
   DescritorDraft,
   EscolaDraft,
@@ -1581,7 +1584,13 @@ function LoginScreen({
   const [loginMode, setLoginMode] = useState<"aluno" | "servidor">("aluno");
   const [studentCode, setStudentCode] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [studentSession, setStudentSession] = useState<{ assessment: AvaliacaoDraft; name: string } | null>(null);
+  const [studentSession, setStudentSession] = useState<{
+    assessment: AvaliacaoDraft;
+    name: string;
+    questoes?: QuestaoPublica[];
+    secureOnline?: boolean;
+  } | null>(null);
+  const [studentLoading, setStudentLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const selectedUser = users.find((user) => normalizeKey(user.usuario) === normalizeKey(username));
@@ -1596,8 +1605,29 @@ function LoginScreen({
     onLogin(selectedUser, password);
   }
 
-  function submitStudentAccess() {
-    if (!studentAssessment || studentName.trim().split(" ").length < 2) return;
+  async function submitStudentAccess() {
+    if (studentName.trim().split(" ").length < 2) return;
+    if (supabaseConfigured) {
+      if (!studentCode.trim()) return;
+      setStudentLoading(true);
+      try {
+        const acesso = await obterAvaliacaoPublicaAluno(studentCode, studentName);
+        setStudentSession({
+          assessment: acesso.assessment,
+          name: studentName.trim(),
+          questoes: acesso.questoes,
+          secureOnline: true,
+        });
+        setMessage("");
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Não foi possível acessar a avaliação.");
+      } finally {
+        setStudentLoading(false);
+      }
+      return;
+    }
+
+    if (!studentAssessment) return;
     if ((studentAssessment.status ?? "rascunho") !== "aberta") {
       setMessage("Esta avaliação não está aberta para aplicação no momento.");
       return;
@@ -1614,11 +1644,12 @@ function LoginScreen({
       <main className="student-shell">
         <StudentAssessmentRunner
           assessment={studentSession.assessment}
-          questoes={questoes}
+          questoes={studentSession.questoes ?? questoes}
           studentName={studentSession.name}
           respostas={respostas}
           setRespostas={setRespostas}
           previewMode={false}
+          secureOnline={!!studentSession.secureOnline}
           onBack={() => setStudentSession(null)}
         />
       </main>
@@ -1687,14 +1718,23 @@ function LoginScreen({
                 placeholder="Digite o nome completo"
               />
             </label>
-            {studentAssessment && (
+            {!supabaseConfigured && studentAssessment && (
               <div className="assessment-card">
                 <strong>{studentAssessment.titulo}</strong>
                 <span>{studentAssessment.turma_codigo} · {studentAssessment.quantidade_questoes} questões · {studentAssessment.etapa}</span>
               </div>
             )}
-            <button className="primary" onClick={submitStudentAccess} disabled={!studentAssessment || studentName.trim().split(" ").length < 2}>
-              Acessar avaliação
+            {supabaseConfigured && (
+              <div className="notice">
+                Acesso seguro por RPC: o aluno recebe apenas a prova aberta, sem gabarito e sem acesso ao banco de itens.
+              </div>
+            )}
+            <button
+              className="primary"
+              onClick={submitStudentAccess}
+              disabled={studentLoading || studentName.trim().split(" ").length < 2 || (supabaseConfigured ? !studentCode.trim() : !studentAssessment)}
+            >
+              {studentLoading ? "Verificando..." : "Acessar avaliação"}
             </button>
           </div>
         )}
@@ -2179,20 +2219,22 @@ function StudentAssessmentRunner({
   respostas,
   setRespostas,
   previewMode,
+  secureOnline = false,
   onBack,
 }: {
   assessment: AvaliacaoDraft;
-  questoes: QuestaoDraft[];
+  questoes: Array<QuestaoDraft | QuestaoPublica>;
   studentName: string;
   respostas: RespostaAvaliacaoDraft[];
   setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
   previewMode: boolean;
+  secureOnline?: boolean;
   onBack: () => void;
 }) {
   const [attemptSeed] = useState(() => `${assessment.codigo_acesso}-${studentName}-${Date.now()}-${Math.random()}`);
   const assessmentQuestions = useMemo(
-    () => shuffleWithSeed(getAssessmentQuestions(assessment, questoes), attemptSeed),
-    [assessment, questoes, attemptSeed],
+    () => shuffleWithSeed(secureOnline ? questoes : getAssessmentQuestions(assessment, questoes as QuestaoDraft[]), attemptSeed),
+    [assessment, questoes, attemptSeed, secureOnline],
   );
   const [answers, setAnswers] = useState<Record<string, AlternativaKey>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -2215,7 +2257,24 @@ function StudentAssessmentRunner({
       setSubmitted(true);
       return;
     }
-    const result = calculateStudentResult(assessment, assessmentQuestions, answers);
+    if (secureOnline) {
+      try {
+        const saved = await enviarRespostaPublicaAluno({
+          codigo: assessment.codigo_acesso,
+          nome: studentName,
+          ordemQuestoes: assessmentQuestions.map((questao) => questao.codigo),
+          respostas: answers,
+        });
+        setRespostas([...respostas.filter((resposta) => resposta.estudante_chave !== estudante_chave), saved]);
+        setSubmitError("");
+        setSubmitted(true);
+      } catch (error) {
+        setSubmitError(error instanceof Error ? error.message : "Não foi possível registrar a resposta.");
+      }
+      return;
+    }
+    const localAssessmentQuestions = assessmentQuestions as QuestaoDraft[];
+    const result = calculateStudentResult(assessment, localAssessmentQuestions, answers);
     const submission: RespostaAvaliacaoDraft = {
       id: crypto.randomUUID(),
       avaliacao_codigo: assessment.codigo_acesso,
@@ -2316,7 +2375,13 @@ function StudentAssessmentRunner({
               </div>
             )}
             {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((option) => {
-              const text = questao[`alternativa_${option.toLowerCase()}` as keyof QuestaoDraft] as string;
+              const alternativeKey = `alternativa_${option.toLowerCase()}` as
+                | "alternativa_a"
+                | "alternativa_b"
+                | "alternativa_c"
+                | "alternativa_d"
+                | "alternativa_e";
+              const text = questao[alternativeKey];
               return (
                 <label className="option-row" key={option}>
                   <input
@@ -5365,6 +5430,19 @@ function Reports({
 
   function exportReport(filename: string, title: string, markdown: string, htmlSections: string[], format: "md" | "pdf") {
     const suffix = new Date().toISOString().slice(0, 10);
+    void registrarAuditoria({
+      usuarioTipo: currentUser.role,
+      acao: "relatorio_exportado",
+      entidade: "relatorio",
+      entidadeId: filename,
+      metadados: {
+        titulo: title,
+        formato: format,
+        escopo: scopeLabel,
+        total_avaliacoes: assessments.length,
+        total_respostas: respostasEscopo.length,
+      },
+    });
     if (format === "md") {
       downloadTextFile(`${filename}-${suffix}.md`, markdown, "text/markdown;charset=utf-8");
       return;

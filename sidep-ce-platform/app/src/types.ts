@@ -112,6 +112,14 @@ export interface QuestaoDraft {
   status: "rascunho" | "em_revisao" | "validada";
 }
 
+export type QuestaoPublica = Omit<QuestaoDraft, "gabarito" | "justificativa" | "dificuldade_inicial" | "status">;
+
+export interface AvaliacaoAlunoPublica {
+  attempt_key: string;
+  assessment: AvaliacaoDraft;
+  questoes: QuestaoPublica[];
+}
+
 export interface RespostaAvaliacaoDraft {
   id: string;
   avaliacao_codigo: string;
