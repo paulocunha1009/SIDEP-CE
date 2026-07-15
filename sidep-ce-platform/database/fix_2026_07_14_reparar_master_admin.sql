@@ -13,14 +13,11 @@
 -- 1. Troque o e-mail abaixo pelo e-mail usado no login master.
 -- 2. Rode no SQL Editor do Supabase.
 
-with alvo as (
-  select lower('TROQUE_PELO_EMAIL_DO_MASTER') as email_master
-),
-usuario_auth as (
-  select u.id, lower(u.email) as email
-  from auth.users u
-  join alvo a on lower(u.email) = a.email_master
-)
+drop table if exists tmp_sidep_master_reparo;
+
+create temporary table tmp_sidep_master_reparo as
+select lower('TROQUE_PELO_EMAIL_DO_MASTER') as email_master;
+
 insert into sidep_usuario_perfil (
   auth_user_id,
   email,
@@ -44,7 +41,11 @@ select
   true,
   false,
   now()
-from usuario_auth u
+from (
+  select u.id, lower(u.email) as email
+  from auth.users u
+  join tmp_sidep_master_reparo a on lower(u.email) = a.email_master
+) u
 on conflict (auth_user_id) do update set
   email = excluded.email,
   nome = excluded.nome,
@@ -67,7 +68,7 @@ set
   ativo = true,
   alterar_senha_primeiro_login = false,
   atualizado_em = now()
-from alvo a
+from tmp_sidep_master_reparo a
 where lower(p.email) = a.email_master;
 
 select
@@ -80,4 +81,6 @@ select
   p.ativo,
   p.alterar_senha_primeiro_login
 from sidep_usuario_perfil p
-join alvo a on lower(p.email) = a.email_master;
+join tmp_sidep_master_reparo a on lower(p.email) = a.email_master;
+
+drop table if exists tmp_sidep_master_reparo;
