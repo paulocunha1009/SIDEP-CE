@@ -12,6 +12,7 @@ type Payload = {
   professor_matricula?: string;
   ativo?: boolean;
   alterar_senha_primeiro_login?: boolean;
+  operacao?: "sincronizar" | "redefinir_senha";
 };
 
 const corsHeaders = {
@@ -112,9 +113,12 @@ Deno.serve(async (request) => {
     return json({ error: "Perfil sem permissao para criar este usuario." }, 403);
   }
 
-  const password = payload.password && payload.password.length >= 8
-    ? payload.password
-    : undefined;
+  const wantsPasswordReset = payload.operacao === "redefinir_senha" || payload.password !== undefined;
+  if (wantsPasswordReset && (!payload.password || payload.password.length < 8)) {
+    return json({ error: "A senha de redefinicao precisa ter pelo menos 8 caracteres." }, 400);
+  }
+
+  const password = payload.password;
 
   let existingUser;
   try {
@@ -188,6 +192,7 @@ Deno.serve(async (request) => {
       email: payload.email,
       perfil: payload.perfil,
       ativo: payload.ativo ?? true,
+      operacao: payload.operacao ?? "sincronizar",
       senha_atualizada: Boolean(password || generatedPassword),
       criado_por: authData.user.id,
     },

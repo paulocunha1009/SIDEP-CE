@@ -147,6 +147,7 @@ Resultado:
 - redefinicao de senha de escola/professor passa a atualizar o Auth quando a Edge Function estiver publicada;
 - inativacao/reativacao sincroniza `sidep_usuario_perfil.ativo`, bloqueando login quando o perfil ficar inativo;
 - se a Edge Function nao estiver publicada, o cadastro principal nao quebra, mas o sistema informa que a sincronizacao Auth falhou.
+- redefinicao de senha agora e operacao explicita: se a senha nao tiver no minimo 8 caracteres, a Edge Function retorna erro claro e nao finge sucesso.
 
 Regra operacional:
 

@@ -2530,6 +2530,7 @@ function Schools({
           regional_codigo: updated.regional_codigo,
           ativo: (updated.status ?? "ativa") === "ativa",
           alterar_senha_primeiro_login: true,
+          operacao: "redefinir_senha",
         });
       } catch (error) {
         setMessage(`Senha local redefinida, mas o Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);
@@ -2807,9 +2808,12 @@ function Teachers({
   }
 
   async function resetTeacherPassword(teacher: ProfessorDraft) {
+    const senhaInicial = (teacher.cpf ?? "").replace(/\D/g, "").length >= 8
+      ? (teacher.cpf ?? "").replace(/\D/g, "")
+      : DEFAULT_TEACHER_CPF;
     const updated: ProfessorDraft = {
       ...teacher,
-      senha_acesso: teacher.cpf || DEFAULT_TEACHER_CPF,
+      senha_acesso: senhaInicial,
       alterar_senha_primeiro_login: true,
     };
     const result = await salvarProfessor(updated);
@@ -2830,6 +2834,7 @@ function Teachers({
           professor_matricula: updated.matricula,
           ativo: (updated.status ?? "ativo") === "ativo",
           alterar_senha_primeiro_login: true,
+          operacao: "redefinir_senha",
         });
       } catch (error) {
         setMessage(`Senha local redefinida, mas o Auth não foi atualizado: ${error instanceof Error ? error.message : "falha na Edge Function"}.`);

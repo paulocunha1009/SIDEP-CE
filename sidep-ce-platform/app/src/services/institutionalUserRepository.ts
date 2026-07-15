@@ -12,6 +12,7 @@ export type UsuarioInstitucionalPayload = {
   professor_matricula?: string;
   ativo?: boolean;
   alterar_senha_primeiro_login?: boolean;
+  operacao?: "sincronizar" | "redefinir_senha";
 };
 
 export type UsuarioInstitucionalResultado = {
@@ -32,8 +33,21 @@ export async function sincronizarUsuarioInstitucionalAuth(
     body: payload,
   });
 
-  if (error) throw error;
-  if (!data?.ok) throw new Error("A função administrativa não confirmou a criação do usuário.");
+  if (error) {
+    let message = error.message;
+    const context = (error as { context?: Response }).context;
+    if (context) {
+      try {
+        const body = await context.clone().json();
+        if (body?.error) message = body.error;
+      } catch {
+        // Mantem a mensagem original quando o corpo da resposta nao for JSON.
+      }
+    }
+    throw new Error(message);
+  }
+
+  if (!data?.ok) throw new Error("A função administrativa não confirmou a criação ou sincronização do usuário.");
 
   return data;
 }
