@@ -3132,7 +3132,7 @@ function ItemBank({
   );
 
   useEffect(() => {
-    if (!questaoDraft.codigo || !questionCodeMatchesCourse(cursoSelecionado, questaoDraft.codigo)) {
+    if (questaoDraft.codigo !== proximoCodigoQuestao) {
       setQuestaoDraft((current) => ({ ...current, codigo: proximoCodigoQuestao }));
     }
   }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo]);
