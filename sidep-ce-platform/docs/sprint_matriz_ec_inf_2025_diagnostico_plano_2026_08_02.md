@@ -105,6 +105,49 @@ Validacao executada:
 
 - `npm.cmd run build` em `sidep-ce-platform/app`.
 
+## Implantacao controlada no Supabase
+
+Em 2026-08-02, a migracao `migration_2026_08_02_matriz_ec_inf_2025_v2.sql` foi aplicada no Supabase do projeto `qmfrxrvsoiwsfbjlwkfa`.
+
+Resultado informado pelo SQL Editor:
+
+- `Success. No rows returned`
+
+Consulta de validacao executada:
+
+```sql
+select 'matrizes' as entidade, count(*)::int as total
+from matriz_curricular_v2
+where codigo = 'EC-INF-2025'
+union all
+select 'componentes', count(*)::int
+from matriz_componente_v2
+where matriz_codigo = 'EC-INF-2025'
+union all
+select 'competencias', count(*)::int
+from competencia_curricular_v2
+where matriz_codigo = 'EC-INF-2025'
+union all
+select 'descritores', count(*)::int
+from descritor_curricular_v2
+where matriz_codigo = 'EC-INF-2025'
+union all
+select 'view_descritores', count(*)::int
+from v_matriz_ec_inf_2025_descritores;
+```
+
+Resultado validado:
+
+| Entidade | Total |
+|---|---:|
+| matrizes | 1 |
+| componentes | 17 |
+| competencias | 17 |
+| descritores | 236 |
+| view_descritores | 236 |
+
+Observacao: a migracao foi aplicada somente na camada curricular v2. Nao foram alteradas as tabelas MVP de questoes, avaliacoes, respostas, usuarios ou relatorios.
+
 ## Rollback
 
 Como a migracao e aditiva, o rollback logico consiste em nao utilizar as tabelas v2 pela interface. Caso seja necessario remover a estrutura em homologacao, executar drop controlado apenas das tabelas `*_v2` e da view criada, depois de backup. Essa remocao nao deve ser feita em producao sem autorizacao expressa.
