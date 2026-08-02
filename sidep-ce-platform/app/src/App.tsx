@@ -116,10 +116,10 @@ const nomesComponentesMatrizEcInf2025: Record<string, string> = {
   "EC-INF-2025-BD": "BANCO DE DADOS",
   "EC-INF-2025-LS": "LABORATÓRIO DE SOFTWARE",
   "EC-INF-2025-LH": "LABORATÓRIO DE HARDWARE",
-  "EC-INF-2025-RC": "REDE DE COMPUTADORES",
+  "EC-INF-2025-RED": "REDES DE COMPUTADORES",
   "EC-INF-2025-GC": "GERENCIADOR DE CONTEÚDO",
   "EC-INF-2025-PC": "PLANEJAMENTO DE CARREIRA",
-  "EC-INF-2025-NR": "NOÇÕES DE ROBÓTICA",
+  "EC-INF-2025-ROB": "NOÇÕES DE ROBÓTICA",
 };
 
 function nomeComponenteMatrizV2(componente: MatrizComponenteV2): string {
