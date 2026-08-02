@@ -84,11 +84,26 @@ Ele e aditivo e idempotente. A migracao cadastra:
 ## Proxima sprint recomendada
 
 1. Criar consulta de homologacao local para validar a matriz `EC-INF-2025`.
-2. Integrar a interface do Banco de Itens com selecao de matriz/curso/componente.
+2. Integrar a interface do Banco de Itens com selecao de matriz/curso/componente. **Iniciado:** a tela ja carrega o catalogo curricular v2 quando a migracao existir no Supabase.
 3. Criar rotina de cadastro de questoes v2 sem quebrar `questao_mvp`.
 4. Definir ponte entre `descritor_curricular_v2` e `descritor_mvp`, para manter avaliacoes atuais funcionando.
 5. Validar RLS em ambiente local/homologacao antes de aplicar no Supabase.
 6. Somente depois, aplicar a migracao no SQL Editor do Supabase e testar leitura com usuario autenticado.
+
+## Integracao de interface iniciada
+
+Arquivos adicionados/alterados na segunda etapa da sprint:
+
+- `app/src/services/curricularMatrixRepository.ts`: leitura segura das tabelas v2, com retorno vazio quando a migracao ainda nao foi aplicada.
+- `app/src/types.ts`: tipos `MatrizCurricularV2`, `MatrizComponenteV2`, `CompetenciaCurricularV2`, `DescritorCurricularV2` e `CatalogoCurricularV2`.
+- `app/src/App.tsx`: carregamento do catalogo v2 no fluxo principal e painel de referencia curricular dentro do Banco de Itens.
+- `app/src/styles.css`: layout responsivo para resumo da matriz e tabela de componentes.
+
+Regra preservada: a interface ainda nao usa a matriz v2 para gerar provas. Ela apenas exibe a referencia curricular versionada. A geracao de avaliacoes continua baseada no banco MVP validado, evitando quebra operacional.
+
+Validacao executada:
+
+- `npm.cmd run build` em `sidep-ce-platform/app`.
 
 ## Rollback
 

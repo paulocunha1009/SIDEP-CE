@@ -112,6 +112,63 @@ export interface QuestaoDraft {
   status: "rascunho" | "em_revisao" | "validada";
 }
 
+export interface MatrizCurricularV2 {
+  codigo: string;
+  curso_codigo: string;
+  curso_nome: string;
+  modalidade: string;
+  ano_matriz: number;
+  carga_horaria_total: number;
+  carga_horaria_tecnica: number;
+  versao: string;
+  status: "rascunho" | "ativa" | "inativa" | "substituida";
+  fonte?: string;
+}
+
+export interface MatrizComponenteV2 {
+  codigo: string;
+  matriz_codigo: string;
+  nome: string;
+  sigla: string;
+  carga_horaria: number;
+  ordem: number;
+  status: "ativo" | "inativo";
+}
+
+export interface CompetenciaCurricularV2 {
+  codigo: string;
+  matriz_codigo: string;
+  componente_codigo: string;
+  codigo_pedagogico: string;
+  descricao: string;
+  versao: string;
+  status: "rascunho" | "ativa" | "inativa";
+  fonte?: string;
+}
+
+export interface DescritorCurricularV2 {
+  codigo: string;
+  matriz_codigo: string;
+  componente_codigo: string;
+  competencia_codigo: string;
+  codigo_pedagogico: string;
+  codigo_curto: string;
+  descricao: string;
+  nivel_cognitivo: "N1" | "N2" | "N3";
+  nivel_tri_inicial: "basico" | "intermediario" | "avancado";
+  tipo_evidencia?: string;
+  referencia_ementa?: string;
+  versao: string;
+  status: "ativo" | "inativo" | "substituido";
+}
+
+export interface CatalogoCurricularV2 {
+  matrizes: MatrizCurricularV2[];
+  componentes: MatrizComponenteV2[];
+  competencias: CompetenciaCurricularV2[];
+  descritores: DescritorCurricularV2[];
+}
+
 export type QuestaoPublica = Omit<QuestaoDraft, "gabarito" | "justificativa" | "dificuldade_inicial" | "status">;
 
 export interface AvaliacaoAlunoPublica {
