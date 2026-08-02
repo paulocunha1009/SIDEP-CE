@@ -1129,7 +1129,8 @@ export function App() {
       carregarQuestoes(),
       carregarCatalogoCurricularV2(),
     ]);
-    const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
+    const precisaSanearBanco =
+      !supabaseConfigured && precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
     const banco = precisaSanearBanco
       ? montarBancoNorteadorAtualizado(competenciasBase, descritoresBase, questoesBase)
       : { competencias: competenciasBase, descritores: descritoresBase, questoes: questoesBase };
