@@ -324,7 +324,10 @@ function scopedPedagogicalCode(curso: string, codigo: string) {
 
 function questionCodeNumber(codigo: string) {
   const normalized = codigo.trim().toUpperCase();
-  const match = normalized.match(/(?:^|-)Q(?:-)?(\d+)$/) ?? normalized.match(/^Q[A-Z]*-(\d+)$/);
+  const match =
+    normalized.match(/(?:^|-)Q(?:-)?(\d+)$/) ??
+    normalized.match(/^Q(?:-[A-Z0-9]+)*-(\d+)$/) ??
+    normalized.match(/^Q[A-Z]*-(\d+)$/);
   return match ? Number(match[1]) : 0;
 }
 
