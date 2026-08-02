@@ -1,6 +1,6 @@
 # SIDEP-CE - Backlog Tecnico e Pedagogico
 
-Atualizado em: 09/07/2026
+Atualizado em: 17/07/2026
 
 ## Visao do Produto
 
@@ -154,7 +154,7 @@ Entregas:
 
 ## Sprint 7 - Seguranca institucional
 
-Status: proxima prioridade apos deploy das melhorias da Sprint 6.2.
+Status: implementada em piloto online seguro.
 
 Objetivo:
 
@@ -175,6 +175,27 @@ Historias:
 - definir politicas de upload/leitura de imagens por perfil institucional.
 
 Observacao: as rotinas de login e permissao ja existem no MVP, mas a proxima etapa deve levar essa regra para Supabase Auth e RLS real, evitando dependencia de validacao apenas no frontend.
+
+## Sprint 7.1 - Teste piloto controlado
+
+Status: proxima execucao.
+
+Objetivo:
+
+Validar o SIDEP-CE em um ciclo real pequeno, com uma escola, um professor, uma avaliacao e estudantes de teste. O checklist oficial da sprint esta em `docs/sprint_1_teste_piloto_controlado_2026_07_17.md`.
+
+Historias:
+
+- confirmar acesso do administrador;
+- confirmar cadastro e login da gestao escolar;
+- confirmar cadastro, login e redefinicao de senha do professor;
+- criar avaliacao diagnostica com 20 questoes;
+- abrir avaliacao e aplicar por codigo;
+- testar estudantes em desktop e celular;
+- verificar bloqueio de segunda tentativa;
+- conferir relatorios geral, por avaliacao e individual;
+- exportar relatorios;
+- registrar incidentes e evidencias para a sprint seguinte.
 
 ## Sprint 8 - Gestao escolar e regional
 

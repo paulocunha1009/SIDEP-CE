@@ -682,7 +682,7 @@ begin
       'status', v_avaliacao.status,
       'professor_matricula', v_avaliacao.professor_matricula,
       'escola_inep', v_avaliacao.escola_inep,
-      'regional_codigo', v_avaliacao.regional_codigo,
+      'regional_codigo', null,
       'inicio_em', v_avaliacao.inicio_em,
       'fim_em', v_avaliacao.fim_em,
       'codigo_bloqueado_em', v_avaliacao.codigo_bloqueado_em
