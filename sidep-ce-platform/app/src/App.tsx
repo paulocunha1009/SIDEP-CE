@@ -3320,7 +3320,8 @@ function ItemBank({
       return;
     }
 
-    const normalized = { ...questaoDraft, codigo: proximoCodigoQuestao };
+    const codigoAtual = nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
+    const normalized = { ...questaoDraft, codigo: codigoAtual };
     const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
     const normalizedFingerprint = questionFingerprint(normalized);
     const duplicate = questoes.find((questao) => {
@@ -3352,7 +3353,10 @@ function ItemBank({
       justificativa: "",
       imagem_url: "",
     });
-    setMessage(result.erro ?? `Questão salva em modo ${result.modo}. Ela já pode compor avaliações futuras.`);
+    setMessage(
+      result.erro ??
+        `Questão ${normalized.codigo} salva em modo ${result.modo} como ${questaoStatusLabel(normalized.status).toLowerCase()}. ${questaoStatusHint(normalized.status)}`,
+    );
   }
 
   function importNorteadores() {
