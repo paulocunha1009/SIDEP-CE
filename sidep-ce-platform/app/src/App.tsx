@@ -40,6 +40,7 @@ import {
   sincronizarBancoItensSupabase,
   substituirBancoItensLocal,
 } from "./services/itemBankRepository";
+import { carregarCatalogoCurricularV2 } from "./services/curricularMatrixRepository";
 import {
   carregarAvaliacoes,
   carregarAvaliacoesLocais,
@@ -68,6 +69,7 @@ import type {
   AvaliacaoDraft,
   QuestaoPublica,
   CompetenciaDraft,
+  CatalogoCurricularV2,
   DescritorDraft,
   EscolaDraft,
   PerfilAcesso,
@@ -1070,6 +1072,12 @@ export function App() {
   const [competencias, setCompetencias] = useState<CompetenciaDraft[]>([]);
   const [descritores, setDescritores] = useState<DescritorDraft[]>([]);
   const [questoes, setQuestoes] = useState<QuestaoDraft[]>([]);
+  const [catalogoCurricularV2, setCatalogoCurricularV2] = useState<CatalogoCurricularV2>({
+    matrizes: [],
+    componentes: [],
+    competencias: [],
+    descritores: [],
+  });
   const [assessments, setAssessments] = useState<AvaliacaoDraft[]>([]);
   const [respostas, setRespostas] = useState<RespostaAvaliacaoDraft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1077,7 +1085,16 @@ export function App() {
   const [masterUser, setMasterUser] = useState<AuthUser>(() => carregarMasterUser());
 
   async function loadApplicationData(successMessage?: string) {
-    const [escolas, professores, avaliacoesOnline, respostasOnline, competenciasBase, descritoresBase, questoesBase] = await Promise.all([
+    const [
+      escolas,
+      professores,
+      avaliacoesOnline,
+      respostasOnline,
+      competenciasBase,
+      descritoresBase,
+      questoesBase,
+      catalogoV2,
+    ] = await Promise.all([
       carregarEscolas(),
       carregarProfessores(),
       carregarAvaliacoes(),
@@ -1085,6 +1102,7 @@ export function App() {
       carregarCompetencias(),
       carregarDescritores(),
       carregarQuestoes(),
+      carregarCatalogoCurricularV2(),
     ]);
     const precisaSanearBanco = precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
     const banco = precisaSanearBanco
@@ -1100,6 +1118,7 @@ export function App() {
     setCompetencias(banco.competencias);
     setDescritores(banco.descritores);
     setQuestoes(banco.questoes);
+    setCatalogoCurricularV2(catalogoV2);
     setAssessments(avaliacoesOnline);
     setRespostas(respostasOnline);
     setMessage(
@@ -1500,6 +1519,7 @@ export function App() {
               setDescritores={setDescritores}
               questoes={questoes}
               setQuestoes={setQuestoes}
+              catalogoCurricularV2={catalogoCurricularV2}
               setMessage={setMessage}
             />
           )}
@@ -2987,6 +3007,7 @@ function ItemBank({
   setDescritores,
   questoes,
   setQuestoes,
+  catalogoCurricularV2,
   setMessage,
 }: {
   competencias: CompetenciaDraft[];
@@ -2995,6 +3016,7 @@ function ItemBank({
   setDescritores: (descritores: DescritorDraft[]) => void;
   questoes: QuestaoDraft[];
   setQuestoes: (questoes: QuestaoDraft[]) => void;
+  catalogoCurricularV2: CatalogoCurricularV2;
   setMessage: (message: string) => void;
 }) {
   const [competenciaDraft, setCompetenciaDraft] = useState<CompetenciaDraft>({
@@ -3036,10 +3058,39 @@ function ItemBank({
   const [reviewDescriptorFilter, setReviewDescriptorFilter] = useState("todos");
   const [reviewStatusFilter, setReviewStatusFilter] = useState<QuestaoStatusFiltro>("todas");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
+  const [matrizReferenciaCodigo, setMatrizReferenciaCodigo] = useState("EC-INF-2025");
   const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean)));
   const cursosCadastro = [...cursosTecnicosOficiais.map((curso) => curso.nome), ...cursosDoBanco.filter((curso) => !findOfficialCourse(curso))]
     .sort((a, b) => a.localeCompare(b));
   const cursoAtual = findOfficialCourse(cursoSelecionado);
+  const matrizesCurriculares = catalogoCurricularV2.matrizes;
+  const matrizReferencia =
+    matrizesCurriculares.find((matriz) => matriz.codigo === matrizReferenciaCodigo) ?? matrizesCurriculares[0];
+  const componentesMatrizReferencia = matrizReferencia
+    ? catalogoCurricularV2.componentes
+        .filter((componente) => componente.matriz_codigo === matrizReferencia.codigo)
+        .sort((a, b) => a.ordem - b.ordem)
+    : [];
+  const competenciasMatrizReferencia = matrizReferencia
+    ? catalogoCurricularV2.competencias.filter((competencia) => competencia.matriz_codigo === matrizReferencia.codigo)
+    : [];
+  const descritoresMatrizReferencia = matrizReferencia
+    ? catalogoCurricularV2.descritores.filter((descritor) => descritor.matriz_codigo === matrizReferencia.codigo)
+    : [];
+  const descritoresPorComponenteV2 = componentesMatrizReferencia.map((componente) => {
+    const competenciasDoComponente = competenciasMatrizReferencia.filter(
+      (competencia) => competencia.componente_codigo === componente.codigo,
+    );
+    const descritoresDoComponente = descritoresMatrizReferencia.filter(
+      (descritor) => descritor.componente_codigo === componente.codigo,
+    );
+
+    return {
+      componente,
+      competencias: competenciasDoComponente.length,
+      descritores: descritoresDoComponente.length,
+    };
+  });
   const competenciasDoCurso = competencias.filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoSelecionado));
   const codigosCompetenciasDoCurso = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
   const descritoresDoCurso = descritores.filter((descritor) => codigosCompetenciasDoCurso.has(descritor.competencia_codigo));
@@ -3503,6 +3554,95 @@ function ItemBank({
         <article className="kpi"><span>Em revisão</span><strong>{questoesEmRevisao}</strong></article>
         <article className="kpi"><span>Rascunhos</span><strong>{questoesRascunho}</strong></article>
       </div>
+
+      <section className="matrix-v2-panel">
+        <div className="section-heading compact">
+          <div>
+            <h3>Catálogo curricular versionado</h3>
+            <p>
+              Esta leitura mostra a matriz técnica oficializada em estrutura v2. Ela serve como referência para criar
+              competências, descritores e questões sem conflito de códigos entre cursos.
+            </p>
+          </div>
+          <span className="count-chip">{descritoresMatrizReferencia.length || 0} descritores v2</span>
+        </div>
+
+        {matrizesCurriculares.length > 0 ? (
+          <>
+            <div className="toolbar compact-toolbar">
+              <label>
+                Matriz de referência
+                <select value={matrizReferencia?.codigo ?? ""} onChange={(event) => setMatrizReferenciaCodigo(event.target.value)}>
+                  {matrizesCurriculares.map((matriz) => (
+                    <option key={matriz.codigo} value={matriz.codigo}>
+                      {matriz.codigo} · {matriz.curso_nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="status-chip course-chip">
+                {matrizReferencia
+                  ? `${matrizReferencia.curso_codigo} · ${matrizReferencia.ano_matriz} · versão ${matrizReferencia.versao}`
+                  : "Sem matriz selecionada"}
+              </div>
+            </div>
+            <div className="matrix-summary-grid">
+              <article>
+                <span>Componentes</span>
+                <strong>{componentesMatrizReferencia.length}</strong>
+                <small>{matrizReferencia?.carga_horaria_tecnica ?? 0}h técnicas</small>
+              </article>
+              <article>
+                <span>Competências</span>
+                <strong>{competenciasMatrizReferencia.length}</strong>
+                <small>agrupadoras por componente</small>
+              </article>
+              <article>
+                <span>Descritores</span>
+                <strong>{descritoresMatrizReferencia.length}</strong>
+                <small>observáveis e avaliáveis</small>
+              </article>
+              <article>
+                <span>Status</span>
+                <strong>{matrizReferencia?.status ?? "-"}</strong>
+                <small>{matrizReferencia?.modalidade ?? "matriz versionada"}</small>
+              </article>
+            </div>
+            <div className="matrix-component-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Componente</th>
+                    <th>Sigla</th>
+                    <th>Carga</th>
+                    <th>Competências</th>
+                    <th>Descritores</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {descritoresPorComponenteV2.map(({ componente, competencias: totalCompetencias, descritores: totalDescritores }) => (
+                    <tr key={componente.codigo}>
+                      <td>{componente.nome}</td>
+                      <td>{componente.sigla}</td>
+                      <td>{componente.carga_horaria}h</td>
+                      <td>{totalCompetencias}</td>
+                      <td>{totalDescritores}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="info-callout">
+            <strong>Matriz v2 ainda não encontrada no banco online.</strong>
+            <p>
+              A migração `migration_2026_08_02_matriz_ec_inf_2025_v2.sql` já está pronta. Depois de aplicada no Supabase,
+              esta área exibirá automaticamente os 17 componentes, 17 competências e 236 descritores da matriz EC-INF-2025.
+            </p>
+          </div>
+        )}
+      </section>
 
       <div className="dependency-flow">
         <div>
