@@ -72,6 +72,7 @@ import type {
   CatalogoCurricularV2,
   DescritorDraft,
   EscolaDraft,
+  MatrizComponenteV2,
   PerfilAcesso,
   ProfessorDraft,
   QuestaoDraft,
@@ -100,6 +101,30 @@ type AuthUser = {
   alterar_senha_primeiro_login?: boolean;
   origem: "sistema" | "escola" | "professor" | "supabase";
 };
+
+const nomesComponentesMatrizEcInf2025: Record<string, string> = {
+  "EC-INF-2025-IB": "INFORMÁTICA BÁSICA",
+  "EC-INF-2025-LP1": "LÓGICA DE PROGRAMAÇÃO I",
+  "EC-INF-2025-LP2": "LÓGICA DE PROGRAMAÇÃO II",
+  "EC-INF-2025-AMC": "ARQUITETURA E MANUTENÇÃO DE COMPUTADORES",
+  "EC-INF-2025-POO": "PROGRAMAÇÃO ORIENTADA A OBJETOS",
+  "EC-INF-2025-SO": "SISTEMAS OPERACIONAIS",
+  "EC-INF-2025-HTML": "HTML/CSS",
+  "EC-INF-2025-DG": "DESIGN GRÁFICO",
+  "EC-INF-2025-PWEB": "PROGRAMAÇÃO WEB",
+  "EC-INF-2025-PI": "PROJETO INTEGRADOR",
+  "EC-INF-2025-BD": "BANCO DE DADOS",
+  "EC-INF-2025-LS": "LABORATÓRIO DE SOFTWARE",
+  "EC-INF-2025-LH": "LABORATÓRIO DE HARDWARE",
+  "EC-INF-2025-RC": "REDE DE COMPUTADORES",
+  "EC-INF-2025-GC": "GERENCIADOR DE CONTEÚDO",
+  "EC-INF-2025-PC": "PLANEJAMENTO DE CARREIRA",
+  "EC-INF-2025-NR": "NOÇÕES DE ROBÓTICA",
+};
+
+function nomeComponenteMatrizV2(componente: MatrizComponenteV2): string {
+  return nomesComponentesMatrizEcInf2025[componente.codigo] ?? componente.nome;
+}
 
 const tipoEscolaOptions: TipoEscola[] = [
   "EEEP",
@@ -3622,7 +3647,7 @@ function ItemBank({
                 <tbody>
                   {descritoresPorComponenteV2.map(({ componente, competencias: totalCompetencias, descritores: totalDescritores }) => (
                     <tr key={componente.codigo}>
-                      <td>{componente.nome}</td>
+                      <td>{nomeComponenteMatrizV2(componente)}</td>
                       <td>{componente.sigla}</td>
                       <td>{componente.carga_horaria}h</td>
                       <td>{totalCompetencias}</td>
