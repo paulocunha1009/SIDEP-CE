@@ -36,7 +36,7 @@ export async function carregarCompetencias() {
     .order("codigo");
 
   if (error) throw error;
-  if (!data?.length) return carregarCompetenciasLocais();
+  if (!data?.length) return [];
   return (data as CompetenciaDraft[]).map(sanitizeCompetencia);
 }
 
@@ -80,7 +80,7 @@ export async function carregarDescritores() {
     .order("codigo");
 
   if (error) throw error;
-  if (!data?.length) return carregarDescritoresLocais();
+  if (!data?.length) return [];
   return (data as DescritorDraft[]).map(sanitizeDescritor);
 }
 
@@ -126,7 +126,7 @@ export async function carregarQuestoes() {
     .order("codigo");
 
   if (error) throw error;
-  if (!data?.length) return carregarQuestoesLocais();
+  if (!data?.length) return [];
   return (data as QuestaoDraft[]).map(sanitizeQuestao);
 }
 
