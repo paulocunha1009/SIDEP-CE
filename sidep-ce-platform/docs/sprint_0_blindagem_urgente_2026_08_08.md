@@ -195,9 +195,51 @@ as 7 policies esperadas foram recriadas corretamente em
 
 ## O que ainda falta na Sprint 1
 
-- Tela administrativa de cadastro/gestão de usuário (hoje só via script
-  `bootstrap-auth-users.mjs`).
 - Auditoria de ações críticas (alteração de perfil, abertura/encerramento
   de avaliação) além do que já existe em `log_auditoria`.
 - Revisão da policy de Storage de imagens por status da questão (imagem de
   questão em rascunho hoje é pública se a URL for descoberta).
+
+---
+
+# Sprint 1 — Blindagem de Segurança, parte 2: tela de usuários Regionais/SEDUC
+
+## Investigação e escopo
+
+Ao investigar "tela administrativa de usuários", descobri que Escola e
+Professor **já sincronizam Supabase Auth automaticamente** ao salvar
+(`App.tsx`, chamadas a `sincronizarUsuarioInstitucionalAuth` já existentes) —
+essa parte não era mais uma pendência real. O gap de verdade: não havia
+nenhuma tela para criar/gerenciar contas `regional` (CREDE/SEFOR) ou `seduc`
+— só possível via script de terminal ou SQL direto.
+
+Escopo confirmado com o usuário em 08/08/2026: construir só a tela de
+CREDE/SEFOR e SEDUC (não uma tela unificada de todos os perfis), reaproveitando
+a Edge Function `admin-create-user` já existente e testada.
+
+## O que foi implementado
+
+- **`database/migration_2026_08_08_rls_seduc_visualiza_perfis.sql`**: amplia
+  a policy de `SELECT` em `sidep_usuario_perfil` para incluir `seduc` (antes
+  só `administrador` via `sidep_is_admin()`), consistente com o resto do
+  sistema onde SEDUC já tem o mesmo nível de acesso que administrador.
+- **`app/src/services/institutionalUserRepository.ts`**: nova função
+  `carregarUsuariosRegionaisSeduc()` (lista perfis `regional`/`seduc`).
+- **`app/src/App.tsx`**: nova tela `RegionalUsers` ("Usuários Regionais e
+  SEDUC"), visível só para `seduc`/`administrador` — cadastro de conta
+  vinculada a uma das 23 CREDE/SEFOR já existentes (`regionaisSeed`) ou conta
+  SEDUC, listagem com status ativo/inativo e "aguardando troca de senha",
+  ações de inativar/reativar e redefinir senha (gera senha aleatória seguindo
+  o mesmo padrão criptográfico já usado para código de avaliação).
+
+## Testes realizados
+
+- `tsc -b` e `npm run build` sem erros.
+- Teste funcional em modo local (sem tocar produção): login como
+  administrador, tela renderiza corretamente com as 23 CREDE/SEFOR no
+  dropdown, formulário e listagem sem erros.
+- `migration_2026_08_08_rls_seduc_visualiza_perfis.sql` **confirmada como
+  executada em produção pelo usuário em 08/08/2026**.
+- **Ainda pendente**: teste ponta a ponta com conta real (`administrador` ou
+  `seduc`) contra o Supabase de produção — precisa ser feito pelo usuário
+  após o deploy, já que não há credenciais de admin disponíveis nesta sessão.

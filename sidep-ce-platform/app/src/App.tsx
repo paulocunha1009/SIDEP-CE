@@ -5,6 +5,7 @@
   ClipboardList,
   GraduationCap,
   KeyRound,
+  Landmark,
   Layers3,
   ShieldCheck,
   UserRoundCog,
@@ -62,8 +63,8 @@ import {
   sincronizarRegionaisSupabase,
 } from "./services/registryRepository";
 import { enviarRespostaPublicaAluno, obterAvaliacaoPublicaAluno } from "./services/studentRepository";
-import { sincronizarUsuarioInstitucionalAuth } from "./services/institutionalUserRepository";
-import type { PerfilUsuarioInstitucional } from "./services/institutionalUserRepository";
+import { carregarUsuariosRegionaisSeduc, sincronizarUsuarioInstitucionalAuth } from "./services/institutionalUserRepository";
+import type { PerfilUsuarioInstitucional, UsuarioRegionalOuSeduc } from "./services/institutionalUserRepository";
 import type {
   AlternativaKey,
   AvaliacaoDraft,
@@ -81,7 +82,7 @@ import type {
 } from "./types";
 
 type Role = "student" | "teacher" | "management";
-type View = "home" | "student" | "schools" | "teachers" | "items" | "assessments" | "reports";
+type View = "home" | "student" | "schools" | "teachers" | "regionalUsers" | "items" | "assessments" | "reports";
 type ItemBankTab = "competencias" | "descritores" | "questoes";
 type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario" | "solicitacoes" | "historico";
 type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
@@ -1238,6 +1239,7 @@ export function App() {
   const role: Role = currentUser?.role === "aluno" ? "student" : currentUser?.role === "professor" ? "teacher" : "management";
   const canManageSchools = currentUser?.role === "regional" || currentUser?.role === "seduc" || currentUser?.role === "administrador";
   const canManageTeachers = currentUser?.role === "gestao_escolar" || canManageSchools;
+  const canManageRegionalUsers = currentUser?.role === "seduc" || currentUser?.role === "administrador";
   const canUseTeacherArea = currentUser?.role === "professor" || currentUser?.role === "regional" || currentUser?.role === "seduc" || currentUser?.role === "administrador";
 
   const scopedSchools = useMemo(() => {
@@ -1503,6 +1505,7 @@ export function App() {
               <>
                 {canManageSchools && <NavButton active={view === "schools"} onClick={() => setView("schools")} icon={Building2} label="Escolas" />}
                 {canManageTeachers && <NavButton active={view === "teachers"} onClick={() => setView("teachers")} icon={UserRoundCog} label="Professores" />}
+                {canManageRegionalUsers && <NavButton active={view === "regionalUsers"} onClick={() => setView("regionalUsers")} icon={Landmark} label="Usuarios Regionais" />}
               </>
             )}
             <NavButton active={view === "reports"} onClick={() => setView("reports")} icon={BookOpenCheck} label="Relatorios" />
@@ -1544,6 +1547,9 @@ export function App() {
           )}
           {role === "management" && view === "teachers" && canManageTeachers && (
             <Teachers teachers={scopedTeachers} allTeachers={teachers} setTeachers={setTeachers} schools={scopedSchools} setMessage={setMessage} currentUser={currentUser} />
+          )}
+          {role === "management" && view === "regionalUsers" && canManageRegionalUsers && (
+            <RegionalUsers setMessage={setMessage} />
           )}
           {canUseTeacherArea && view === "items" && (
             <ItemBank
@@ -2703,6 +2709,162 @@ function Schools({
           </div>
         </div>
       )}
+    </section>
+  );
+}
+
+function generateRandomPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+  const values = new Uint32Array(14);
+  crypto.getRandomValues(values);
+  return Array.from(values, (value) => alphabet[value % alphabet.length]).join("");
+}
+
+function RegionalUsers({ setMessage }: { setMessage: (message: string) => void }) {
+  const [usuarios, setUsuarios] = useState<UsuarioRegionalOuSeduc[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [draft, setDraft] = useState({
+    nome: "",
+    email: "",
+    perfil: "regional" as "regional" | "seduc",
+    regional_codigo: regionaisSeed[0]?.codigo ?? "",
+  });
+
+  async function loadUsuarios() {
+    setLoading(true);
+    try {
+      setUsuarios(await carregarUsuariosRegionaisSeduc());
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao carregar usuários regionais/SEDUC.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadUsuarios();
+  }, []);
+
+  async function criarUsuario() {
+    if (!draft.nome || !draft.email) {
+      setMessage("Preencha nome e e-mail institucional.");
+      return;
+    }
+    if (!draft.email.includes("@")) {
+      setMessage("Informe um e-mail institucional válido.");
+      return;
+    }
+
+    try {
+      const resultado = await sincronizarUsuarioInstitucionalAuth({
+        email: draft.email,
+        nome: draft.nome,
+        perfil: draft.perfil,
+        regional_codigo: draft.perfil === "regional" ? draft.regional_codigo : undefined,
+        ativo: true,
+        alterar_senha_primeiro_login: true,
+      });
+      const senhaMsg = resultado?.senha_inicial ? ` Senha inicial gerada: ${resultado.senha_inicial} (informe ao usuário e peça para trocar no primeiro acesso).` : " Usuário sincronizado.";
+      setMessage(`Usuário ${draft.perfil === "regional" ? "regional" : "SEDUC"} salvo.${senhaMsg}`);
+      setDraft({ nome: "", email: "", perfil: "regional", regional_codigo: regionaisSeed[0]?.codigo ?? "" });
+      await loadUsuarios();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao criar usuário.");
+    }
+  }
+
+  async function redefinirSenha(usuario: UsuarioRegionalOuSeduc) {
+    const novaSenha = generateRandomPassword();
+    try {
+      await sincronizarUsuarioInstitucionalAuth({
+        email: usuario.email,
+        password: novaSenha,
+        nome: usuario.nome,
+        perfil: usuario.perfil,
+        regional_codigo: usuario.regional_codigo ?? undefined,
+        ativo: usuario.ativo,
+        alterar_senha_primeiro_login: true,
+        operacao: "redefinir_senha",
+      });
+      setMessage(`Senha de ${usuario.nome} redefinida: ${novaSenha} (informe ao usuário e peça para trocar no primeiro acesso).`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao redefinir senha.");
+    }
+  }
+
+  async function alternarAtivo(usuario: UsuarioRegionalOuSeduc) {
+    try {
+      await sincronizarUsuarioInstitucionalAuth({
+        email: usuario.email,
+        nome: usuario.nome,
+        perfil: usuario.perfil,
+        regional_codigo: usuario.regional_codigo ?? undefined,
+        ativo: !usuario.ativo,
+        alterar_senha_primeiro_login: usuario.alterar_senha_primeiro_login,
+      });
+      setMessage(`${usuario.nome} marcado como ${!usuario.ativo ? "ativo" : "inativo"}.`);
+      await loadUsuarios();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Falha ao atualizar status.");
+    }
+  }
+
+  return (
+    <section className="panel">
+      <h2>Usuários Regionais e SEDUC</h2>
+      <p>Contas de acesso para CREDE/SEFOR (perfil regional) e SEDUC. As 23 regionais já existem cadastradas — aqui você só cria/gerencia o login vinculado a cada uma.</p>
+      <div className="form-grid">
+        <Field label="Nome" value={draft.nome} onChange={(value) => setDraft({ ...draft, nome: value })} />
+        <Field label="E-mail institucional" value={draft.email} onChange={(value) => setDraft({ ...draft, email: value })} />
+        <label>
+          Perfil
+          <select value={draft.perfil} onChange={(event) => setDraft({ ...draft, perfil: event.target.value as "regional" | "seduc" })}>
+            <option value="regional">CREDE/SEFOR (regional)</option>
+            <option value="seduc">SEDUC</option>
+          </select>
+        </label>
+        {draft.perfil === "regional" && (
+          <label>
+            CREDE/SEFOR
+            <select value={draft.regional_codigo} onChange={(event) => setDraft({ ...draft, regional_codigo: event.target.value })}>
+              {regionaisSeed.map((regional) => (
+                <option value={regional.codigo} key={regional.codigo}>{regional.codigo}</option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+      <div className="notice">
+        Ao salvar, o usuário é criado/atualizado no Supabase Auth automaticamente. Se for uma conta nova, a senha inicial é gerada e mostrada aqui uma única vez.
+      </div>
+      <button className="primary" onClick={criarUsuario}>Salvar usuário</button>
+
+      <div className="reference-list">
+        <div className="section-heading compact">
+          <h4>Usuários cadastrados</h4>
+          <span className="count-chip">{usuarios.length}</span>
+        </div>
+        {loading && <p className="empty">Carregando...</p>}
+        {!loading && !usuarios.length && <p className="empty">Nenhum usuário regional ou SEDUC cadastrado ainda.</p>}
+        <div className="reference-grid">
+          {usuarios.map((usuario) => (
+            <article className="reference-card" key={usuario.id}>
+              <div>
+                <strong>{usuario.nome}</strong>
+                <em>{usuario.perfil === "regional" ? usuario.regional_codigo : "SEDUC"} · {usuario.ativo ? "ativo" : "inativo"}</em>
+                <span>{usuario.email}</span>
+                {usuario.alterar_senha_primeiro_login && <small>Aguardando troca de senha do primeiro acesso</small>}
+              </div>
+              <button className="secondary small" onClick={() => alternarAtivo(usuario)}>
+                {usuario.ativo ? "Inativar" : "Reativar"}
+              </button>
+              <button className="secondary small" onClick={() => redefinirSenha(usuario)}>
+                Redefinir senha
+              </button>
+            </article>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
