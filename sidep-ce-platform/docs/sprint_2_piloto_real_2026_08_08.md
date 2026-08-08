@@ -168,6 +168,51 @@ formulário (não é validação bloqueante, é orientação):
 `tsc -b` e `npm run build` sem erros após cada item. Mudanças 2, 4 e 5
 são só de formulário/exibição — não alteram `avaliacao_mvp` nem
 `resposta_avaliacao` diretamente, e não afetam avaliações já existentes
-(só o formulário de criação/edição). Recomendo testar a criação de uma
-nova avaliação de teste após o deploy para confirmar o dropdown de turma
-funcionando como esperado.
+(só o formulário de criação/edição).
+
+**Teste funcional completo feito em modo local** (sem tocar produção):
+criada escola de teste, avaliação de teste com 22 questões reais do banco
+seed, publicada com sucesso. Testado:
+- Exportação MD da Visão Geral: sem erro no console.
+- Exportação PDF: bloqueada pelo bloqueador de pop-up do ambiente de teste
+  automatizado (mesmo comportamento já existente antes das mudanças —
+  não é regressão).
+- Versão impressa da avaliação: mesmo bloqueio de pop-up do ambiente de
+  teste, mas sem erro — confirma que a correção da Sprint 1 (abrir a
+  janela antes do `await` da URL assinada) funciona: a mensagem de
+  bloqueio aparece corretamente em vez de travar ou lançar exceção.
+- Lançamento de prova impressa (modal): abre corretamente.
+- Responsividade: verificada por revisão de CSS (`.form-grid` com
+  `minmax(0, 1fr)` já dentro do breakpoint mobile existente,
+  `.table-wrap` com `overflow-x: auto`) — a ferramenta de automação
+  teve problema técnico para capturar a árvore de acessibilidade em
+  viewport mobile nesta sessão; recomendo uma checagem visual rápida do
+  usuário quando conveniente, sem bloquear o deploy.
+
+## Extra: significado de "encerrada" vs "corrigida"
+
+Discutido com o usuário durante os testes: os dois status não tinham
+diferença funcional nenhuma — a correção já é sempre automática (online
+ou lançamento manual impresso). Implementado:
+
+- **"Encerrar"** continua parando novas respostas online (a RPC
+  `sidep_enviar_resposta_publica` já só aceita envio com
+  `status = 'aberta'`, então isso já funcionava, só não estava
+  documentado/explicado na interface).
+- **"Marcar corrigida"** agora exige confirmação explícita
+  (`window.confirm`) perguntando se todos os dados — online e provas
+  impressas já lançadas manualmente — estão completos no sistema. Tooltip
+  (`title`) adicionado nos dois botões explicando a diferença.
+
+Também confirmado nesta sessão: o botão **"Lançar prova impressa"** já é
+exatamente o que o usuário imaginou ao perguntar sobre um "botão para
+lançar gabarito com nome do aluno" — funcionalidade já existente, só não
+estava sendo notada.
+
+## Nova demanda registrada (não implementada agora)
+
+Usuário relatou, ao tentar editar uma questão, que a tela está confusa e
+com usabilidade ruim — quer poder editar questão, descritor e componente
+vinculados em um fluxo mais integrado, sem trocar de tela. Registrado
+para a **Sprint 4** (que já ia mexer em banco de itens), documentado
+também na memória do projeto.

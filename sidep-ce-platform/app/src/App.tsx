@@ -5225,6 +5225,12 @@ function AssessmentsV2({
   }
 
   async function alterarStatusAvaliacao(assessment: AvaliacaoDraft, status: NonNullable<AvaliacaoDraft["status"]>) {
+    if (status === "corrigida") {
+      const confirmed = window.confirm(
+        `Marcar ${assessment.codigo_acesso} como corrigida confirma que TODOS os dados desta aplicação já estão no sistema — respostas online e qualquer prova impressa já lançada manualmente. Confirma que não falta nenhum estudante para registrar?`,
+      );
+      if (!confirmed) return;
+    }
     const updated: AvaliacaoDraft = {
       ...assessment,
       status,
@@ -5756,8 +5762,8 @@ function AssessmentsV2({
               <button className="secondary small" onClick={() => iniciarLancamentoImpresso(assessment)}>Lançar prova impressa</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "agendada")}>Agendar</button>
               <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "aberta")}>Abrir</button>
-              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "encerrada")}>Encerrar</button>
-              <button className="secondary small" onClick={() => alterarStatusAvaliacao(assessment, "corrigida")}>Marcar corrigida</button>
+              <button className="secondary small" title="Para de aceitar novas respostas online. Provas impressas ainda podem ser lançadas depois." onClick={() => alterarStatusAvaliacao(assessment, "encerrada")}>Encerrar</button>
+              <button className="secondary small" title="Confirma que todos os dados (online + impressos) já estão completos no sistema." onClick={() => alterarStatusAvaliacao(assessment, "corrigida")}>Marcar corrigida</button>
               <button className="secondary danger small" onClick={() => excluirAvaliacao(assessment)}>Excluir avaliação</button>
             </article>
           ))}
