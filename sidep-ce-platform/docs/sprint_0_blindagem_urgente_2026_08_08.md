@@ -140,3 +140,64 @@ identificadas na auditoria de 08/08/2026): escopo de escrita em
 `WITH CHECK` de `professor_vinculo`/`avaliacao_mvp`/`resposta_avaliacao`,
 tela administrativa de usuários, auditoria de ações críticas, policy de
 Storage por status da questão.
+
+---
+
+# Sprint 1 — Blindagem de Segurança (RLS), parte 1: WITH CHECK
+
+**Status: ✅ Parte 1 concluída em 08/08/2026** (demais itens da Sprint 1 —
+tela de usuários, auditoria, Storage — seguem pendentes, ver seção final)
+
+## Decisão de escopo registrada
+
+Perguntado se o banco de itens (`competencia_mvp`/`descritor_mvp`/`questao_mvp`)
+deveria ser restrito por curso/escola do professor, o usuário confirmou em
+08/08/2026 que é **proposital** ser um banco compartilhado entre todos os
+professores (curadoria em equipe via fluxo rascunho/em_revisão/validada).
+Nenhuma mudança feita aqui — documentado como regra de negócio, não como
+pendência de segurança.
+
+## O que foi corrigido
+
+Dois gaps reais onde `WITH CHECK` (regra de escrita) era mais fraco que
+`USING` (regra de leitura), permitindo em teoria escrita fora do escopo
+institucional do usuário:
+
+1. **`professor_vinculo`**: escrita validava só o papel do usuário, não a
+   escola/regional do vínculo. Corrigido: gestão escolar só vincula
+   professor à própria escola; CREDE/SEFOR só dentro da própria regional.
+2. **`avaliacao_mvp`, `avaliacao_codigo_bloqueado`, `resposta_avaliacao`**:
+   escrita de professor liberada só por bater a matrícula, sem checar se a
+   `escola_inep` gravada era uma escola onde ele tem vínculo. Corrigido:
+   agora exige matrícula E vínculo com a escola.
+
+Aplicado via `database/migration_2026_08_08_rls_scope_hardening_sprint1.sql`.
+Só altera `WITH CHECK` — `USING` (leitura) não mudou, nenhum acesso de
+leitura foi removido.
+
+## Verificação de segurança antes de aplicar
+
+Antes de rodar, verificado com
+`database/diagnostico_2026_08_08_vinculo_avaliacoes_reais.sql` que as 4
+avaliações reais existentes (2 abertas, 2 encerradas) já tinham vínculo
+correto entre professor e escola — a migração não bloqueia nenhuma delas.
+Confirmado também no código (`App.tsx:5046-5060`, `alterarStatusAvaliacao`)
+que a ação "Encerrar avaliação" sempre preserva `escola_inep`/
+`professor_matricula` do registro original, então continua funcionando
+normalmente com a regra nova.
+
+## Verificação pós-migração
+
+Rodada em produção em 08/08/2026, confirmada via consulta a `pg_policies`:
+as 7 policies esperadas foram recriadas corretamente em
+`professor_vinculo`, `avaliacao_mvp`, `avaliacao_codigo_bloqueado` e
+`resposta_avaliacao`.
+
+## O que ainda falta na Sprint 1
+
+- Tela administrativa de cadastro/gestão de usuário (hoje só via script
+  `bootstrap-auth-users.mjs`).
+- Auditoria de ações críticas (alteração de perfil, abertura/encerramento
+  de avaliação) além do que já existe em `log_auditoria`.
+- Revisão da policy de Storage de imagens por status da questão (imagem de
+  questão em rascunho hoje é pública se a URL for descoberta).
