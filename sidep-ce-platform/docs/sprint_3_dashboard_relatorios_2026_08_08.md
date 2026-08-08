@@ -67,7 +67,6 @@ gráfico, mais níveis de aprendizagem por faixa fixa.
 
 ## O que ainda falta na Sprint 3
 
-- Filtros interativos combinados (turma, escola, componente, data).
 - As duas lacunas estruturais registradas na Sprint 2: vínculo
   persistente do aluno entre rodadas de avaliação, e controle de
   cobertura de descritores por turma.
@@ -75,3 +74,56 @@ gráfico, mais níveis de aprendizagem por faixa fixa.
   (hoje ainda usa `MiniBarList`).
 - Validar com o usuário se os cortes de 40%/70% fazem sentido depois de
   ver dados reais de mais avaliações.
+
+---
+
+# Sprint 3, parte 2: filtros interativos
+
+## O que foi implementado
+
+Barra de filtros no topo da tela de Relatórios, aplicada a **todas** as
+abas (Visão Geral, Por Avaliação, Individual, Pedagógico, Exportações),
+porque todos os cálculos já derivavam de duas variáveis centrais
+(`respostasEscopo` e `assessments`) — filtrar ali propaga para a tela
+inteira sem precisar mexer em cada gráfico/tabela individualmente:
+
+- **Escola**: só aparece se o perfil do usuário enxerga mais de uma
+  escola (professor/gestão de escola única não precisa).
+- **Turma**: opções calculadas dinamicamente a partir das avaliações do
+  escopo, filtradas pela escola selecionada (se houver).
+- **Período**: data de início/fim do envio da resposta.
+- Aviso "Filtro ativo" e botão "Limpar filtros" quando algum filtro
+  estiver em uso.
+
+## Detalhe técnico da implementação
+
+Os parâmetros `schools`, `teachers`, `assessments` e `respostas` do
+componente `Reports` foram renomeados internamente para
+`schoolsProp`/`teachersProp`/`assessmentsProp`/`respostasProp`, e
+variáveis locais com o nome original (`schools`, `teachers`,
+`assessments`, `respostas`) foram recriadas já filtradas pelos novos
+controles. Como o resto do componente (mais de 900 linhas) já usava
+esses nomes, todo o código existente passou a respeitar o filtro
+automaticamente, sem precisar editar cada ponto individualmente.
+
+**Cuidado tomado**: os indicadores de qualidade de dado
+("avaliação sem turma", "resposta sem avaliação vinculada") continuam
+lendo o escopo completo por perfil, não o filtro escolhido pelo
+usuário — filtrar um problema de vínculo quebrado pelo próprio campo
+que está quebrado não faria sentido.
+
+**Achado incidental, fora do escopo desta sprint**: `respostasSemVinculo`
+já era estruturalmente sempre igual a zero antes desta mudança (a
+variável de onde ele lê já era pré-filtrada pelo mesmo critério que ele
+testa). Não é uma regressão introduzida agora, mas fica registrado para
+revisão futura.
+
+## Teste
+
+`tsc -b` e `npm run build`: sem erros, nenhum aviso de tipo mesmo após a
+renomeação de props. Teste funcional em modo local: criadas 2 escolas
+de teste — dropdown "Escola" só apareceu depois da segunda (confirma a
+regra de "só mostrar com mais de uma escola"); selecionar uma escola
+atualizou corretamente o KPI "Escolas" de 2 para 1, mostrou o aviso
+"Filtro ativo" e o botão "Limpar filtros"; limpar o filtro voltou ao
+estado original. Nenhum erro de console em nenhuma etapa.

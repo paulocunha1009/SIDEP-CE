@@ -5776,15 +5776,15 @@ function AssessmentsV2({
 }
 
 function Reports({
-  schools,
+  schools: schoolsProp,
   setSchools,
-  teachers,
+  teachers: teachersProp,
   setTeachers,
-  assessments,
+  assessments: assessmentsProp,
   setAssessments,
   questoes,
   setQuestoes,
-  respostas,
+  respostas: respostasProp,
   setRespostas,
   competencias,
   setCompetencias,
@@ -5814,6 +5814,40 @@ function Reports({
   const [activeReportTab, setActiveReportTab] = useState<"geral" | "avaliacao" | "individual" | "pedagogico" | "exportacoes">("geral");
   const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("");
   const [selectedResponseId, setSelectedResponseId] = useState("");
+  const [filtroEscolaInep, setFiltroEscolaInep] = useState("");
+  const [filtroTurma, setFiltroTurma] = useState("");
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
+
+  // Opcoes do filtro sempre listam o escopo completo (por perfil), nao o ja filtrado,
+  // para o usuario poder trocar de escola/turma sem precisar limpar o filtro antes.
+  const turmasFiltroDisponiveis = Array.from(
+    new Set(
+      assessmentsProp
+        .filter((assessment) => !filtroEscolaInep || assessment.escola_inep === filtroEscolaInep)
+        .map((assessment) => assessment.turma_codigo)
+        .filter((turma): turma is string => Boolean(turma?.trim())),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const assessments = assessmentsProp.filter(
+    (assessment) =>
+      (!filtroEscolaInep || assessment.escola_inep === filtroEscolaInep) &&
+      (!filtroTurma || assessment.turma_codigo === filtroTurma),
+  );
+  const schools = filtroEscolaInep ? schoolsProp.filter((school) => school.codigo_inep === filtroEscolaInep) : schoolsProp;
+  const teachers = filtroEscolaInep
+    ? teachersProp.filter((teacher) => teacherSchoolIds(teacher).includes(filtroEscolaInep))
+    : teachersProp;
+  const assessmentCodesFiltrados = new Set(assessments.map((assessment) => assessment.codigo_acesso));
+  const respostas = respostasProp.filter((resposta) => {
+    if (!assessmentCodesFiltrados.has(resposta.avaliacao_codigo)) return false;
+    if (filtroDataInicio && resposta.enviado_em < filtroDataInicio) return false;
+    if (filtroDataFim && resposta.enviado_em > `${filtroDataFim}T23:59:59`) return false;
+    return true;
+  });
+  const filtrosAtivos = Boolean(filtroEscolaInep || filtroTurma || filtroDataInicio || filtroDataFim);
+
   const assessmentCodes = new Set(assessments.map((assessment) => assessment.codigo_acesso));
   const respostasEscopo = respostas.filter((resposta) => assessmentCodes.has(resposta.avaliacao_codigo));
   const mediaGeral = respostasEscopo.length
@@ -6477,6 +6511,61 @@ function Reports({
         <div className="notice warning">
           <strong>Atenção aos vínculos:</strong> {avaliacoesSemTurma} avaliação(ões) sem turma informada e {respostasSemVinculo} resposta(s) sem avaliação encontrada neste escopo.
           Revise esses registros antes de usar os dados em decisão pedagógica.
+        </div>
+      )}
+      <div className="toolbar report-filter">
+        {schoolsProp.length > 1 && (
+          <label>
+            Escola
+            <select
+              value={filtroEscolaInep}
+              onChange={(event) => {
+                setFiltroEscolaInep(event.target.value);
+                setFiltroTurma("");
+              }}
+            >
+              <option value="">Todas as escolas do escopo</option>
+              {schoolsProp.map((school) => (
+                <option key={school.codigo_inep} value={school.codigo_inep}>{school.nome_oficial}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label>
+          Turma
+          <select value={filtroTurma} onChange={(event) => setFiltroTurma(event.target.value)}>
+            <option value="">Todas as turmas</option>
+            {turmasFiltroDisponiveis.map((turma) => (
+              <option key={turma} value={turma}>{turma}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Envio de
+          <input type="date" value={filtroDataInicio} onChange={(event) => setFiltroDataInicio(event.target.value)} />
+        </label>
+        <label>
+          Envio até
+          <input type="date" value={filtroDataFim} onChange={(event) => setFiltroDataFim(event.target.value)} />
+        </label>
+        {filtrosAtivos && (
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => {
+              setFiltroEscolaInep("");
+              setFiltroTurma("");
+              setFiltroDataInicio("");
+              setFiltroDataFim("");
+            }}
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+      {filtrosAtivos && (
+        <div className="notice">
+          Filtro ativo — os números e gráficos abaixo refletem só a escola/turma/período selecionados.
         </div>
       )}
       <div className="item-bank-tabs report-tabs" role="tablist" aria-label="Subabas de relatórios">
