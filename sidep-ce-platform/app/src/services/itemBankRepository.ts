@@ -8,6 +8,32 @@ const STORAGE_KEYS = {
   questoes: "sidep-ce:questoes",
 };
 
+export const QUESTION_IMAGE_BUCKET = "sidep-questoes-imagens";
+
+const IMAGEM_QUESTAO_EXPIRES_VISUALIZACAO_SEGUNDOS = 60 * 60 * 24;
+export const IMAGEM_QUESTAO_EXPIRES_IMPRESSAO_SEGUNDOS = 60 * 60 * 24 * 7;
+
+// O bucket de imagens de questoes e privado (ver migration_2026_08_08_storage_imagens_por_status.sql):
+// leitura anonima so e liberada por RLS para questoes com status "validada". Por isso a exibicao
+// sempre passa por uma URL assinada de curta duracao, gerada sob demanda, em vez de URL publica fixa.
+// Aceita tambem valores ja resolvidos (data: base64 do modo local, ou http(s) colado manualmente
+// pelo professor no campo de URL externa) e devolve sem alteracao.
+export async function resolverUrlImagemQuestao(
+  caminhoOuUrl: string | undefined,
+  expiresInSeconds: number = IMAGEM_QUESTAO_EXPIRES_VISUALIZACAO_SEGUNDOS,
+): Promise<string | undefined> {
+  if (!caminhoOuUrl) return undefined;
+  if (caminhoOuUrl.startsWith("data:") || caminhoOuUrl.startsWith("http")) return caminhoOuUrl;
+  if (!supabaseConfigured || !supabase) return undefined;
+
+  const { data, error } = await supabase.storage
+    .from(QUESTION_IMAGE_BUCKET)
+    .createSignedUrl(caminhoOuUrl, expiresInSeconds);
+
+  if (error || !data) return undefined;
+  return data.signedUrl;
+}
+
 function readLocal<T>(key: string): T[] {
   const raw = window.localStorage.getItem(key);
   if (!raw) return [];

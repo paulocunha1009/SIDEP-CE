@@ -193,12 +193,114 @@ as 7 policies esperadas foram recriadas corretamente em
 `professor_vinculo`, `avaliacao_mvp`, `avaliacao_codigo_bloqueado` e
 `resposta_avaliacao`.
 
+---
+
+# Sprint 1 — Blindagem de Segurança, parte 3: auditoria de avaliações
+
+## O que foi feito
+
+`log_auditoria` já cobria criação/sincronização de usuário (Edge Function) e
+envio de resposta do aluno. Faltava abertura/encerramento e exclusão de
+avaliação — adicionado em `App.tsx` (`alterarStatusAvaliacao`,
+`excluirAvaliacao`), reaproveitando o helper `registrarAuditoria` já
+existente (usado antes só para exportação de relatório). Alteração de
+perfil de usuário já era coberta server-side pela Edge Function
+`admin-create-user`, então não precisou de mudança adicional.
+
+## Teste
+
+`tsc -b` e `npm run build` sem erros. Ação é só um `INSERT` adicional em
+`log_auditoria` (RLS já permite insert para qualquer autenticado com perfil
+válido) — sem risco para o fluxo de avaliação em si.
+
+---
+
+# Sprint 1 — Blindagem de Segurança, parte 4: Storage de imagens por status
+
+## Investigação
+
+Descoberta mais séria do que o esperado: o caminho de cada imagem
+(`questoes/{codigo}/...`) é prevísivel, e como o bucket era **público**
+(`public = true`), a policy de leitura não bastava — buckets públicos no
+Supabase servem objetos por um endpoint que **ignora RLS por completo**.
+Isso significa que qualquer pessoa, sem login, podia **listar e baixar
+todas as imagens do banco de itens, inclusive rascunhos nunca publicados**,
+sem precisar adivinhar nome de arquivo algum.
+
+Confirmado com o usuário em 08/08/2026: nenhuma questão tem imagem em uso
+hoje — por isso foi possível implementar a correção completa (não uma
+mitigação parcial) sem nenhum risco de quebrar imagem já publicada.
+
+## O que foi implementado
+
+- **`database/migration_2026_08_08_storage_imagens_por_status.sql`**:
+  bucket passa a ser **privado**; policy de leitura para `authenticated`
+  (staff, qualquer perfil institucional ativo, vê qualquer imagem
+  independente do status — necessário para curadoria); policy de leitura
+  para `anon` (aluno) só quando a questão correspondente tem
+  `status = 'validada'`.
+- **`app/src/services/itemBankRepository.ts`**: nova função
+  `resolverUrlImagemQuestao()` — gera URL assinada sob demanda (bucket
+  privado não tem mais URL pública fixa); aceita também valores já prontos
+  (`data:` base64 do modo local, ou `http(s)` colado manualmente pelo
+  professor no campo de URL externa) e devolve sem alteração.
+- **`app/src/App.tsx`**: upload passa a guardar o **caminho** do arquivo em
+  `imagem_url` (não mais a URL pública); novo componente `QuestionImage`
+  resolve a URL assinada sob demanda em todos os pontos de exibição (tela
+  do aluno, prévia de upload, modal de leitura da questão); versão impressa
+  da avaliação (`abrirVersaoImpressa`) passou a ser assíncrona, resolvendo
+  URLs assinadas com validade de 7 dias antes de montar o HTML estático.
+- **Regressão encontrada e corrigida durante a implementação**: tornar
+  `abrirVersaoImpressa` assíncrona quebraria a abertura da janela de
+  impressão (bloqueio de pop-up do navegador, que só permite `window.open`
+  síncrono dentro do clique). Corrigido abrindo a janela imediatamente e
+  preenchendo o conteúdo depois que as URLs resolvem.
+
+## Teste
+
+`tsc -b` e `npm run build` sem erros. **Não foi possível testar upload real
+de imagem nem a resolução de URL assinada contra produção nesta sessão**
+(exigiria enviar um arquivo de teste real ao Storage) — pedir para o
+usuário testar após o deploy: cadastrar uma questão com imagem, verificar
+que aparece normalmente para staff, e que a versão impressa carrega a
+imagem.
+
+## Risco residual a observar
+
+Entre rodar a migration do banco (bucket fica privado) e o deploy do
+frontend novo terminar no Vercel, se alguém usar a versão **antiga** do
+frontend (ainda pedindo URL pública) para subir uma imagem nesse intervalo,
+o link ficaria quebrado até o deploy novo entrar no ar. Janela pequena
+(minutos), e não há imagem real hoje, mas por segurança recomendo rodar a
+migration e o push próximos no tempo.
+
+## Achado urgente durante a verificação (fora do escopo planejado)
+
+Ao rodar a query de conferência da migration acima, apareceram 3 policies
+que **não vieram desta sprint**: `sidep_questoes_imagens_select_anon`,
+`sidep_questoes_imagens_insert_anon` e `sidep_questoes_imagens_update_anon`
+— resquícios da migration do piloto de 09/07/2026. A migration "segura" de
+14/07/2026 (`migration_2026_07_14_storage_imagens_seguro.sql`) já mandava
+remover essas policies, mas **elas continuavam ativas em produção até
+08/08/2026** — ou seja, até este exato momento, qualquer pessoa sem login
+podia listar, ler, **enviar e sobrescrever** arquivos no bucket de imagens
+de questões. Corrigido imediatamente via
+`database/fix_2026_08_08_remove_policies_anon_storage_imagens.sql`,
+confirmado em produção: restam só `sidep_questoes_imagens_select_staff` e
+`sidep_questoes_imagens_select_validada`.
+
+**Lição registrada**: pelo menos uma migration "histórica" já dada como
+resolvida (14/07/2026) não tinha sido totalmente aplicada em produção.
+Recomendo, numa próxima sprint, uma auditoria completa comparando
+`pg_policies` real de produção contra o que cada migration do histórico
+deveria ter deixado, para garantir que não haja mais divergências como
+essa.
+
 ## O que ainda falta na Sprint 1
 
-- Auditoria de ações críticas (alteração de perfil, abertura/encerramento
-  de avaliação) além do que já existe em `log_auditoria`.
-- Revisão da policy de Storage de imagens por status da questão (imagem de
-  questão em rascunho hoje é pública se a URL for descoberta).
+Nada — os quatro itens planejados (RLS `WITH CHECK`, tela de usuários
+Regionais/SEDUC, auditoria de avaliações, Storage por status) estão
+concluídos, além da correção urgente encontrada no caminho.
 
 ---
 

@@ -40,6 +40,9 @@ import {
   salvarQuestaoLocal,
   sincronizarBancoItensSupabase,
   substituirBancoItensLocal,
+  QUESTION_IMAGE_BUCKET,
+  IMAGEM_QUESTAO_EXPIRES_IMPRESSAO_SEGUNDOS,
+  resolverUrlImagemQuestao,
 } from "./services/itemBankRepository";
 import { carregarCatalogoCurricularV2 } from "./services/curricularMatrixRepository";
 import {
@@ -378,7 +381,6 @@ function fileToBase64(file: File) {
 }
 
 const quantidadePorComponenteOptions = [2, 5, 10, 20];
-const QUESTION_IMAGE_BUCKET = "sidep-questoes-imagens";
 // Senha do administrador master no modo local (sem Supabase) só existe se definida
 // em VITE_LOCAL_MASTER_PASSWORD (arquivo .env.local, nunca commitado). Sem essa
 // variavel, o login local do master fica desabilitado - ver authUsers abaixo.
@@ -2439,7 +2441,7 @@ function StudentAssessmentRunner({
             <p>{questao.enunciado}</p>
             {questao.imagem_url && (
               <div className="question-image-box">
-                <img src={questao.imagem_url} alt={`Imagem de apoio da questão ${index + 1}`} />
+                <QuestionImage path={questao.imagem_url} alt={`Imagem de apoio da questão ${index + 1}`} />
               </div>
             )}
             {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((option) => {
@@ -3350,8 +3352,9 @@ function ItemBank({
           setMessage(`Falha no upload da imagem: ${error.message}. Confira se o bucket ${QUESTION_IMAGE_BUCKET} foi criado no Supabase.`);
           return;
         }
-        const { data } = supabase.storage.from(QUESTION_IMAGE_BUCKET).getPublicUrl(path);
-        setQuestaoDraft({ ...questaoDraft, imagem_url: data.publicUrl });
+        // Bucket privado: guardamos o caminho do objeto, nao uma URL publica. A exibicao
+        // resolve uma URL assinada sob demanda (QuestionImage), respeitando o status da questao.
+        setQuestaoDraft({ ...questaoDraft, imagem_url: path });
         setMessage("Imagem enviada ao Supabase Storage e vinculada a questao.");
         return;
       }
@@ -4155,7 +4158,7 @@ function ItemBank({
           {questaoDraft.imagem_url && (
             <div className="question-image-preview">
               <span>Prévia da imagem</span>
-              <img src={questaoDraft.imagem_url} alt="Prévia da imagem vinculada à questão" />
+              <QuestionImage path={questaoDraft.imagem_url} alt="Prévia da imagem vinculada à questão" />
               <button className="secondary small" type="button" onClick={() => setQuestaoDraft({ ...questaoDraft, imagem_url: "" })}>
                 Remover imagem
               </button>
@@ -4424,7 +4427,7 @@ function ItemBank({
                     <p>{questaoEmLeitura.enunciado}</p>
                     {questaoEmLeitura.imagem_url && (
                       <div className="question-image-box">
-                        <img src={questaoEmLeitura.imagem_url} alt={`Imagem de apoio da questão ${questaoEmLeitura.codigo}`} />
+                        <QuestionImage path={questaoEmLeitura.imagem_url} alt={`Imagem de apoio da questão ${questaoEmLeitura.codigo}`} />
                       </div>
                     )}
                   </div>
@@ -5218,6 +5221,18 @@ function AssessmentsV2({
       return;
     }
     setAssessments([...assessments.filter((item) => item.codigo_acesso !== updated.codigo_acesso), updated]);
+    void registrarAuditoria({
+      usuarioTipo: currentUser.role,
+      acao: "avaliacao_status_alterado",
+      entidade: "avaliacao_mvp",
+      entidadeId: updated.codigo_acesso,
+      metadados: {
+        status_anterior: assessment.status ?? "rascunho",
+        status_novo: status,
+        escola_inep: updated.escola_inep,
+        professor_matricula: updated.professor_matricula,
+      },
+    });
     setMessage(`Status da avaliação ${updated.codigo_acesso} alterado para ${status} em modo ${result.modo}.`);
   }
 
@@ -5242,6 +5257,17 @@ function AssessmentsV2({
     const nextBlockedCodes = Array.from(new Set([...blockedAssessmentCodes, assessment.codigo_acesso.toUpperCase()]));
     setAssessments(nextAssessments);
     setBlockedAssessmentCodes(nextBlockedCodes);
+    void registrarAuditoria({
+      usuarioTipo: currentUser.role,
+      acao: "avaliacao_excluida",
+      entidade: "avaliacao_mvp",
+      entidadeId: assessment.codigo_acesso,
+      metadados: {
+        escola_inep: assessment.escola_inep,
+        professor_matricula: assessment.professor_matricula,
+        status_no_momento: assessment.status,
+      },
+    });
     setDraft({
       ...draft,
       codigo_acesso: generateAssessmentAccessCode(nextAssessments, draft.curso_tecnico, draft.etapa, nextBlockedCodes),
@@ -5249,15 +5275,38 @@ function AssessmentsV2({
     setMessage(`Avaliação ${assessment.codigo_acesso} excluída em modo ${result.modo}. O código foi bloqueado e não será reutilizado.`);
   }
 
-  function abrirVersaoImpressa(assessment: AvaliacaoDraft) {
+  async function abrirVersaoImpressa(assessment: AvaliacaoDraft) {
     const assessmentQuestions = getAssessmentQuestions(assessment, questoes);
     if (!assessmentQuestions.length) {
       setMessage("Não foi possível gerar impressão: a avaliação não possui questões vinculadas.");
       return;
     }
+    // A janela precisa abrir de forma sincrona (dentro do clique) para o navegador nao
+    // bloquear como pop-up; o conteudo e preenchido depois que as URLs assinadas resolvem.
+    const printWindow = window.open("", "_blank", "width=1100,height=800");
+    if (!printWindow) {
+      setMessage("O navegador bloqueou a janela de impressão.");
+      return;
+    }
+    printWindow.document.write("<p>Preparando versão impressa...</p>");
+
+    // HTML estatico nao pode resolver imagem sob demanda, entao a URL assinada e gerada
+    // aqui com validade mais longa (7 dias) para o professor imprimir sem pressa.
+    const questoesComImagemResolvida = await Promise.all(
+      assessmentQuestions.map(async (questao) => ({
+        ...questao,
+        imagem_url: await resolverUrlImagemQuestao(questao.imagem_url, IMAGEM_QUESTAO_EXPIRES_IMPRESSAO_SEGUNDOS),
+      })),
+    );
     const school = schools.find((item) => item.codigo_inep === assessment.escola_inep);
-    const opened = openPrintableHtml(buildPrintableAssessmentHtml(assessment, assessmentQuestions, school));
-    setMessage(opened ? `Versão impressa da avaliação ${assessment.codigo_acesso} aberta.` : "O navegador bloqueou a janela de impressão.");
+    const html = buildPrintableAssessmentHtml(assessment, questoesComImagemResolvida, school);
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 400);
+    setMessage(`Versão impressa da avaliação ${assessment.codigo_acesso} aberta.`);
   }
 
   function iniciarLancamentoImpresso(assessment: AvaliacaoDraft) {
@@ -6950,6 +6999,25 @@ function ReferenceList({
       </div>
     </div>
   );
+}
+
+function QuestionImage({ path, alt }: { path: string; alt: string }) {
+  const [url, setUrl] = useState<string | undefined>(
+    path.startsWith("data:") || path.startsWith("http") ? path : undefined,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    resolverUrlImagemQuestao(path).then((resolved) => {
+      if (!cancelled) setUrl(resolved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
+
+  if (!url) return <p className="empty">Carregando imagem...</p>;
+  return <img src={url} alt={alt} />;
 }
 
 function Field({
