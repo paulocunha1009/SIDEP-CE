@@ -11,6 +11,7 @@
   UserRoundCog,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { NivelLegend, PerformanceBarChart, StatusDoughnutChart } from "./charts";
 import logoCentec from "./assets/logo-centec-transparent.png";
 import logoCrede03 from "./assets/logo-crede-03-transparent.png";
 import logoSeduc from "./assets/logo-seduc-transparent.png";
@@ -6502,21 +6503,15 @@ function Reports({
                 <h3>Desempenho por componente</h3>
                 <span className="tag">acertos</span>
               </div>
-              <MiniBarList items={componentesChart} empty="Ainda não há respostas para montar o gráfico por componente." />
+              <PerformanceBarChart items={componentesChart} emptyMessage="Ainda não há respostas para montar o gráfico por componente." />
+              <NivelLegend />
             </section>
             <section className="dashboard-card">
               <div className="card-heading">
                 <h3>Status das avaliações</h3>
                 <span className="tag">aplicações</span>
               </div>
-              <MiniBarList
-                items={statusResumo.map((item) => ({
-                  label: item.label,
-                  value: assessments.length ? Math.round((item.total / assessments.length) * 10000) / 100 : 0,
-                  detalhe: `${item.total} avaliação(ões)`,
-                }))}
-                empty="Nenhuma avaliação criada neste escopo."
-              />
+              <StatusDoughnutChart items={statusResumo.map((item) => ({ status: item.label, total: item.total }))} />
             </section>
           </div>
 
@@ -6525,11 +6520,11 @@ function Reports({
               <h3>Descritores críticos do escopo</h3>
               <span className="tag">prioridade pedagógica</span>
             </div>
-            <MiniBarList
+            <PerformanceBarChart
               items={descritoresCriticos.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
-              empty="Ainda não há respostas suficientes para apontar descritores críticos."
-              inverted
+              emptyMessage="Ainda não há respostas suficientes para apontar descritores críticos."
             />
+            <NivelLegend />
           </section>
 
           <section className="subpanel wide report-block">
@@ -6782,16 +6777,17 @@ function Reports({
             )}
           </section>
 
+          <NivelLegend />
+
           <div className="dashboard-grid two">
             <section className="dashboard-card">
               <div className="card-heading">
                 <h3>Descritores que exigem intervenção</h3>
                 <span className="tag">menor desempenho</span>
               </div>
-              <MiniBarList
+              <PerformanceBarChart
                 items={descritoresCriticos.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
-                empty="Ainda não há respostas suficientes para apontar descritores críticos."
-                inverted
+                emptyMessage="Ainda não há respostas suficientes para apontar descritores críticos."
               />
             </section>
             <section className="dashboard-card">
@@ -6799,9 +6795,9 @@ function Reports({
                 <h3>Descritores consolidados</h3>
                 <span className="tag">pontos fortes</span>
               </div>
-              <MiniBarList
+              <PerformanceBarChart
                 items={descritoresFortes.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
-                empty="Ainda não há respostas suficientes para apontar pontos fortes."
+                emptyMessage="Ainda não há respostas suficientes para apontar pontos fortes."
               />
             </section>
           </div>
@@ -6812,17 +6808,16 @@ function Reports({
                 <h3>Componentes curriculares</h3>
                 <span className="tag">planejamento</span>
               </div>
-              <MiniBarList items={componentesChart} empty="Ainda não há respostas por componente." />
+              <PerformanceBarChart items={componentesChart} emptyMessage="Ainda não há respostas por componente." />
             </section>
             <section className="dashboard-card">
               <div className="card-heading">
                 <h3>Competências amplas</h3>
                 <span className="tag">matriz</span>
               </div>
-              <MiniBarList
+              <PerformanceBarChart
                 items={competenciasChart.map((item) => ({ label: `${item.codigo} - ${item.descricao}`, value: item.value, detalhe: item.detalhe }))}
-                empty="Ainda não há respostas por competência."
-                inverted
+                emptyMessage="Ainda não há respostas por competência."
               />
             </section>
           </div>
