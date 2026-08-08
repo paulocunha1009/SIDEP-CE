@@ -5768,6 +5768,11 @@ function Reports({
     ? Math.round((respostasEscopo.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasEscopo.length) * 100) / 100
     : 0;
   const avaliacaoPorCodigo = new Map(assessments.map((assessment) => [assessment.codigo_acesso, assessment]));
+  const escolaPorInep = new Map(schools.map((school) => [school.codigo_inep, school.nome_oficial]));
+  function nomeEscola(inep: string | undefined) {
+    if (!inep) return "-";
+    return escolaPorInep.get(inep) ?? inep;
+  }
   const questaoPorCodigo = new Map(questoes.map((questao) => [questao.codigo, questao]));
   const descritorPorCodigo = new Map(descritores.map((descritor) => [descritor.codigo, descritor]));
   const competenciaPorCodigo = new Map(competencias.map((competencia) => [competencia.codigo, competencia]));
@@ -5809,6 +5814,7 @@ function Reports({
       return [
         resposta.estudante_nome,
         resposta.avaliacao_codigo,
+        nomeEscola(resposta.escola_inep || assessment?.escola_inep),
         turma,
         assessment?.titulo ?? resposta.avaliacao_titulo,
         `${resposta.acertos}/${resposta.total_questoes}`,
@@ -5825,6 +5831,7 @@ function Reports({
       : 0;
     return [
       assessment.codigo_acesso,
+      nomeEscola(assessment.escola_inep),
       assessment.turma_codigo,
       assessment.titulo,
       assessment.status ?? "rascunho",
@@ -6100,14 +6107,14 @@ function Reports({
       markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows),
       "",
       "## Avaliações recentes",
-      markdownTable(["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes),
+      markdownTable(["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes),
     ].join("\n");
     const htmlSections = [
       `<section><h2>Indicadores</h2><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
       `<section><h2>Status das avaliações</h2>${htmlTable(["Status", "Total"], statusRows)}</section>`,
       `<section><h2>Desempenho por componente</h2>${htmlTable(["Componente", "Acertos", "Resultado"], componentRows)}</section>`,
       `<section><h2>Descritores críticos</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
-      `<section><h2>Avaliações recentes</h2>${htmlTable(["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes)}</section>`,
+      `<section><h2>Avaliações recentes</h2>${htmlTable(["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes)}</section>`,
     ];
     exportReport("sidep-ce-relatorio-geral", title, markdown, htmlSections, format);
   }
@@ -6141,12 +6148,12 @@ function Reports({
       markdownTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows),
       "",
       "## Alunos da avaliação",
-      markdownTable(["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao),
+      markdownTable(["Aluno", "Avaliação", "Escola", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao),
     ].join("\n");
     const htmlSections = [
       `<section><h2>Dados da avaliação</h2><p><strong>Título:</strong> ${escapeHtml(selectedAssessment.titulo)}</p><p><strong>Curso:</strong> ${escapeHtml(selectedAssessment.curso_tecnico)}</p><p><strong>Componentes:</strong> ${escapeHtml(selectedAssessment.componentes)}</p><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
       `<section><h2>Descritores críticos da avaliação</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
-      `<section><h2>Alunos da avaliação</h2>${htmlTable(["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao)}</section>`,
+      `<section><h2>Alunos da avaliação</h2>${htmlTable(["Aluno", "Avaliação", "Escola", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"], linhasAlunosAvaliacao)}</section>`,
     ];
     exportReport(`sidep-ce-avaliacao-${slugReport(selectedAssessment.codigo_acesso)}`, title, markdown, htmlSections, format);
   }
@@ -6482,7 +6489,7 @@ function Reports({
               </div>
             </div>
             <DataTable
-              headers={["Avaliação", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"]}
+              headers={["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"]}
               rows={linhasAvaliacoesRecentes}
             />
           </section>
@@ -6549,7 +6556,7 @@ function Reports({
                   </div>
                 </div>
                 <DataTable
-                  headers={["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
+                  headers={["Aluno", "Avaliação", "Escola", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
                   rows={linhasAlunosAvaliacao}
                 />
               </section>
@@ -6655,7 +6662,7 @@ function Reports({
                   </div>
                 </div>
                 <DataTable
-                  headers={["Aluno", "Avaliação", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
+                  headers={["Aluno", "Avaliação", "Escola", "Turma", "Título", "Acertos", "Resultado", "Criada/Aberta", "Envio do aluno"]}
                   rows={linhasAlunos}
                 />
               </section>
