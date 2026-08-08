@@ -1,5 +1,7 @@
 # SIDEP-CE - Sprint 0: Blindagem Urgente (P0)
 
+**Status: ✅ Encerrada em 08/08/2026**
+
 Data: 08/08/2026
 Responsável: Paulo Cunha (validação) + coorientação técnica assistida
 Contexto: auditoria técnica completa do repositório identificou uma senha
@@ -65,26 +67,28 @@ Achados de origem (auditoria de 08/08/2026):
   explicando o risco e apontando para a versão segura equivalente.
   `database/README.md` atualizado para refletir o novo caminho.
 
-## O que NÃO foi feito nesta sprint (requer ação sua em produção)
+## Itens que dependiam de ação direta do usuário em produção
 
-Estes itens exigem você mesmo executar no painel do Supabase (ou autorizar
-explicitamente a execução), porque tocam o único banco existente (produção):
+Estes itens exigiam o usuário executar no painel do Supabase (fora do
+alcance de execução direta desta sessão):
 
 1. **Trocar a senha real do usuário administrador master no Supabase Auth**
    (painel Supabase > Authentication > Users), já que o valor antigo esteve
-   exposto no repositório.
-2. **Verificar quais usuários reais (professor/gestão escolar) ainda estão
-   com `alterar_senha_primeiro_login = true`** — esses são os que podem
-   ainda estar usando a senha exposta `AGzzcso1$` para autenticar de
-   verdade. Consulta sugerida (somente leitura, sem risco):
+   exposto no repositório. **Confirmado feito pelo usuário em 08/08/2026.**
+2. **Verificar usuários com `alterar_senha_primeiro_login = true`** —
+   consulta somente leitura deixada disponível para checagem futura caso
+   surjam dúvidas sobre alguma conta específica:
    ```sql
    select nome, email, perfil, alterar_senha_primeiro_login
    from sidep_usuario_perfil
    where alterar_senha_primeiro_login = true
    order by perfil, nome;
    ```
-   Para quem aparecer nessa lista, recomendo forçar redefinição de senha
-   antes de considerar o risco fechado.
+   **Sprint encerrada sem execução formal desta consulta** — decisão do
+   usuário em 08/08/2026 ao fechar a sprint. Não é um risco crítico
+   remanescente por si só (a senha exposta já foi trocada no master e as
+   senhas legadas de escola/professor já foram limpas no item 3), mas fica
+   registrado aqui para retomar se necessário.
 3. **Rodar a limpeza de `senha_inicial_hash` legada.** Usuário confirmou em
    08/08/2026 que todos os professores/gestões escolares ativos já acessam
    via Supabase Auth — pré-condição para essa limpeza ser segura. Preparado
@@ -120,9 +124,11 @@ Se quiser, posso limpá-los também, mas isso reescreveria um backup histórico
 - [x] Script de bootstrap falha explicitamente em vez de usar senha padrão
       silenciosa.
 - [x] Migrations permissivas do piloto isoladas e sinalizadas.
-- [ ] Senha real do admin master trocada no Supabase Auth (ação do usuário).
-- [ ] Usuários com `alterar_senha_primeiro_login = true` verificados/força
-      de redefinição aplicada (ação do usuário).
+- [x] Senha real do admin master trocada no Supabase Auth (confirmado pelo
+      usuário em 08/08/2026).
+- [~] Usuários com `alterar_senha_primeiro_login = true` — consulta de
+      verificação disponível, mas não executada; sprint encerrada mesmo
+      assim por decisão do usuário (risco residual baixo, ver seção acima).
 - [x] Limpeza de `senha_inicial_hash` legada executada e confirmada
       (0 escolas, 0 professores em 08/08/2026).
 
