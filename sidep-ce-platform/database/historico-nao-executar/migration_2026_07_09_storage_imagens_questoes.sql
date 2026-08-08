@@ -1,3 +1,11 @@
+-- !! NAO EXECUTAR EM PRODUCAO !!
+-- Este arquivo cria policies de Storage "to anon" (insert/update) para o bucket
+-- de imagens. Ele fica aqui so como referencia historica do piloto inicial
+-- (07/2026). A versao segura, que restringe escrita a usuarios autenticados, e:
+--   database/migration_2026_07_14_storage_imagens_seguro.sql
+-- Se voce rodar este arquivo no SQL Editor do Supabase depois da versao segura,
+-- qualquer visitante anonimo volta a poder enviar/alterar imagens no bucket.
+--
 -- SIDEP-CE - Imagens opcionais das questoes via Supabase Storage
 -- Data: 09/07/2026
 --

@@ -6,7 +6,7 @@ const overwriteProfiles = args.has("--overwrite-profiles");
 const includeArg = process.argv.find((arg) => arg.startsWith("--include="));
 const include = includeArg?.split("=")[1] ?? "all";
 const passwordMode = process.env.SIDEP_PASSWORD_MODE ?? "fixed";
-const fallbackPassword = process.env.SIDEP_INITIAL_PASSWORD ?? "AGzzcso1$";
+const fallbackPassword = process.env.SIDEP_INITIAL_PASSWORD;
 const protectedProfiles = new Set(["administrador", "seduc", "regional"]);
 const protectedEmails = new Set(
   String(process.env.SIDEP_MASTER_EMAILS ?? "")
@@ -20,6 +20,14 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY antes de rodar.");
+  process.exit(1);
+}
+
+if (execute && !fallbackPassword) {
+  console.error(
+    "Defina SIDEP_INITIAL_PASSWORD antes de rodar com --execute. Nao ha mais senha padrao fixa no codigo " +
+      "(use um valor novo e forte a cada execucao, nunca reaproveitado).",
+  );
   process.exit(1);
 }
 

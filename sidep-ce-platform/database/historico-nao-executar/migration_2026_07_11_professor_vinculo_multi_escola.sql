@@ -1,3 +1,11 @@
+-- !! NAO EXECUTAR EM PRODUCAO !!
+-- Este arquivo cria policies "to anon using(true)" em professor_vinculo. Ele
+-- fica aqui so como referencia historica do piloto inicial (07/2026). O setup
+-- seguro atual e:
+--   database/setup_2026_07_14_supabase_seguro_unico.sql
+-- Se voce rodar este arquivo no SQL Editor do Supabase depois do setup seguro,
+-- vai reabrir acesso anonimo de leitura/escrita em professor_vinculo.
+--
 -- SIDEP-CE - Vinculo N:N professor-escola para MVP online
 -- Data: 11/07/2026
 --

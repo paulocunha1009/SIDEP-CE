@@ -47,10 +47,13 @@ No PowerShell, dentro da pasta `sidep-ce-platform/app`, rode:
 ```powershell
 $env:SUPABASE_URL="https://SEU-PROJETO.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="COLE_A_SERVICE_ROLE_KEY"
-$env:SIDEP_INITIAL_PASSWORD="AGzzcso1$"
+$env:SIDEP_INITIAL_PASSWORD="DEFINA_UMA_SENHA_FORTE_E_UNICA_POR_EXECUCAO"
 $env:SIDEP_MASTER_EMAILS="email.master@dominio.com"
 npm run auth:bootstrap
 ```
+
+> Nunca reutilize a mesma senha inicial entre execuções nem a deixe escrita
+> neste arquivo. Defina um valor novo no terminal a cada execução.
 
 Sem `--execute`, nada será gravado. O script apenas mostra quem seria criado/vinculado.
 

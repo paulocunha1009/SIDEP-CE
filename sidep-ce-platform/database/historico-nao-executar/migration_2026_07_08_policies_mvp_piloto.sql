@@ -1,3 +1,11 @@
+-- !! NAO EXECUTAR EM PRODUCAO !!
+-- Este arquivo cria policies "to anon using(true)" que reabrem acesso publico
+-- total as tabelas listadas. Ele fica aqui so como referencia historica do
+-- piloto inicial (07/2026). O setup seguro atual e:
+--   database/setup_2026_07_14_supabase_seguro_unico.sql
+-- Se voce rodar este arquivo no SQL Editor do Supabase depois do setup seguro,
+-- vai reabrir acesso anonimo as tabelas institucionais e ao banco de itens.
+--
 -- SIDEP-CE - Policies temporarias para MVP piloto online
 -- Contexto:
 -- O app ainda nao usa Supabase Auth. Enquanto isso, o frontend acessa o banco

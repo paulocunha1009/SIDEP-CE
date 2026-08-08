@@ -26,15 +26,22 @@ Use apenas se o usuário master/admin aparecer como professor, gestão ou outro 
 
 Use apenas depois de confirmar que professores e gestões escolares já acessam pelo Supabase Auth.
 
-## Arquivos históricos do piloto
+## Arquivos históricos do piloto — NÃO EXECUTAR
 
-Os arquivos abaixo fizeram parte do MVP/piloto e não devem ser executados em produção sem revisão:
+Os arquivos abaixo fizeram parte do MVP/piloto inicial e foram movidos para
+`historico-nao-executar/` justamente para reduzir o risco de reexecução por
+engano no SQL Editor:
 
-- `migration_2026_07_08_policies_mvp_piloto.sql`
-- `migration_2026_07_09_storage_imagens_questoes.sql`
-- `migration_2026_07_11_professor_vinculo_multi_escola.sql`
+- `historico-nao-executar/migration_2026_07_08_policies_mvp_piloto.sql`
+- `historico-nao-executar/migration_2026_07_09_storage_imagens_questoes.sql`
+- `historico-nao-executar/migration_2026_07_11_professor_vinculo_multi_escola.sql`
 
-Eles contêm ou podem conter policies antigas para o papel `anon`, usadas apenas para validação inicial. O setup seguro remove essas policies do banco, mas rodar os arquivos históricos depois do setup pode reabrir permissões indevidas.
+Eles contêm policies `to anon using(true)` (acesso público total), usadas apenas
+para validação inicial do piloto. O setup seguro remove essas policies do banco,
+mas rodar qualquer um desses arquivos depois do setup reabre permissões
+indevidas. Cada arquivo tem um aviso `NAO EXECUTAR EM PRODUCAO` no topo. Mantidos
+apenas como referência histórica de como o RLS evoluiu — nunca colar no SQL
+Editor do Supabase em produção.
 
 ## Usuários Auth
 

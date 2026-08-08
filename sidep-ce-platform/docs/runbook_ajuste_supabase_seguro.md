@@ -48,10 +48,17 @@ cd "C:\Users\yolep\OneDrive\Documentos\Método TRI e IA\sidep-ce-platform\app"
 Configure as variaveis:
 
 ```powershell
-$env:SUPABASE_URL="https://qmfrxrvsoiwsfbjlwkfa.supabase.co"
+$env:SUPABASE_URL="COLE_A_URL_DO_PROJETO_SUPABASE"
 $env:SUPABASE_SERVICE_ROLE_KEY="COLE_A_SERVICE_ROLE_KEY"
-$env:SIDEP_INITIAL_PASSWORD="AGzzcso1$"
+$env:SIDEP_INITIAL_PASSWORD="DEFINA_UMA_SENHA_FORTE_E_UNICA_POR_EXECUCAO"
 ```
+
+> A URL do projeto e a senha inicial nunca devem ficar escritas em texto claro
+> neste arquivo. Defina os dois valores manualmente no terminal antes de cada
+> execução e nunca faça commit deles. Se a senha inicial usada em uma execução
+> anterior tiver sido exposta, gere uma nova e force a troca de senha (ou
+> revogue e recrie) de qualquer usuário que ainda esteja com
+> `alterar_senha_primeiro_login = true`.
 
 Primeiro rode em simulacao:
 

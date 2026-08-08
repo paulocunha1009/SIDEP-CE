@@ -378,7 +378,10 @@ function fileToBase64(file: File) {
 
 const quantidadePorComponenteOptions = [2, 5, 10, 20];
 const QUESTION_IMAGE_BUCKET = "sidep-questoes-imagens";
-const DEFAULT_ACCESS_PASSWORD = "AGzzcso1$";
+// Senha do administrador master no modo local (sem Supabase) só existe se definida
+// em VITE_LOCAL_MASTER_PASSWORD (arquivo .env.local, nunca commitado). Sem essa
+// variavel, o login local do master fica desabilitado - ver authUsers abaixo.
+const LOCAL_MASTER_PASSWORD = ((import.meta.env.VITE_LOCAL_MASTER_PASSWORD as string | undefined) ?? "").trim();
 const DEFAULT_TEACHER_CPF = "00000000000";
 const MASTER_USER_STORAGE_KEY = "sidep-ce:master-user";
 const ASSESSMENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -388,7 +391,7 @@ const DEFAULT_MASTER_USER: AuthUser = {
   nome: "Administrador Master SIDEP-CE",
   email: "master@sidep.ce.gov.br",
   role: "administrador",
-  senha_acesso: DEFAULT_ACCESS_PASSWORD,
+  senha_acesso: LOCAL_MASTER_PASSWORD,
   alterar_senha_primeiro_login: true,
   origem: "sistema",
 };
@@ -1189,7 +1192,9 @@ export function App() {
 
   const authUsers = useMemo<AuthUser[]>(
     () => [
-      masterUser,
+      // Master local só entra na lista de login se tiver senha real (definida via
+      // VITE_LOCAL_MASTER_PASSWORD ou já customizada e salva no navegador).
+      ...(masterUser.senha_acesso ? [masterUser] : []),
       ...schools
         .filter((school) => (school.status ?? "ativa") === "ativa")
         .map((school) => ({
@@ -1199,7 +1204,7 @@ export function App() {
           email: school.email_principal,
           role: "gestao_escolar" as const,
           escola_inep: school.codigo_inep,
-          senha_acesso: !school.senha_acesso || school.senha_acesso === DEFAULT_ACCESS_PASSWORD ? school.codigo_inep : school.senha_acesso,
+          senha_acesso: school.senha_acesso || school.codigo_inep,
           alterar_senha_primeiro_login: school.alterar_senha_primeiro_login ?? true,
           origem: "escola" as const,
         })),
@@ -1221,7 +1226,7 @@ export function App() {
             escolas_inep: escolasAtuacao,
             regional_codigo: authRole === "regional" ? school?.regional_codigo : undefined,
             professor_matricula: teacher.matricula,
-            senha_acesso: !teacher.senha_acesso || teacher.senha_acesso === DEFAULT_ACCESS_PASSWORD ? teacher.cpf || DEFAULT_TEACHER_CPF : teacher.senha_acesso,
+            senha_acesso: teacher.senha_acesso || teacher.cpf || DEFAULT_TEACHER_CPF,
             alterar_senha_primeiro_login: teacher.alterar_senha_primeiro_login ?? true,
             origem: "professor" as const,
           };
