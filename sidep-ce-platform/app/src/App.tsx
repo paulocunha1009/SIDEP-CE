@@ -256,6 +256,13 @@ function formatDateTime(value?: string) {
   });
 }
 
+function diasDesde(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function authRoleFromPerfil(perfil: PerfilAcesso): AuthRole {
   if (perfil === "administrador") return "administrador";
   if (perfil === "seduc") return "seduc";
@@ -4888,7 +4895,7 @@ function AssessmentsV2({
     curso_tecnico: cursoInicialPermitido,
     componentes: "",
     quantidade_questoes: 20,
-    turma_codigo: "2ª TEC. INF.",
+    turma_codigo: "",
     etapa: "diagnostica",
     questoes_por_componente: {},
     descritores_selecionados: [],
@@ -4902,6 +4909,15 @@ function AssessmentsV2({
   const [paperStudentName, setPaperStudentName] = useState("");
   const [paperAnswers, setPaperAnswers] = useState<Record<string, AlternativaKey>>({});
   const selectedSchool = schools.find((school) => school.codigo_inep === draft.escola_inep);
+  // Turmas ja usadas nessa escola, para reaproveitar o mesmo texto em vez de
+  // permitir grafias diferentes para a mesma turma (ex.: "1a TEC INF" vs "1ª TEC. INF.").
+  const turmasConhecidasEscola = Array.from(
+    new Set(
+      assessments
+        .filter((assessment) => assessment.escola_inep === draft.escola_inep && assessment.turma_codigo?.trim())
+        .map((assessment) => assessment.turma_codigo.trim()),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
 
   useEffect(() => {
     carregarCodigosAvaliacaoBloqueadosOnline()
@@ -5437,7 +5453,12 @@ function AssessmentsV2({
           <span className="count-chip">{cursosPermitidos.length} curso(s) permitido(s)</span>
         </div>
       <div className="form-grid assessment-form-grid">
-        <Field label="Título" value={draft.titulo} onChange={(value) => setDraft({ ...draft, titulo: value })} />
+        <Field
+          label="Título"
+          value={draft.titulo}
+          onChange={(value) => setDraft({ ...draft, titulo: value })}
+          helper="Sugestão: inclua os descritores cobertos e a rodada (ex.: 'Diagnóstico Informática - IB-D01/D02 - Rodada 1'), para identificar cada aplicação nos relatórios."
+        />
         <label>
           Código para estudantes
           <div className="code-generator">
@@ -5481,7 +5502,26 @@ function AssessmentsV2({
               : "A avaliação precisa informar a escola onde será aplicada."}
           </small>
         </label>
-        <Field label="Turma" value={draft.turma_codigo} onChange={(value) => setDraft({ ...draft, turma_codigo: value })} />
+        <label>
+          Turma
+          <select
+            value={turmasConhecidasEscola.includes(draft.turma_codigo.trim()) ? draft.turma_codigo.trim() : "__nova__"}
+            onChange={(event) => setDraft({ ...draft, turma_codigo: event.target.value === "__nova__" ? "" : event.target.value })}
+          >
+            <option value="__nova__">+ Nova turma...</option>
+            {turmasConhecidasEscola.map((turma) => (
+              <option key={turma} value={turma}>{turma}</option>
+            ))}
+          </select>
+          {!turmasConhecidasEscola.includes(draft.turma_codigo.trim()) && (
+            <input
+              value={draft.turma_codigo}
+              onChange={(event) => setDraft({ ...draft, turma_codigo: event.target.value })}
+              placeholder="Digite o nome da nova turma (ex.: 1ª TEC. INF.)"
+            />
+          )}
+          <small className="field-helper">Reaproveite uma turma já usada nesta escola sempre que possível, para os relatórios somarem certo entre avaliações.</small>
+        </label>
         <label>
           Etapa
           <select
@@ -5705,6 +5745,11 @@ function AssessmentsV2({
                   Regional: {assessment.regional_codigo ?? schools.find((school) => school.codigo_inep === assessment.escola_inep)?.regional_codigo ?? "não informada"} ·
                   Professor: {assessment.professor_matricula ?? "não informado"} · Código bloqueado para relatórios.
                 </small>
+                {assessment.status === "aberta" && (diasDesde(assessment.inicio_em) ?? 0) >= 3 && (
+                  <div className="notice warning">
+                    Aberta há {diasDesde(assessment.inicio_em)} dia(s) — se a aplicação já terminou, encerre para os relatórios refletirem o resultado final.
+                  </div>
+                )}
               </div>
               <button className="secondary small" onClick={() => setPreviewAssessment(assessment)}>Pré-visualizar como aluno</button>
               <button className="secondary small" onClick={() => abrirVersaoImpressa(assessment)}>Versão impressa</button>
