@@ -85,9 +85,23 @@ explicitamente a execução), porque tocam o único banco existente (produção)
    ```
    Para quem aparecer nessa lista, recomendo forçar redefinição de senha
    antes de considerar o risco fechado.
-3. **Confirmar se `database/cleanup_2026_07_14_senhas_legadas_pos_auth.sql`
-   já rodou** em produção (limpeza de `senha_inicial_hash` legada) — ainda
-   pendente de confirmação.
+3. **Rodar a limpeza de `senha_inicial_hash` legada.** Usuário confirmou em
+   08/08/2026 que todos os professores/gestões escolares ativos já acessam
+   via Supabase Auth — pré-condição para essa limpeza ser segura. Preparado
+   nesta sprint (não executado, pois não há acesso direto ao banco de
+   produção a partir daqui):
+   - `database/backup_2026_08_08_senhas_legadas_pre_cleanup.sql` — rodar
+     PRIMEIRO no SQL Editor do Supabase (só leitura + cria tabelas de
+     backup, não apaga nada).
+   - `database/cleanup_2026_07_14_senhas_legadas_pos_auth.sql` — rodar
+     DEPOIS de confirmar o backup.
+   Nenhum dos dois toca `avaliacao_mvp`/`resposta_avaliacao`/`questao_mvp`.
+   **Backup executado em 08/08/2026**: 0 escolas e 2 professores com
+   `senha_inicial_hash` legada, copiados para
+   `backup_20260808_professor_senha_legada` antes da limpeza.
+   **Limpeza executada em 08/08/2026**: confirmado 0 escolas e 0 professores
+   com `senha_inicial_hash` restante após rodar
+   `cleanup_2026_07_14_senhas_legadas_pos_auth.sql`. Item concluído.
 
 ## Observação sobre backups locais
 
@@ -109,7 +123,8 @@ Se quiser, posso limpá-los também, mas isso reescreveria um backup histórico
 - [ ] Senha real do admin master trocada no Supabase Auth (ação do usuário).
 - [ ] Usuários com `alterar_senha_primeiro_login = true` verificados/força
       de redefinição aplicada (ação do usuário).
-- [ ] Limpeza de `senha_inicial_hash` legada confirmada como executada.
+- [x] Limpeza de `senha_inicial_hash` legada executada e confirmada
+      (0 escolas, 0 professores em 08/08/2026).
 
 ## Próxima sprint recomendada
 
