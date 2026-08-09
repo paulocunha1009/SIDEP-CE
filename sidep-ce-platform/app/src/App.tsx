@@ -265,11 +265,15 @@ function pareceMatricula(value: string) {
   return /^\d{4,20}$/.test(value.trim());
 }
 
-// Aceita matricula cadastrada (mais robusta, liga o aluno entre rodadas de
-// avaliacao) ou nome completo (fallback, sempre funciona mesmo antes de a
-// escola ser importada para a tabela aluno_matricula).
+function pareceEmailInstitucional(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+// Aceita matricula ou e-mail institucional cadastrados (vinculam o aluno
+// entre rodadas de avaliacao) ou nome completo (fallback, sempre funciona
+// mesmo antes de a escola ser importada para a tabela aluno_matricula).
 function identificadorAlunoValido(value: string, aceitaMatricula: boolean) {
-  return pareceNomeCompleto(value) || (aceitaMatricula && pareceMatricula(value));
+  return pareceNomeCompleto(value) || (aceitaMatricula && (pareceMatricula(value) || pareceEmailInstitucional(value)));
 }
 
 function diasDesde(value?: string) {
@@ -1785,7 +1789,7 @@ function LoginScreen({
           <p>
             {loginMode === "aluno"
               ? supabaseConfigured
-                ? "Informe o código da prova e sua matrícula (ou nome completo, se sua escola ainda não tiver matrícula cadastrada). O aluno não acessa relatórios, pesos ou diagnóstico."
+                ? "Informe o código da prova e sua matrícula ou e-mail institucional (ou nome completo, se sua escola ainda não tiver matrícula cadastrada). O aluno não acessa relatórios, pesos ou diagnóstico."
                 : "Informe o código da prova e seu nome completo. O aluno não acessa relatórios, pesos ou diagnóstico."
               : "Professor, gestão escolar, CREDE/SEFOR, SEDUC e Administrador Master entram pelo acesso institucional."}
           </p>
@@ -1808,12 +1812,12 @@ function LoginScreen({
               />
             </label>
             <label>
-              {supabaseConfigured ? "Matrícula ou nome completo do aluno" : "Nome completo do aluno"}
+              {supabaseConfigured ? "Matrícula, e-mail institucional ou nome completo" : "Nome completo do aluno"}
               <input
                 className="student-login-input"
                 value={studentName}
                 onChange={(event) => setStudentName(event.target.value)}
-                placeholder={supabaseConfigured ? "Digite sua matrícula ou o nome completo" : "Digite o nome completo"}
+                placeholder={supabaseConfigured ? "Matrícula, e-mail institucional ou nome completo" : "Digite o nome completo"}
               />
             </label>
             {!supabaseConfigured && studentAssessment && (

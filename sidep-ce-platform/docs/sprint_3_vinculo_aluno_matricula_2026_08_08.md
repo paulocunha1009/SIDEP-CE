@@ -84,6 +84,27 @@ Migration e importação já aplicadas em produção. Falta só publicar o
 código do frontend (App.tsx, types.ts, registryRepository.ts) que já
 estava pronto aguardando essa validação.
 
+## Extensão: e-mail institucional como identificador também
+
+O usuário levantou uma dúvida importante: trocar "nome" por "matrícula"
+**não tira o sistema da LGPD** — matrícula e e-mail institucional
+continuam sendo dado pessoal (e, com o e-mail geralmente contendo o
+nome, até mais identificável que um nome solto). Isso não muda com essa
+extensão; é uma decisão de robustez técnica (evitar erro de digitação),
+não de conformidade. Registrado como pendência real: o projeto ainda
+não tem política de privacidade/termo de uso formal, e agora liga dado
+de aluno entre rodadas — vale revisão formal (idealmente com o
+jurídico/DPO da SEDUC) numa próxima etapa, fora do escopo técnico desta
+sessão.
+
+Decidido: o login do aluno aceita **matrícula OU e-mail institucional**
+(`@aluno.ce.gov.br`) cadastrados, além do nome completo (fallback).
+Implementado em `database/migration_2026_08_08_aluno_email_login.sql` —
+mesma lógica híbrida e aditiva, só adiciona `lower(email_institucional)
+= lower(identificador)` como segunda forma de resolução. Testado pelo
+usuário em produção com e-mail real contra avaliação já encerrada:
+resolveu corretamente, sem efeito colateral.
+
 ## Próximo passo natural (não implementado agora)
 
 Com `resposta_avaliacao.matricula` sendo populado a partir de agora,
