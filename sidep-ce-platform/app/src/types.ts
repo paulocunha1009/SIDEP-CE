@@ -173,6 +173,7 @@ export type QuestaoPublica = Omit<QuestaoDraft, "gabarito" | "justificativa" | "
 
 export interface AvaliacaoAlunoPublica {
   attempt_key: string;
+  nome_resolvido: string;
   assessment: AvaliacaoDraft;
   questoes: QuestaoPublica[];
 }
@@ -183,6 +184,7 @@ export interface RespostaAvaliacaoDraft {
   avaliacao_titulo: string;
   estudante_nome: string;
   estudante_chave: string;
+  matricula?: string;
   turma_codigo: string;
   curso_tecnico: string;
   escola_inep?: string;

@@ -257,6 +257,21 @@ function formatDateTime(value?: string) {
   });
 }
 
+function pareceNomeCompleto(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length >= 2;
+}
+
+function pareceMatricula(value: string) {
+  return /^\d{4,20}$/.test(value.trim());
+}
+
+// Aceita matricula cadastrada (mais robusta, liga o aluno entre rodadas de
+// avaliacao) ou nome completo (fallback, sempre funciona mesmo antes de a
+// escola ser importada para a tabela aluno_matricula).
+function identificadorAlunoValido(value: string, aceitaMatricula: boolean) {
+  return pareceNomeCompleto(value) || (aceitaMatricula && pareceMatricula(value));
+}
+
 function diasDesde(value?: string) {
   if (!value) return null;
   const date = new Date(value);
@@ -1665,6 +1680,7 @@ function LoginScreen({
   const [studentSession, setStudentSession] = useState<{
     assessment: AvaliacaoDraft;
     name: string;
+    identificador?: string;
     questoes?: QuestaoPublica[];
     secureOnline?: boolean;
   } | null>(null);
@@ -1684,7 +1700,7 @@ function LoginScreen({
   }
 
   async function submitStudentAccess() {
-    if (studentName.trim().split(" ").length < 2) return;
+    if (!identificadorAlunoValido(studentName, supabaseConfigured)) return;
     if (supabaseConfigured) {
       if (!studentCode.trim()) return;
       setStudentLoading(true);
@@ -1692,7 +1708,8 @@ function LoginScreen({
         const acesso = await obterAvaliacaoPublicaAluno(studentCode, studentName);
         setStudentSession({
           assessment: acesso.assessment,
-          name: studentName.trim(),
+          name: acesso.nome_resolvido || studentName.trim(),
+          identificador: studentName.trim(),
           questoes: acesso.questoes,
           secureOnline: true,
         });
@@ -1724,6 +1741,7 @@ function LoginScreen({
           assessment={studentSession.assessment}
           questoes={studentSession.questoes ?? questoes}
           studentName={studentSession.name}
+          identificador={studentSession.identificador}
           respostas={respostas}
           setRespostas={setRespostas}
           previewMode={false}
@@ -1766,7 +1784,9 @@ function LoginScreen({
           <h2>{loginMode === "aluno" ? "Entrar na avaliação" : "Acesso institucional"}</h2>
           <p>
             {loginMode === "aluno"
-              ? "Informe o código da prova e seu nome completo. O aluno não acessa relatórios, pesos ou diagnóstico."
+              ? supabaseConfigured
+                ? "Informe o código da prova e sua matrícula (ou nome completo, se sua escola ainda não tiver matrícula cadastrada). O aluno não acessa relatórios, pesos ou diagnóstico."
+                : "Informe o código da prova e seu nome completo. O aluno não acessa relatórios, pesos ou diagnóstico."
               : "Professor, gestão escolar, CREDE/SEFOR, SEDUC e Administrador Master entram pelo acesso institucional."}
           </p>
         </div>
@@ -1788,12 +1808,12 @@ function LoginScreen({
               />
             </label>
             <label>
-              Nome completo do aluno
+              {supabaseConfigured ? "Matrícula ou nome completo do aluno" : "Nome completo do aluno"}
               <input
                 className="student-login-input"
                 value={studentName}
                 onChange={(event) => setStudentName(event.target.value)}
-                placeholder="Digite o nome completo"
+                placeholder={supabaseConfigured ? "Digite sua matrícula ou o nome completo" : "Digite o nome completo"}
               />
             </label>
             {!supabaseConfigured && studentAssessment && (
@@ -1810,7 +1830,7 @@ function LoginScreen({
             <button
               className="primary"
               onClick={submitStudentAccess}
-              disabled={studentLoading || studentName.trim().split(" ").length < 2 || (supabaseConfigured ? !studentCode.trim() : !studentAssessment)}
+              disabled={studentLoading || !identificadorAlunoValido(studentName, supabaseConfigured) || (supabaseConfigured ? !studentCode.trim() : !studentAssessment)}
             >
               {studentLoading ? "Verificando..." : "Acessar avaliação"}
             </button>
@@ -2294,6 +2314,7 @@ function StudentAssessmentRunner({
   assessment,
   questoes,
   studentName,
+  identificador,
   respostas,
   setRespostas,
   previewMode,
@@ -2303,12 +2324,18 @@ function StudentAssessmentRunner({
   assessment: AvaliacaoDraft;
   questoes: Array<QuestaoDraft | QuestaoPublica>;
   studentName: string;
+  identificador?: string;
   respostas: RespostaAvaliacaoDraft[];
   setRespostas: (respostas: RespostaAvaliacaoDraft[]) => void;
   previewMode: boolean;
   secureOnline?: boolean;
   onBack: () => void;
 }) {
+  // Para acesso online, o "identificador" e o valor cru digitado (matricula ou
+  // nome) - precisa ser reenviado igual no envio final, senao o vinculo com
+  // aluno_matricula (e a checagem de segunda tentativa) se perde, mesmo com
+  // studentName ja mostrando o nome resolvido na tela.
+  const identificadorEnvio = identificador ?? studentName;
   const [attemptSeed] = useState(() => `${assessment.codigo_acesso}-${studentName}-${Date.now()}-${Math.random()}`);
   const assessmentQuestions = useMemo(
     () => shuffleWithSeed(secureOnline ? questoes : getAssessmentQuestions(assessment, questoes as QuestaoDraft[]), attemptSeed),
@@ -2330,7 +2357,7 @@ function StudentAssessmentRunner({
       setSubmitted(true);
       return;
     }
-    const estudante_chave = studentAttemptKey(assessment.codigo_acesso, studentName);
+    const estudante_chave = studentAttemptKey(assessment.codigo_acesso, secureOnline ? identificadorEnvio : studentName);
     if (respostas.some((resposta) => resposta.estudante_chave === estudante_chave)) {
       setSubmitted(true);
       return;
@@ -2339,7 +2366,7 @@ function StudentAssessmentRunner({
       try {
         const saved = await enviarRespostaPublicaAluno({
           codigo: assessment.codigo_acesso,
-          nome: studentName,
+          nome: identificadorEnvio,
           ordemQuestoes: assessmentQuestions.map((questao) => questao.codigo),
           respostas: answers,
         });
