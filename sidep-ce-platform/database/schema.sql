@@ -1,6 +1,15 @@
 ﻿-- SIDEP-CE - Modelo inicial de banco de dados
 -- Banco alvo: PostgreSQL
 -- Fase: fundacao institucional + avaliacao diagnostica pre-TRI
+--
+-- Nota (08/08/2026, Sprint 4): removidas as tabelas do fluxo de avaliacao
+-- "amplo" original (questao, avaliacao, avaliacao_questao,
+-- estudante_aplicacao, resposta, resultado_individual,
+-- intervencao_pedagogica) - nunca chegaram a ser usadas em producao,
+-- ficaram bloqueadas por RLS sem nenhuma policy desde a migracao de
+-- seguranca de 14/07/2026. O fluxo real de avaliacao usa exclusivamente
+-- o modelo MVP abaixo (avaliacao_mvp, questao_mvp, resposta_avaliacao).
+-- Decisao confirmada com o usuario antes de remover.
 
 create extension if not exists pgcrypto;
 
@@ -147,68 +156,6 @@ create table if not exists descritor (
   unique (competencia_id, codigo)
 );
 
-create table if not exists questao (
-  id uuid primary key default gen_random_uuid(),
-  descritor_id uuid not null references descritor(id),
-  autor_professor_id uuid references professor(id),
-  enunciado text not null,
-  tipo varchar(30) not null default 'multipla_escolha'
-    check (tipo in ('multipla_escolha', 'multipla_resposta', 'situacao_problema', 'rubrica')),
-  alternativas jsonb,
-  gabarito jsonb,
-  justificativa text,
-  dificuldade_inicial numeric(5,2) not null default 1.00,
-  status varchar(30) not null default 'rascunho'
-    check (status in ('rascunho', 'em_revisao', 'validada', 'aplicada', 'revisada', 'suspensa', 'descartada')),
-  criado_em timestamptz not null default now(),
-  atualizado_em timestamptz not null default now()
-);
-
-create table if not exists avaliacao (
-  id uuid primary key default gen_random_uuid(),
-  professor_id uuid not null references professor(id),
-  turma_id uuid not null references turma(id),
-  titulo varchar(220) not null,
-  codigo_acesso varchar(40) not null unique,
-  quantidade_questoes integer not null check (quantidade_questoes between 20 and 80),
-  status varchar(30) not null default 'rascunho'
-    check (status in ('rascunho', 'agendada', 'aberta', 'encerrada', 'corrigida')),
-  inicio_em timestamptz,
-  fim_em timestamptz,
-  criada_em timestamptz not null default now()
-);
-
-create table if not exists avaliacao_questao (
-  avaliacao_id uuid not null references avaliacao(id) on delete cascade,
-  questao_id uuid not null references questao(id),
-  ordem integer not null,
-  peso_pre_tri numeric(5,2) not null default 1.00,
-  primary key (avaliacao_id, questao_id)
-);
-
-create table if not exists estudante_aplicacao (
-  id uuid primary key default gen_random_uuid(),
-  avaliacao_id uuid not null references avaliacao(id),
-  nome_completo varchar(180) not null,
-  identificador_institucional varchar(80),
-  iniciado_em timestamptz not null default now(),
-  finalizado_em timestamptz,
-  dispositivo varchar(80),
-  status varchar(20) not null default 'em_andamento'
-    check (status in ('em_andamento', 'finalizada', 'cancelada'))
-);
-
-create table if not exists resposta (
-  id uuid primary key default gen_random_uuid(),
-  estudante_aplicacao_id uuid not null references estudante_aplicacao(id) on delete cascade,
-  questao_id uuid not null references questao(id),
-  resposta jsonb not null,
-  correta boolean,
-  tempo_resposta_segundos integer,
-  respondida_em timestamptz not null default now(),
-  unique (estudante_aplicacao_id, questao_id)
-);
-
 -- Registro consolidado usado pelo MVP React/Supabase.
 -- Mantem uma tentativa por estudante normalizado e codigo de avaliacao,
 -- preserva a ordem sorteada das questoes e os agregados pedagogicos.
@@ -315,30 +262,6 @@ create index if not exists avaliacao_mvp_status_idx on avaliacao_mvp (status);
 create index if not exists descritor_mvp_competencia_idx on descritor_mvp (competencia_codigo);
 create index if not exists questao_mvp_descritor_idx on questao_mvp (descritor_codigo);
 create index if not exists questao_mvp_status_idx on questao_mvp (status);
-
-create table if not exists resultado_individual (
-  id uuid primary key default gen_random_uuid(),
-  estudante_aplicacao_id uuid not null references estudante_aplicacao(id),
-  percentual_bruto numeric(5,2) not null,
-  escore_pre_tri numeric(8,2),
-  nivel_diagnostico varchar(80),
-  desempenho_por_descritor jsonb,
-  descritores_criticos jsonb,
-  gerado_em timestamptz not null default now()
-);
-
-create table if not exists intervencao_pedagogica (
-  id uuid primary key default gen_random_uuid(),
-  avaliacao_id uuid not null references avaliacao(id),
-  turma_id uuid not null references turma(id),
-  descritor_id uuid references descritor(id),
-  professor_id uuid not null references professor(id),
-  descricao text not null,
-  prazo date,
-  status varchar(30) not null default 'planejada'
-    check (status in ('planejada', 'em_execucao', 'concluida', 'cancelada')),
-  criada_em timestamptz not null default now()
-);
 
 create table if not exists log_auditoria (
   id uuid primary key default gen_random_uuid(),
