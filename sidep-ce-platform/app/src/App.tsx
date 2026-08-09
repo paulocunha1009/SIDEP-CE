@@ -5959,6 +5959,60 @@ function Reports({
     ];
   });
 
+  // Cobertura de descritores por turma: como a aplicacao acontece em rodadas
+  // curtas (poucos descritores por vez), isso mostra o que ja foi aplicado
+  // (avaliacao com pelo menos 1 resposta) e o que ainda falta por turma.
+  const descritoresPorCurso = new Map<string, Set<string>>();
+  descritores.forEach((descritor) => {
+    const competencia = competenciaPorCodigo.get(descritor.competencia_codigo);
+    if (!competencia) return;
+    const curso = competencia.curso_tecnico;
+    if (!descritoresPorCurso.has(curso)) descritoresPorCurso.set(curso, new Set());
+    descritoresPorCurso.get(curso)!.add(descritor.codigo);
+  });
+
+  const coberturaPorTurma = new Map<string, { escola_inep?: string; turma: string; curso: string; cobertos: Set<string> }>();
+  assessments.forEach((assessment) => {
+    const respostasDaAvaliacao = respostasEscopo.filter((resposta) => resposta.avaliacao_codigo === assessment.codigo_acesso);
+    if (!respostasDaAvaliacao.length) return;
+    const chave = `${assessment.escola_inep ?? "-"}||${assessment.turma_codigo}||${assessment.curso_tecnico}`;
+    if (!coberturaPorTurma.has(chave)) {
+      coberturaPorTurma.set(chave, {
+        escola_inep: assessment.escola_inep,
+        turma: assessment.turma_codigo,
+        curso: assessment.curso_tecnico,
+        cobertos: new Set(),
+      });
+    }
+    const entrada = coberturaPorTurma.get(chave)!;
+    (assessment.questoes_codigos ?? []).forEach((codigoQuestao) => {
+      const questao = questaoPorCodigo.get(codigoQuestao);
+      if (questao) entrada.cobertos.add(questao.descritor_codigo);
+    });
+  });
+
+  function formatPendentes(pendentes: string[]) {
+    if (!pendentes.length) return "Nenhum — cobertura completa";
+    if (pendentes.length <= 8) return pendentes.join(", ");
+    return `${pendentes.slice(0, 8).join(", ")} e mais ${pendentes.length - 8}`;
+  }
+
+  const linhasCobertura = Array.from(coberturaPorTurma.values())
+    .map((entrada) => {
+      const todosDescritores = descritoresPorCurso.get(entrada.curso) ?? new Set<string>();
+      const pendentes = Array.from(todosDescritores)
+        .filter((codigo) => !entrada.cobertos.has(codigo))
+        .sort((a, b) => a.localeCompare(b));
+      return [
+        nomeEscola(entrada.escola_inep),
+        entrada.turma || "-",
+        entrada.curso,
+        `${entrada.cobertos.size}/${todosDescritores.size || entrada.cobertos.size}`,
+        formatPendentes(pendentes),
+      ];
+    })
+    .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+
   const descritorResumo = new Map<string, { acertos: number; total: number }>();
   const componenteResumo = new Map<string, { acertos: number; total: number }>();
   const competenciaResumo = new Map<string, { acertos: number; total: number }>();
@@ -6225,6 +6279,9 @@ function Reports({
       "",
       "## Avaliações recentes",
       markdownTable(["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes),
+      "",
+      "## Cobertura de descritores por turma",
+      markdownTable(["Escola", "Turma", "Curso", "Cobertos", "Descritores pendentes"], linhasCobertura),
     ].join("\n");
     const htmlSections = [
       `<section><h2>Indicadores</h2><div class="metrics">${metrics.map(([label, value]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div></section>`,
@@ -6232,6 +6289,7 @@ function Reports({
       `<section><h2>Desempenho por componente</h2>${htmlTable(["Componente", "Acertos", "Resultado"], componentRows)}</section>`,
       `<section><h2>Descritores críticos</h2>${htmlTable(["Descritor", "Descrição", "Acertos", "Resultado"], criticalRows)}</section>`,
       `<section><h2>Avaliações recentes</h2>${htmlTable(["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"], linhasAvaliacoesRecentes)}</section>`,
+      `<section><h2>Cobertura de descritores por turma</h2>${htmlTable(["Escola", "Turma", "Curso", "Cobertos", "Descritores pendentes"], linhasCobertura)}</section>`,
     ];
     exportReport("sidep-ce-relatorio-geral", title, markdown, htmlSections, format);
   }
@@ -6657,6 +6715,19 @@ function Reports({
             <DataTable
               headers={["Avaliação", "Escola", "Turma", "Título", "Status", "Respostas", "Média", "Criada/Aberta", "Encerrada/Corrigida"]}
               rows={linhasAvaliacoesRecentes}
+            />
+          </section>
+
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Cobertura de descritores por turma</h3>
+                <p>Como a aplicação acontece em rodadas curtas, aqui mostra o que já foi aplicado (com pelo menos 1 resposta) e o que ainda falta cobrir por turma.</p>
+              </div>
+            </div>
+            <DataTable
+              headers={["Escola", "Turma", "Curso", "Cobertos", "Descritores pendentes"]}
+              rows={linhasCobertura}
             />
           </section>
         </div>
