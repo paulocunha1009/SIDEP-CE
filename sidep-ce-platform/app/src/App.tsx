@@ -88,7 +88,7 @@ import type {
 type Role = "student" | "teacher" | "management";
 type View = "home" | "student" | "schools" | "teachers" | "regionalUsers" | "items" | "assessments" | "reports";
 type ItemBankTab = "competencias" | "descritores" | "questoes";
-type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario" | "solicitacoes" | "historico";
+type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario";
 type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
 type AuthRole = "aluno" | "professor" | "gestao_escolar" | "regional" | "seduc" | "administrador";
 
@@ -1589,6 +1589,7 @@ export function App() {
               questoes={questoes}
               setQuestoes={setQuestoes}
               catalogoCurricularV2={catalogoCurricularV2}
+              respostas={respostas}
               setMessage={setMessage}
             />
           )}
@@ -3245,6 +3246,7 @@ function ItemBank({
   questoes,
   setQuestoes,
   catalogoCurricularV2,
+  respostas,
   setMessage,
 }: {
   competencias: CompetenciaDraft[];
@@ -3254,6 +3256,7 @@ function ItemBank({
   questoes: QuestaoDraft[];
   setQuestoes: (questoes: QuestaoDraft[]) => void;
   catalogoCurricularV2: CatalogoCurricularV2;
+  respostas: RespostaAvaliacaoDraft[];
   setMessage: (message: string) => void;
 }) {
   const [competenciaDraft, setCompetenciaDraft] = useState<CompetenciaDraft>({
@@ -3288,12 +3291,9 @@ function ItemBank({
   const [activeTab, setActiveTab] = useState<ItemBankTab>("competencias");
   const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
   const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
+  const [questaoEmEdicaoCodigo, setQuestaoEmEdicaoCodigo] = useState<string | null>(null);
   const [cursoExportacao, setCursoExportacao] = useState("todos");
   const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
-  const [reviewSearch, setReviewSearch] = useState("");
-  const [reviewComponentFilter, setReviewComponentFilter] = useState("todos");
-  const [reviewDescriptorFilter, setReviewDescriptorFilter] = useState("todos");
-  const [reviewStatusFilter, setReviewStatusFilter] = useState<QuestaoStatusFiltro>("todas");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
   const [matrizReferenciaCodigo, setMatrizReferenciaCodigo] = useState("EC-INF-2025");
   const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean)));
@@ -3340,10 +3340,11 @@ function ItemBank({
   );
 
   useEffect(() => {
+    if (questaoEmEdicaoCodigo) return;
     if (questaoDraft.codigo !== proximoCodigoQuestao) {
       setQuestaoDraft((current) => ({ ...current, codigo: proximoCodigoQuestao }));
     }
-  }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo]);
+  }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo, questaoEmEdicaoCodigo]);
 
   useEffect(() => {
     if (!componentesDaQuestao.length) return;
@@ -3437,8 +3438,6 @@ function ItemBank({
       descritor_codigo: primeiroDescritor?.codigo ?? "",
       componente_curricular: primeiroDescritor?.componente_curricular ?? questaoDraft.componente_curricular,
     });
-    setReviewComponentFilter("todos");
-    setReviewDescriptorFilter("todos");
   }
 
   async function saveCompetencia() {
@@ -3532,8 +3531,23 @@ function ItemBank({
       return;
     }
 
-    const codigoAtual = nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
-    const normalized = { ...questaoDraft, codigo: codigoAtual };
+    const eraEdicao = Boolean(questaoEmEdicaoCodigo);
+    const codigoAtual = questaoEmEdicaoCodigo ?? nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
+    const conteudoTravado =
+      questaoTravada && questaoEmEdicaoOriginal
+        ? {
+            enunciado: questaoEmEdicaoOriginal.enunciado,
+            alternativa_a: questaoEmEdicaoOriginal.alternativa_a,
+            alternativa_b: questaoEmEdicaoOriginal.alternativa_b,
+            alternativa_c: questaoEmEdicaoOriginal.alternativa_c,
+            alternativa_d: questaoEmEdicaoOriginal.alternativa_d,
+            alternativa_e: questaoEmEdicaoOriginal.alternativa_e,
+            gabarito: questaoEmEdicaoOriginal.gabarito,
+            descritor_codigo: questaoEmEdicaoOriginal.descritor_codigo,
+            componente_curricular: questaoEmEdicaoOriginal.componente_curricular,
+          }
+        : {};
+    const normalized = { ...questaoDraft, ...conteudoTravado, codigo: codigoAtual };
     const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
     const normalizedFingerprint = questionFingerprint(normalized);
     const duplicate = questoes.find((questao) => {
@@ -3565,9 +3579,14 @@ function ItemBank({
       justificativa: "",
       imagem_url: "",
     });
+    if (eraEdicao) {
+      fecharEdicaoQuestao();
+    }
     setMessage(
       result.erro ??
-        `Questão ${normalized.codigo} salva em modo ${result.modo} como ${questaoStatusLabel(normalized.status).toLowerCase()}. ${questaoStatusHint(normalized.status)}`,
+        (eraEdicao
+          ? `Questão ${normalized.codigo} atualizada. ${questaoStatusHint(normalized.status)}`
+          : `Questão ${normalized.codigo} salva em modo ${result.modo} como ${questaoStatusLabel(normalized.status).toLowerCase()}. ${questaoStatusHint(normalized.status)}`),
     );
   }
 
@@ -3600,29 +3619,6 @@ function ItemBank({
   const questoesFiltradas = questoesDoCurso
     .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
     .slice(0, 80);
-  const reviewComponents = Array.from(new Set(questoesDoCurso.map((questao) => questao.componente_curricular).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b),
-  );
-  const reviewDescriptors = descritoresDoCurso
-    .filter((descritor) => reviewComponentFilter === "todos" || descritor.componente_curricular === reviewComponentFilter)
-    .sort((a, b) => a.codigo.localeCompare(b.codigo));
-  const reviewQuestionsAllFiltered = questoesDoCurso
-    .filter((questao) => reviewStatusFilter === "todas" || questao.status === reviewStatusFilter)
-    .filter((questao) => reviewComponentFilter === "todos" || questao.componente_curricular === reviewComponentFilter)
-    .filter((questao) => reviewDescriptorFilter === "todos" || questao.descritor_codigo === reviewDescriptorFilter)
-    .filter((questao) => {
-      const term = normalizeKey(reviewSearch);
-      if (!term) return true;
-      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
-      return [
-        questao.codigo,
-        questao.enunciado,
-        questao.componente_curricular,
-        questao.descritor_codigo,
-        descritor?.descricao ?? "",
-      ].some((value) => normalizeKey(value).includes(term));
-    });
-  const reviewQuestionsFiltered = reviewQuestionsAllFiltered.slice(0, 120);
   const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
     const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
     const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
@@ -3653,6 +3649,37 @@ function ItemBank({
   const competenciaDaQuestao = descritorSelecionado
     ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
     : undefined;
+  const codigosQuestoesUsadas = useMemo(
+    () => new Set(respostas.flatMap((resposta) => resposta.ordem_questoes)),
+    [respostas],
+  );
+  const questaoEmEdicaoOriginal = questaoEmEdicaoCodigo ? questoes.find((item) => item.codigo === questaoEmEdicaoCodigo) : undefined;
+  const questaoTravada = Boolean(
+    questaoEmEdicaoOriginal &&
+      questaoEmEdicaoOriginal.status === "validada" &&
+      codigosQuestoesUsadas.has(questaoEmEdicaoOriginal.codigo),
+  );
+
+  function iniciarEdicaoQuestao(questao: QuestaoDraft) {
+    const descritorVinculado = descritores.find((item) => item.codigo === questao.descritor_codigo);
+    const competenciaVinculada = descritorVinculado
+      ? competencias.find((item) => item.codigo === descritorVinculado.competencia_codigo)
+      : undefined;
+    if (competenciaVinculada && normalizeCourseName(competenciaVinculada.curso_tecnico) !== normalizeCourseName(cursoSelecionado)) {
+      setCursoSelecionado(competenciaVinculada.curso_tecnico);
+    }
+    setQuestaoEmEdicaoCodigo(questao.codigo);
+    setQuestaoDraft({ ...questao });
+    if (descritorVinculado) setDescritorDraft({ ...descritorVinculado });
+    if (competenciaVinculada) setCompetenciaDraft({ ...competenciaVinculada });
+    setQuestaoEmLeitura(questao);
+  }
+
+  function fecharEdicaoQuestao() {
+    setQuestaoEmLeitura(null);
+    setQuestaoEmEdicaoCodigo(null);
+  }
+
   const cursosDisponiveisExportacao = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico))).sort((a, b) =>
     a.localeCompare(b),
   );
@@ -3731,18 +3758,6 @@ function ItemBank({
       title: "Consulta estruturada do banco de questões",
       description: "Veja código, descritor, competência, componente, gabarito, dificuldade e situação de cada item.",
       scope: "Inventário",
-    },
-    solicitacoes: {
-      eyebrow: "Revisão colaborativa",
-      title: "Solicitações de melhoria entre professores",
-      description: "Localize qualquer questão do banco, revise itens próprios e solicite ajustes ao criador quando necessário.",
-      scope: "Solicitações",
-    },
-    historico: {
-      eyebrow: "Rastreabilidade",
-      title: "Histórico de revisão dos itens",
-      description: "Acompanhe solicitações, decisões e encaminhamentos para manter auditoria pedagógica do banco.",
-      scope: "Histórico",
     },
   };
 
@@ -4064,8 +4079,6 @@ function ItemBank({
             ["curadoria", "2. Curadoria"],
             ["cobertura", "3. Cobertura"],
             ["inventario", "4. Inventário"],
-            ["solicitacoes", "5. Solicitações"],
-            ["historico", "6. Histórico"],
           ].map(([id, label]) => (
             <button
               key={id}
@@ -4285,8 +4298,8 @@ function ItemBank({
                     </small>
                   </div>
                   <div className="review-actions" aria-label={`Alterar situação da questão ${questao.codigo}`}>
-                    <button className="secondary small" onClick={() => setQuestaoEmLeitura(questao)}>
-                      Ver questão
+                    <button className="secondary small" onClick={() => iniciarEdicaoQuestao(questao)}>
+                      Editar questão
                     </button>
                     <button className="secondary small" disabled={questao.status === "validada"} onClick={() => alterarStatusQuestao(questao.codigo, "validada")}>
                       Validar
@@ -4389,391 +4402,196 @@ function ItemBank({
         </section>
         )}
 
-        {questaoSubTab === "solicitacoes" && (
-          <QuestionReviewRequestsPreview
-            questoes={reviewQuestionsFiltered}
-            totalQuestoes={questoesDoCurso.length}
-            totalFiltrado={reviewQuestionsAllFiltered.length}
-            componentes={reviewComponents}
-            descritores={descritores}
-            descritoresFiltrados={reviewDescriptors}
-            competencias={competencias}
-            search={reviewSearch}
-            setSearch={setReviewSearch}
-            componentFilter={reviewComponentFilter}
-            setComponentFilter={(value) => {
-              setReviewComponentFilter(value);
-              setReviewDescriptorFilter("todos");
-            }}
-            descriptorFilter={reviewDescriptorFilter}
-            setDescriptorFilter={setReviewDescriptorFilter}
-            statusFilter={reviewStatusFilter}
-            setStatusFilter={setReviewStatusFilter}
-            setMessage={setMessage}
-          />
-        )}
-
-        {questaoSubTab === "historico" && (
-          <QuestionReviewHistoryPreview />
-        )}
       </section>
       )}
 
       {questaoEmLeitura && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setQuestaoEmLeitura(null)}>
+        <div className="modal-backdrop" role="presentation" onClick={fecharEdicaoQuestao}>
           <section className="question-modal" role="dialog" aria-modal="true" aria-labelledby="question-modal-title" onClick={(event) => event.stopPropagation()}>
-            {(() => {
-              const descritor = descritores.find((item) => item.codigo === questaoEmLeitura.descritor_codigo);
-              const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
-              const alternativas: Array<[AlternativaKey, string]> = [
-                ["A", questaoEmLeitura.alternativa_a],
-                ["B", questaoEmLeitura.alternativa_b],
-                ["C", questaoEmLeitura.alternativa_c],
-                ["D", questaoEmLeitura.alternativa_d],
-                ["E", questaoEmLeitura.alternativa_e],
-              ];
+            <div className="modal-header">
+              <div>
+                <span className={`status-badge ${questaoDraft.status}`}>{questaoStatusLabel(questaoDraft.status)}</span>
+                <h3 id="question-modal-title">Editar questão {questaoEmLeitura.codigo}</h3>
+                <p>{questaoDraft.componente_curricular}</p>
+              </div>
+              <button className="icon-close" type="button" onClick={fecharEdicaoQuestao} aria-label="Fechar edição da questão">
+                ×
+              </button>
+            </div>
 
-              return (
-                <>
-                  <div className="modal-header">
-                    <div>
-                      <span className={`status-badge ${questaoEmLeitura.status}`}>{questaoStatusLabel(questaoEmLeitura.status)}</span>
-                      <h3 id="question-modal-title">{questaoEmLeitura.codigo}</h3>
-                      <p>{questaoEmLeitura.componente_curricular}</p>
-                    </div>
-                    <button className="icon-close" type="button" onClick={() => setQuestaoEmLeitura(null)} aria-label="Fechar leitura da questão">
-                      ×
-                    </button>
-                  </div>
+            {questaoTravada && (
+              <p className="helper warning">
+                Esta questão já foi validada e usada em pelo menos uma avaliação com resposta registrada. Enunciado,
+                alternativas, gabarito e o vínculo com descritor/componente ficam travados para não invalidar
+                resultados já aplicados. Só é possível ajustar justificativa, imagem, dificuldade e status.
+              </p>
+            )}
 
-                  <div className="modal-context">
-                    <div>
-                      <strong>Competência</strong>
-                      <span>{competencia ? `${visiblePedagogicalCode(competencia.codigo)} · ${competencia.descricao}` : "Competência não encontrada"}</span>
-                    </div>
-                    <div>
-                      <strong>Descritor</strong>
-                      <span>{descritor ? `${visiblePedagogicalCode(descritor.codigo)} · ${descritor.descricao}` : visiblePedagogicalCode(questaoEmLeitura.descritor_codigo)}</span>
-                    </div>
-                    <div>
-                      <strong>Dificuldade pré-TRI</strong>
-                      <span>{questaoEmLeitura.dificuldade_inicial}</span>
-                    </div>
-                  </div>
-
-                  <div className="question-reading">
-                    <strong>Enunciado</strong>
-                    <p>{questaoEmLeitura.enunciado}</p>
-                    {questaoEmLeitura.imagem_url && (
-                      <div className="question-image-box">
-                        <QuestionImage path={questaoEmLeitura.imagem_url} alt={`Imagem de apoio da questão ${questaoEmLeitura.codigo}`} />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="alternatives-list">
-                    {alternativas.map(([letra, texto]) => (
-                      <div className={letra === questaoEmLeitura.gabarito ? "correct" : ""} key={letra}>
-                        <strong>{letra}</strong>
-                        <span>{texto}</span>
-                      </div>
+            <div className="modal-section">
+              <h4>Questão</h4>
+              <div className="form-grid">
+                <Field label="Código da questão" value={questaoDraft.codigo} onChange={() => undefined} readOnly helper="Código preservado — não muda ao editar." />
+                <label>
+                  Componente curricular
+                  <select
+                    value={questaoDraft.componente_curricular}
+                    disabled={questaoTravada}
+                    onChange={(event) => selecionarComponenteQuestao(event.target.value)}
+                  >
+                    <option value="">Selecione o componente</option>
+                    {componentesDaQuestao.map((componente) => (
+                      <option key={componente} value={componente}>{componente}</option>
                     ))}
+                  </select>
+                </label>
+                <label>
+                  Descritor vinculado
+                  <select
+                    value={questaoDraft.descritor_codigo}
+                    disabled={questaoTravada}
+                    onChange={(event) => {
+                      const descritor = descritoresDoComponenteDaQuestao.find((item) => item.codigo === event.target.value);
+                      setQuestaoDraft({
+                        ...questaoDraft,
+                        descritor_codigo: event.target.value,
+                        componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
+                      });
+                    }}
+                  >
+                    <option value="">Selecione</option>
+                    {descritoresDoComponenteDaQuestao.map((descritor) => (
+                      <option key={descritor.codigo} value={descritor.codigo}>{visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular} · {descritor.descricao}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Status
+                  <select value={questaoDraft.status} onChange={(event) => setQuestaoDraft({ ...questaoDraft, status: event.target.value as QuestaoDraft["status"] })}>
+                    <option value="rascunho">Rascunho</option>
+                    <option value="em_revisao">Em revisão</option>
+                    <option value="validada">Validada</option>
+                  </select>
+                </label>
+                <TextArea label="Enunciado" value={questaoDraft.enunciado} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, enunciado: value })} />
+                <Field
+                  label="Imagem da questão (opcional)"
+                  value={questaoDraft.imagem_url ?? ""}
+                  placeholder="Cole uma URL publica ou use o upload abaixo"
+                  onChange={(value) => setQuestaoDraft({ ...questaoDraft, imagem_url: value })}
+                  helper="No online, prefira upload para Supabase Storage. A URL/caminho fica salvo na questao."
+                />
+                <label>
+                  Upload da imagem (Supabase Storage)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      anexarImagemQuestao(event.target.files?.[0]);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <small>Opcional. Use arquivos leves, ate 2 MB, para preservar a cota gratuita.</small>
+                </label>
+                {questaoDraft.imagem_url && (
+                  <div className="question-image-preview">
+                    <span>Prévia da imagem</span>
+                    <QuestionImage path={questaoDraft.imagem_url} alt="Prévia da imagem vinculada à questão" />
+                    <button className="secondary small" type="button" onClick={() => setQuestaoDraft({ ...questaoDraft, imagem_url: "" })}>
+                      Remover imagem
+                    </button>
                   </div>
+                )}
+                <TextArea label="Justificativa pedagógica" value={questaoDraft.justificativa} onChange={(value) => setQuestaoDraft({ ...questaoDraft, justificativa: value })} />
+                <Field label="Alternativa A" value={questaoDraft.alternativa_a} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_a: value })} />
+                <Field label="Alternativa B" value={questaoDraft.alternativa_b} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_b: value })} />
+                <Field label="Alternativa C" value={questaoDraft.alternativa_c} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_c: value })} />
+                <Field label="Alternativa D" value={questaoDraft.alternativa_d} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_d: value })} />
+                <Field label="Alternativa E" value={questaoDraft.alternativa_e} readOnly={questaoTravada} onChange={(value) => setQuestaoDraft({ ...questaoDraft, alternativa_e: value })} />
+                <label>
+                  Gabarito
+                  <select value={questaoDraft.gabarito} disabled={questaoTravada} onChange={(event) => setQuestaoDraft({ ...questaoDraft, gabarito: event.target.value as AlternativaKey })}>
+                    {(["A", "B", "C", "D", "E"] as AlternativaKey[]).map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Dificuldade inicial pré-TRI
+                  <input
+                    type="number"
+                    min={0.1}
+                    max={5}
+                    step={0.1}
+                    value={questaoDraft.dificuldade_inicial}
+                    onChange={(event) => setQuestaoDraft({ ...questaoDraft, dificuldade_inicial: Number(event.target.value) })}
+                  />
+                </label>
+              </div>
+            </div>
 
-                  <div className="question-reading">
-                    <strong>Justificativa pedagógica</strong>
-                    <p>{questaoEmLeitura.justificativa || "Sem justificativa cadastrada."}</p>
-                  </div>
+            <div className="modal-section">
+              <h4>Descritor vinculado</h4>
+              <div className="form-grid">
+                <Field
+                  label="Código do descritor"
+                  value={visiblePedagogicalCode(descritorDraft.codigo)}
+                  onChange={() => undefined}
+                  readOnly
+                  helper="Código travado para preservar o vínculo com questões e respostas já registradas."
+                />
+                <Field
+                  label="Componente curricular"
+                  value={descritorDraft.componente_curricular}
+                  onChange={(value) => setDescritorDraft({ ...descritorDraft, componente_curricular: value })}
+                />
+                <label>
+                  Nível esperado
+                  <select
+                    value={descritorDraft.nivel_esperado}
+                    onChange={(event) => setDescritorDraft({ ...descritorDraft, nivel_esperado: event.target.value as DescritorDraft["nivel_esperado"] })}
+                  >
+                    <option value="basico">Básico</option>
+                    <option value="intermediario">Intermediário</option>
+                    <option value="avancado">Avançado</option>
+                  </select>
+                </label>
+                <TextArea
+                  label="Descrição do descritor"
+                  value={descritorDraft.descricao}
+                  onChange={(value) => setDescritorDraft({ ...descritorDraft, descricao: value })}
+                />
+              </div>
+              <button className="secondary small" type="button" onClick={saveDescritor}>Salvar descritor</button>
+            </div>
 
-                  <div className="modal-actions">
-                    <button className="secondary" type="button" onClick={() => setQuestaoEmLeitura(null)}>Fechar</button>
-                    <button className="secondary" type="button" disabled={questaoEmLeitura.status === "rascunho"} onClick={() => {
-                      alterarStatusQuestao(questaoEmLeitura.codigo, "rascunho");
-                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "rascunho" });
-                    }}>
-                      Marcar rascunho
-                    </button>
-                    <button className="secondary" type="button" disabled={questaoEmLeitura.status === "em_revisao"} onClick={() => {
-                      alterarStatusQuestao(questaoEmLeitura.codigo, "em_revisao");
-                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "em_revisao" });
-                    }}>
-                      Voltar para revisão
-                    </button>
-                    <button className="primary" type="button" disabled={questaoEmLeitura.status === "validada"} onClick={() => {
-                      alterarStatusQuestao(questaoEmLeitura.codigo, "validada");
-                      setQuestaoEmLeitura({ ...questaoEmLeitura, status: "validada" });
-                    }}>
-                      Validar questão
-                    </button>
-                  </div>
-                </>
-              );
-            })()}
+            <div className="modal-section">
+              <h4>Competência vinculada</h4>
+              <div className="form-grid">
+                <Field
+                  label="Código da competência"
+                  value={visiblePedagogicalCode(competenciaDraft.codigo)}
+                  onChange={() => undefined}
+                  readOnly
+                  helper="Código travado para preservar o vínculo com descritores e questões já registrados."
+                />
+                <Field label="Curso técnico" value={competenciaDraft.curso_tecnico} onChange={() => undefined} readOnly />
+                <TextArea
+                  label="Descrição da competência"
+                  value={competenciaDraft.descricao}
+                  onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, descricao: value })}
+                />
+                <Field label="Fonte" value={competenciaDraft.fonte} onChange={(value) => setCompetenciaDraft({ ...competenciaDraft, fonte: value })} />
+              </div>
+              <button className="secondary small" type="button" onClick={saveCompetencia}>Salvar competência</button>
+            </div>
+
+            <div className="modal-actions">
+              <button className="secondary" type="button" onClick={fecharEdicaoQuestao}>Cancelar</button>
+              <button className="primary" type="button" onClick={saveQuestao}>Salvar questão</button>
+            </div>
           </section>
         </div>
       )}
-    </section>
-  );
-}
-
-function QuestionReviewRequestsPreview({
-  questoes,
-  totalQuestoes,
-  totalFiltrado,
-  componentes,
-  descritores,
-  descritoresFiltrados,
-  competencias,
-  search,
-  setSearch,
-  componentFilter,
-  setComponentFilter,
-  descriptorFilter,
-  setDescriptorFilter,
-  statusFilter,
-  setStatusFilter,
-  setMessage,
-}: {
-  questoes: QuestaoDraft[];
-  totalQuestoes: number;
-  totalFiltrado: number;
-  componentes: string[];
-  descritores: DescritorDraft[];
-  descritoresFiltrados: DescritorDraft[];
-  competencias: CompetenciaDraft[];
-  search: string;
-  setSearch: (value: string) => void;
-  componentFilter: string;
-  setComponentFilter: (value: string) => void;
-  descriptorFilter: string;
-  setDescriptorFilter: (value: string) => void;
-  statusFilter: QuestaoStatusFiltro;
-  setStatusFilter: (value: QuestaoStatusFiltro) => void;
-  setMessage: (message: string) => void;
-}) {
-  return (
-    <section className="question-module-section">
-      <div className="section-heading">
-        <div>
-          <h3>Solicitar revisão de questões</h3>
-          <p>
-            Use esta área quando encontrar uma questão que precisa de ajuste, mas que não foi criada por você.
-            A solicitação vai para o responsável pelo item, sem alterar automaticamente a questão.
-          </p>
-        </div>
-        <span className="count-chip">Fluxo guiado</span>
-      </div>
-
-      <div className="review-explain-grid">
-        <article>
-          <strong>1. Consulte o banco</strong>
-          <span>Você pode ler todas as questões para comparar contexto, gabarito, descritor e qualidade pedagógica.</span>
-        </article>
-        <article>
-          <strong>2. Solicite revisão</strong>
-          <span>Se a questão não for sua, registre o motivo e escreva uma sugestão objetiva para o criador.</span>
-        </article>
-        <article>
-          <strong>3. O criador decide</strong>
-          <span>O responsável aceita, edita, recusa com justificativa ou encaminha para curadoria.</span>
-        </article>
-      </div>
-
-      <div className="guided-callout">
-        <strong>Regra simples para o professor</strong>
-        <p>
-          Se a questão é sua, use a curadoria normal para revisar, validar ou devolver para rascunho. Se a questão é de
-          outro professor, use <b>Solicitar revisão</b> e explique o motivo. Assim o banco melhora sem perder autoria,
-          rastreabilidade e responsabilidade pedagógica.
-        </p>
-        <p>
-          <b>Regra multcurso:</b> cada curso pode ter seus próprios códigos C01, C02, D01 e D02. Para evitar choque no banco,
-          cursos novos usam um identificador técnico interno composto pela sigla do curso e pelo código pedagógico, como
-          <b> TECADM-C01</b>. Na tela, o professor continua lendo apenas <b>C01</b> e <b>D01</b>.
-        </p>
-      </div>
-
-      <div className="section-heading compact">
-        <div>
-          <h4>Questões disponíveis para revisão colaborativa</h4>
-          <p>
-            Use os filtros para localizar qualquer questão do banco por código, texto, componente, descritor ou status.
-            Mostrando {questoes.length} de {totalFiltrado} encontradas no banco de {totalQuestoes} questões.
-          </p>
-        </div>
-      </div>
-
-      <div className="review-filter-panel">
-        <label>
-          Buscar questão
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Código, trecho do enunciado, componente ou descritor"
-          />
-        </label>
-        <label>
-          Componente
-          <select value={componentFilter} onChange={(event) => setComponentFilter(event.target.value)}>
-            <option value="todos">Todos os componentes</option>
-            {componentes.map((component) => (
-              <option key={component} value={component}>{component}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Descritor
-          <select value={descriptorFilter} onChange={(event) => setDescriptorFilter(event.target.value)}>
-            <option value="todos">Todos os descritores</option>
-            {descritoresFiltrados.map((descritor) => (
-              <option key={descritor.codigo} value={descritor.codigo}>
-                {visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as QuestaoStatusFiltro)}>
-            <option value="todas">Todos os status</option>
-            <option value="validada">Validadas</option>
-            <option value="em_revisao">Em revisão</option>
-            <option value="rascunho">Rascunhos</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="table-wrap review-request-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Questão</th>
-              <th>Descritor</th>
-              <th>Competência</th>
-              <th>Componente</th>
-              <th>O que você pode fazer</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!questoes.length && (
-              <tr>
-                <td colSpan={6}>Nenhuma questão encontrada com os filtros atuais.</td>
-              </tr>
-            )}
-            {questoes.map((questao, index) => {
-              const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
-              const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
-              const ownItem = index % 3 === 0;
-
-              return (
-                <tr key={questao.codigo}>
-                  <td><strong>{questao.codigo}</strong><br />{questao.enunciado.slice(0, 90)}...</td>
-                  <td>{visiblePedagogicalCode(questao.descritor_codigo)}</td>
-                  <td>{competencia ? visiblePedagogicalCode(competencia.codigo) : "-"}</td>
-                  <td>{questao.componente_curricular}</td>
-                  <td>
-                    <span className={`status-badge ${ownItem ? "validada" : "em_revisao"}`}>
-                      {ownItem ? "Revisar diretamente" : "Pedir revisão ao criador"}
-                    </span>
-                  </td>
-                  <td>
-                    <button className={ownItem ? "secondary small" : "secondary small inline-action"} type="button" onClick={() => setMessage(ownItem ? "Esta questão pode ser revisada diretamente pelo responsável." : "Prévia local: abriria o popup de solicitação de revisão.")}>
-                      {ownItem ? "Revisar item" : "Solicitar revisão"}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {totalFiltrado > questoes.length && (
-        <p className="helper">Mostrando as primeiras 120 questões filtradas para manter a tela leve. Refine por componente, descritor ou busca para chegar ao item desejado.</p>
-      )}
-
-      <div className="review-request-grid clearer">
-        <article className="review-request-modal">
-          <h4>Formulário que abre ao solicitar revisão</h4>
-          <p>O professor informa o problema de forma objetiva para ajudar o criador a decidir.</p>
-          <label>
-            Motivo da solicitação
-            <select defaultValue="contexto">
-              <option value="contexto">Contexto repetido ou muito semelhante</option>
-              <option value="gabarito">Problema de gabarito</option>
-              <option value="ambiguidade">Enunciado ambíguo</option>
-              <option value="descritor">Descritor desalinhado</option>
-              <option value="linguagem">Linguagem inadequada</option>
-            </select>
-          </label>
-          <label>
-            Sugestão para o criador
-            <textarea defaultValue="A questão usa contexto semelhante a outro item e pode reduzir a diversidade diagnóstica. Sugiro reescrever o cenário mantendo vínculo com o descritor." />
-          </label>
-          <div className="modal-actions">
-            <button className="secondary" type="button">Cancelar</button>
-            <button className="primary" type="button" onClick={() => setMessage("Solicitação de revisão simulada. No fluxo definitivo, ela ficará registrada para o criador da questão.")}>
-              Enviar solicitação
-            </button>
-          </div>
-        </article>
-
-        <article className="review-request-modal">
-          <h4>Área do criador/curador</h4>
-          <p>Quem criou ou recebeu curadoria da questão registra a decisão e mantém o histórico do item.</p>
-          <label>
-            Decisão
-            <select defaultValue="aceitar-revisao">
-              <option value="aceitar-revisao">Aceitar e colocar questão em revisão</option>
-              <option value="editar">Aceitar e editar agora</option>
-              <option value="recusar">Recusar com justificativa</option>
-              <option value="curadoria">Encaminhar para curadoria</option>
-            </select>
-          </label>
-          <label>
-            Parecer para o solicitante
-            <textarea defaultValue="Solicitação pertinente. O item será reescrito para reduzir repetição de contexto e manter alinhamento ao descritor." />
-          </label>
-          <div className="modal-actions">
-            <button className="secondary" type="button">Responder depois</button>
-            <button className="primary" type="button" onClick={() => setMessage("Decisão simulada. No fluxo definitivo, o histórico ficará vinculado à questão.")}>
-              Registrar decisão
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function QuestionReviewHistoryPreview() {
-  return (
-    <section className="question-module-section">
-      <div className="section-heading">
-        <div>
-          <h3>Histórico de revisão</h3>
-          <p>Prévia da trilha de auditoria: quem solicitou, quem decidiu, quando e qual providência foi tomada.</p>
-        </div>
-        <span className="count-chip warning">Prévia local</span>
-      </div>
-
-      <div className="review-history-list">
-        <article>
-          <strong>Solicitação enviada</strong>
-          <span>08/07/2026 · Q-INF-0144 · Motivo: contexto repetido</span>
-          <p>Professor solicitou reescrita do cenário para preservar diversidade diagnóstica no descritor D05.</p>
-        </article>
-        <article>
-          <strong>Decisão registrada</strong>
-          <span>08/07/2026 · Criador aceitou a solicitação</span>
-          <p>Item voltaria para revisão e ficaria fora das avaliações até nova validação docente.</p>
-        </article>
-        <article>
-          <strong>Encaminhamento para curadoria</strong>
-          <span>Futuro · coordenação/professor técnico</span>
-          <p>Solicitações sensíveis podem ser encaminhadas para curadoria compartilhada antes da decisão final.</p>
-        </article>
-      </div>
     </section>
   );
 }
@@ -7213,15 +7031,17 @@ function TextArea({
   label,
   value,
   onChange,
+  readOnly = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  readOnly?: boolean;
 }) {
   return (
     <label>
       {label}
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} />
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} readOnly={readOnly} rows={4} />
     </label>
   );
 }
