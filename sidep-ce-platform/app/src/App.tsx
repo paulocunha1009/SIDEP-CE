@@ -6201,6 +6201,18 @@ function Reports({
     label: status,
     total: assessments.filter((assessment) => (assessment.status ?? "rascunho") === status).length,
   }));
+  const ETAPA_LABELS: Record<AvaliacaoDraft["etapa"], string> = {
+    diagnostica: "Diagnóstica",
+    formativa: "Formativa",
+    final: "Final",
+  };
+  const comparativoEtapas = (["diagnostica", "formativa", "final"] as AvaliacaoDraft["etapa"][]).map((etapa) => {
+    const respostasDaEtapa = respostasEscopo.filter((resposta) => resposta.etapa === etapa);
+    const media = respostasDaEtapa.length
+      ? Math.round((respostasDaEtapa.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasDaEtapa.length) * 100) / 100
+      : 0;
+    return { label: ETAPA_LABELS[etapa], value: media, detalhe: `${respostasDaEtapa.length} resposta(s)` };
+  });
   const componentesChart = Array.from(componenteResumo.entries())
     .map(([componente, resumo]) => ({ label: componente, value: percentNumber(resumo), detalhe: `${resumo.acertos}/${resumo.total}` }))
     .sort((a, b) => b.value - a.value)
@@ -6737,6 +6749,18 @@ function Reports({
               <StatusDoughnutChart items={statusResumo.map((item) => ({ status: item.label, total: item.total }))} />
             </section>
           </div>
+
+          <section className="dashboard-card">
+            <div className="card-heading">
+              <h3>Comparação entre etapas</h3>
+              <span className="tag">diagnóstica · formativa · final</span>
+            </div>
+            <PerformanceBarChart
+              items={comparativoEtapas}
+              emptyMessage="Ainda não há respostas para comparar as etapas."
+            />
+            <NivelLegend />
+          </section>
 
           <section className="dashboard-card">
             <div className="card-heading">
