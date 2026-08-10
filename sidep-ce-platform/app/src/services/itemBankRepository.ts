@@ -58,7 +58,7 @@ export async function carregarCompetencias() {
 
   const { data, error } = await supabase
     .from("competencia_mvp")
-    .select("codigo,curso_tecnico,descricao,fonte")
+    .select("codigo,curso_tecnico,descricao,fonte,origem_v2_codigo")
     .order("codigo");
 
   if (error) throw error;
@@ -102,7 +102,7 @@ export async function carregarDescritores() {
 
   const { data, error } = await supabase
     .from("descritor_mvp")
-    .select("codigo,competencia_codigo,componente_curricular,descricao,nivel_esperado")
+    .select("codigo,competencia_codigo,componente_curricular,descricao,nivel_esperado,origem_v2_codigo")
     .order("codigo");
 
   if (error) throw error;

@@ -83,6 +83,7 @@ export interface CompetenciaDraft {
   curso_tecnico: string;
   descricao: string;
   fonte: string;
+  origem_v2_codigo?: string;
 }
 
 export interface DescritorDraft {
@@ -91,6 +92,7 @@ export interface DescritorDraft {
   componente_curricular: string;
   descricao: string;
   nivel_esperado: "basico" | "intermediario" | "avancado";
+  origem_v2_codigo?: string;
 }
 
 export type AlternativaKey = "A" | "B" | "C" | "D" | "E";

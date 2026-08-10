@@ -75,7 +75,9 @@ import type {
   QuestaoPublica,
   CompetenciaDraft,
   CatalogoCurricularV2,
+  CompetenciaCurricularV2,
   DescritorDraft,
+  DescritorCurricularV2,
   EscolaDraft,
   MatrizComponenteV2,
   PerfilAcesso,
@@ -3300,6 +3302,7 @@ function ItemBank({
   const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
   const [matrizReferenciaCodigo, setMatrizReferenciaCodigo] = useState("EC-INF-2025");
+  const [filtroComponenteV2, setFiltroComponenteV2] = useState("todos");
   const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean)));
   const cursosCadastro = [...cursosTecnicosOficiais.map((curso) => curso.nome), ...cursosDoBanco.filter((curso) => !findOfficialCourse(curso))]
     .sort((a, b) => a.localeCompare(b));
@@ -3332,6 +3335,50 @@ function ItemBank({
       descritores: descritoresDoComponente.length,
     };
   });
+  const competenciasParaImportarV2 = competenciasMatrizReferencia.filter(
+    (competencia) => filtroComponenteV2 === "todos" || competencia.componente_codigo === filtroComponenteV2,
+  );
+  const descritoresParaImportarV2 = descritoresMatrizReferencia.filter(
+    (descritor) => filtroComponenteV2 === "todos" || descritor.componente_codigo === filtroComponenteV2,
+  );
+  const codigosV2JaImportadosCompetencia = new Set(
+    competencias.map((competencia) => competencia.origem_v2_codigo).filter((codigo): codigo is string => Boolean(codigo)),
+  );
+  const codigosV2JaImportadosDescritor = new Set(
+    descritores.map((descritor) => descritor.origem_v2_codigo).filter((codigo): codigo is string => Boolean(codigo)),
+  );
+
+  function usarCompetenciaV2(competenciaV2: CompetenciaCurricularV2) {
+    setCompetenciaDraft({
+      codigo: competenciaV2.codigo_pedagogico,
+      curso_tecnico: cursoSelecionado,
+      descricao: competenciaV2.descricao,
+      fonte: `Matriz curricular v2 ${matrizReferencia?.codigo ?? ""} · versão ${competenciaV2.versao}`,
+      origem_v2_codigo: competenciaV2.codigo,
+    });
+    setActiveTab("competencias");
+    setMessage(`Competência ${competenciaV2.codigo_pedagogico} pré-preenchida a partir da matriz v2. Revise e clique em "Salvar competência".`);
+  }
+
+  function usarDescritorV2(descritorV2: DescritorCurricularV2) {
+    const competenciaVinculada = competencias.find((item) => item.origem_v2_codigo === descritorV2.competencia_codigo);
+    const componenteV2 = catalogoCurricularV2.componentes.find((item) => item.codigo === descritorV2.componente_codigo);
+    setDescritorDraft({
+      codigo: descritorV2.codigo_curto,
+      competencia_codigo: competenciaVinculada?.codigo ?? "",
+      componente_curricular: componenteV2 ? nomeComponenteMatrizV2(componenteV2) : descritorDraft.componente_curricular,
+      descricao: descritorV2.descricao,
+      nivel_esperado: descritorV2.nivel_tri_inicial,
+      origem_v2_codigo: descritorV2.codigo,
+    });
+    setActiveTab("descritores");
+    setMessage(
+      competenciaVinculada
+        ? `Descritor ${descritorV2.codigo_curto} pré-preenchido a partir da matriz v2. Revise e clique em "Salvar descritor".`
+        : `Descritor ${descritorV2.codigo_curto} pré-preenchido, mas a competência correspondente da matriz v2 ainda não foi importada — importe-a primeiro ou selecione a competência manualmente antes de salvar.`,
+    );
+  }
+
   const competenciasDoCurso = competencias.filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoSelecionado));
   const codigosCompetenciasDoCurso = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
   const descritoresDoCurso = descritores.filter((descritor) => codigosCompetenciasDoCurso.has(descritor.competencia_codigo));
@@ -3943,6 +3990,63 @@ function ItemBank({
                 </tbody>
               </table>
             </div>
+
+            <div className="section-heading compact">
+              <div>
+                <h4>Importar da matriz v2 para o banco MVP</h4>
+                <p>
+                  Escolha um componente para localizar competências e descritores da matriz e usá-los como ponto de
+                  partida no cadastro do curso em trabalho ({cursoSelecionado}). O código, a descrição e o nível já
+                  vêm preenchidos; revise antes de salvar. Itens já importados ficam marcados.
+                </p>
+              </div>
+              <label className="inline-filter">
+                Componente
+                <select value={filtroComponenteV2} onChange={(event) => setFiltroComponenteV2(event.target.value)}>
+                  <option value="todos">Todos os componentes</option>
+                  {componentesMatrizReferencia.map((componente) => (
+                    <option key={componente.codigo} value={componente.codigo}>{nomeComponenteMatrizV2(componente)}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <ReferenceList
+              title="Competências da matriz v2"
+              empty="Nenhuma competência da matriz para este filtro."
+              kind="competencia"
+              items={competenciasParaImportarV2.map((competencia) => {
+                const jaImportada = codigosV2JaImportadosCompetencia.has(competencia.codigo);
+                return {
+                  code: competencia.codigo_pedagogico,
+                  title: jaImportada ? "Já importada para o MVP" : "Competência ampla (matriz v2)",
+                  description: competencia.descricao,
+                  meta: `Matriz ${matrizReferencia?.codigo ?? ""} · versão ${competencia.versao}`,
+                  actionLabel: jaImportada ? "Já importada" : "Usar esta competência",
+                  onAction: () => usarCompetenciaV2(competencia),
+                  disabled: jaImportada,
+                };
+              })}
+            />
+
+            <ReferenceList
+              title="Descritores da matriz v2"
+              empty="Nenhum descritor da matriz para este filtro."
+              kind="descritor"
+              items={descritoresParaImportarV2.map((descritor) => {
+                const jaImportado = codigosV2JaImportadosDescritor.has(descritor.codigo);
+                const componenteV2 = catalogoCurricularV2.componentes.find((item) => item.codigo === descritor.componente_codigo);
+                return {
+                  code: descritor.codigo_curto,
+                  title: jaImportado ? "Já importado para o MVP" : (componenteV2 ? nomeComponenteMatrizV2(componenteV2) : "Descritor avaliável (matriz v2)"),
+                  description: descritor.descricao,
+                  meta: `Nível ${descritor.nivel_tri_inicial} · Matriz ${matrizReferencia?.codigo ?? ""} · versão ${descritor.versao}`,
+                  actionLabel: jaImportado ? "Já importado" : "Usar este descritor",
+                  onAction: () => usarDescritorV2(descritor),
+                  disabled: jaImportado,
+                };
+              })}
+            />
           </>
         ) : (
           <div className="info-callout">
@@ -4033,7 +4137,7 @@ function ItemBank({
               code: visiblePedagogicalCode(competencia.codigo),
               title: competencia.curso_tecnico,
               description: competencia.descricao,
-              meta: `${courseCode(competencia.curso_tecnico)} · ${competencia.fonte}`,
+              meta: `${courseCode(competencia.curso_tecnico)} · ${competencia.fonte}${competencia.origem_v2_codigo ? " · Importado da matriz v2" : ""}`,
               actionLabel: "Usar no descritor",
               onAction: () => useCompetenciaInDescritor(competencia),
             }))}
@@ -4104,7 +4208,7 @@ function ItemBank({
                 code: visiblePedagogicalCode(descritor.codigo),
                 title: descritor.componente_curricular,
                 description: descritor.descricao,
-                meta: `Competência: ${competencia ? visiblePedagogicalCode(competencia.codigo) : descritor.competencia_codigo}${competencia ? ` · ${competencia.descricao}` : ""}`,
+                meta: `Competência: ${competencia ? visiblePedagogicalCode(competencia.codigo) : descritor.competencia_codigo}${competencia ? ` · ${competencia.descricao}` : ""}${descritor.origem_v2_codigo ? " · Importado da matriz v2" : ""}`,
                 actionLabel: "Usar na questão",
                 onAction: () => useDescritorInQuestao(descritor),
               };
@@ -7094,6 +7198,7 @@ function ReferenceList({
     meta: string;
     actionLabel: string;
     onAction: () => void;
+    disabled?: boolean;
   }>;
 }) {
   return (
@@ -7113,7 +7218,7 @@ function ReferenceList({
             </div>
             <p>{item.description}</p>
             <small>{item.meta}</small>
-            <button className="secondary small" onClick={item.onAction}>{item.actionLabel}</button>
+            <button className="secondary small" onClick={item.onAction} disabled={item.disabled}>{item.actionLabel}</button>
           </article>
         ))}
       </div>

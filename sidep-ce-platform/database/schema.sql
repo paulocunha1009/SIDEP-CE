@@ -221,11 +221,17 @@ create table if not exists avaliacao_codigo_bloqueado (
   metadados jsonb not null default '{}'::jsonb
 );
 
+-- origem_v2_codigo (08/08/2026): rastreio opcional de qual registro do
+-- catalogo curricular v2 (competencia_curricular_v2/descritor_curricular_v2,
+-- ver migration_2026_08_02_matriz_ec_inf_2025_v2.sql) deu origem a este
+-- cadastro, quando importado via o botao "Usar esta competencia/descritor".
+-- Cadastros manuais continuam com o campo nulo normalmente.
 create table if not exists competencia_mvp (
   codigo varchar(40) primary key,
   curso_tecnico varchar(180) not null,
   descricao text not null,
   fonte varchar(180),
+  origem_v2_codigo varchar(80) references competencia_curricular_v2(codigo) on delete set null,
   atualizada_em timestamptz not null default now()
 );
 
@@ -235,6 +241,7 @@ create table if not exists descritor_mvp (
   componente_curricular varchar(180) not null,
   descricao text not null,
   nivel_esperado varchar(40) not null check (nivel_esperado in ('basico', 'intermediario', 'avancado')),
+  origem_v2_codigo varchar(80) references descritor_curricular_v2(codigo) on delete set null,
   atualizada_em timestamptz not null default now()
 );
 
