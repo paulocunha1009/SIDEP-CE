@@ -3292,6 +3292,10 @@ function ItemBank({
   const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
   const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
   const [questaoEmEdicaoCodigo, setQuestaoEmEdicaoCodigo] = useState<string | null>(null);
+  const [competenciaFiltroQuestaoModal, setCompetenciaFiltroQuestaoModal] = useState("");
+  const [inventarioBusca, setInventarioBusca] = useState("");
+  const [inventarioCompetenciaFiltro, setInventarioCompetenciaFiltro] = useState("todas");
+  const [inventarioDescritorFiltro, setInventarioDescritorFiltro] = useState("todos");
   const [cursoExportacao, setCursoExportacao] = useState("todos");
   const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
@@ -3366,6 +3370,26 @@ function ItemBank({
       componente_curricular: componente,
       descritor_codigo: primeiroDescritor?.codigo ?? "",
     });
+  }
+
+  function selecionarCompetenciaQuestaoModal(competenciaCodigo: string) {
+    setCompetenciaFiltroQuestaoModal(competenciaCodigo);
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.competencia_codigo === competenciaCodigo);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+      componente_curricular: primeiroDescritor?.componente_curricular ?? "",
+    });
+  }
+
+  function selecionarDescritorQuestaoModal(descritorCodigo: string) {
+    const descritor = descritoresDoCurso.find((item) => item.codigo === descritorCodigo);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: descritorCodigo,
+      componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
+    });
+    setCompetenciaFiltroQuestaoModal(descritor?.competencia_codigo ?? competenciaFiltroQuestaoModal);
   }
 
   async function anexarImagemQuestao(file: File | undefined) {
@@ -3619,6 +3643,31 @@ function ItemBank({
   const questoesFiltradas = questoesDoCurso
     .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
     .slice(0, 80);
+  const descritoresParaFiltroInventario = descritoresDoCurso
+    .filter((descritor) => inventarioCompetenciaFiltro === "todas" || descritor.competencia_codigo === inventarioCompetenciaFiltro)
+    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+  const inventarioQuestoesTodas = questoesDoCurso
+    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
+    .filter((questao) => {
+      if (inventarioCompetenciaFiltro === "todas") return true;
+      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+      return descritor?.competencia_codigo === inventarioCompetenciaFiltro;
+    })
+    .filter((questao) => inventarioDescritorFiltro === "todos" || questao.descritor_codigo === inventarioDescritorFiltro)
+    .filter((questao) => {
+      const termo = normalizeKey(inventarioBusca);
+      if (!termo) return true;
+      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+      const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+      return [
+        questao.codigo,
+        questao.enunciado,
+        questao.componente_curricular,
+        descritor?.descricao ?? "",
+        competencia?.descricao ?? "",
+      ].some((valor) => normalizeKey(valor).includes(termo));
+    });
+  const inventarioQuestoesExibidas = inventarioQuestoesTodas.slice(0, 150);
   const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
     const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
     const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
@@ -3649,6 +3698,9 @@ function ItemBank({
   const competenciaDaQuestao = descritorSelecionado
     ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
     : undefined;
+  const descritoresParaModalEdicao = descritoresDoCurso.filter(
+    (descritor) => !competenciaFiltroQuestaoModal || descritor.competencia_codigo === competenciaFiltroQuestaoModal,
+  );
   const codigosQuestoesUsadas = useMemo(
     () => new Set(respostas.flatMap((resposta) => resposta.ordem_questoes)),
     [respostas],
@@ -3672,12 +3724,14 @@ function ItemBank({
     setQuestaoDraft({ ...questao });
     if (descritorVinculado) setDescritorDraft({ ...descritorVinculado });
     if (competenciaVinculada) setCompetenciaDraft({ ...competenciaVinculada });
+    setCompetenciaFiltroQuestaoModal(competenciaVinculada?.codigo ?? "");
     setQuestaoEmLeitura(questao);
   }
 
   function fecharEdicaoQuestao() {
     setQuestaoEmLeitura(null);
     setQuestaoEmEdicaoCodigo(null);
+    setCompetenciaFiltroQuestaoModal("");
   }
 
   const cursosDisponiveisExportacao = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico))).sort((a, b) =>
@@ -4372,7 +4426,11 @@ function ItemBank({
           <div className="section-heading">
             <div>
               <h3>Inventário técnico de questões</h3>
-              <p>Consulta técnica preservada com código, descritor, competência, componente, gabarito, dificuldade e status.</p>
+              <p>
+                Consulta técnica preservada com código, descritor, competência, componente, gabarito, dificuldade e
+                status. Busque por competência, descritor ou texto livre e edite ou valide direto daqui. O curso
+                consultado é sempre o selecionado em "Curso em trabalho", no topo desta tela.
+              </p>
             </div>
             <label className="inline-filter">
               Situação
@@ -4384,21 +4442,100 @@ function ItemBank({
               </select>
             </label>
           </div>
-        <DataTable
-          headers={["Código", "Descritor", "Competência", "Componente", "Gabarito", "Dificuldade", "Status"]}
-          rows={questoesFiltradas.map((questao) => {
-            const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
-            return [
-              questao.codigo,
-              visiblePedagogicalCode(questao.descritor_codigo),
-              descritor?.competencia_codigo ? visiblePedagogicalCode(descritor.competencia_codigo) : "",
-              questao.componente_curricular,
-              questao.gabarito,
-              String(questao.dificuldade_inicial),
-              questaoStatusLabel(questao.status),
-            ];
-          })}
-        />
+
+          <div className="review-filter-panel">
+            <label>
+              Buscar questão
+              <input
+                value={inventarioBusca}
+                onChange={(event) => setInventarioBusca(event.target.value)}
+                placeholder="Código, trecho do enunciado, descritor ou competência"
+              />
+            </label>
+            <label>
+              Competência
+              <select
+                value={inventarioCompetenciaFiltro}
+                onChange={(event) => {
+                  setInventarioCompetenciaFiltro(event.target.value);
+                  setInventarioDescritorFiltro("todos");
+                }}
+              >
+                <option value="todas">Todas as competências</option>
+                {competenciasDoCurso.map((competencia) => (
+                  <option key={competencia.codigo} value={competencia.codigo}>
+                    {visiblePedagogicalCode(competencia.codigo)} · {competencia.descricao}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Descritor
+              <select value={inventarioDescritorFiltro} onChange={(event) => setInventarioDescritorFiltro(event.target.value)}>
+                <option value="todos">Todos os descritores</option>
+                {descritoresParaFiltroInventario.map((descritor) => (
+                  <option key={descritor.codigo} value={descritor.codigo}>
+                    {visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="table-wrap" tabIndex={0} aria-label="Tabela com rolagem horizontal quando necessario">
+            <table aria-label="Inventário técnico de questões">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Competência</th>
+                  <th>Descritor</th>
+                  <th>Componente</th>
+                  <th>Gabarito</th>
+                  <th>Dificuldade</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!inventarioQuestoesExibidas.length && (
+                  <tr>
+                    <td colSpan={8}>Nenhuma questão encontrada com os filtros atuais.</td>
+                  </tr>
+                )}
+                {inventarioQuestoesExibidas.map((questao) => {
+                  const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+                  const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+
+                  return (
+                    <tr key={questao.codigo}>
+                      <td>{questao.codigo}</td>
+                      <td>{competencia ? visiblePedagogicalCode(competencia.codigo) : "-"}</td>
+                      <td>{visiblePedagogicalCode(questao.descritor_codigo)}</td>
+                      <td>{questao.componente_curricular}</td>
+                      <td>{questao.gabarito}</td>
+                      <td>{questao.dificuldade_inicial}</td>
+                      <td><span className={`status-badge ${questao.status}`}>{questaoStatusLabel(questao.status)}</span></td>
+                      <td>
+                        <div className="review-actions" aria-label={`Ações da questão ${questao.codigo}`}>
+                          <button className="secondary small" onClick={() => iniciarEdicaoQuestao(questao)}>Editar</button>
+                          <button
+                            className="secondary small"
+                            disabled={questao.status === "validada"}
+                            onClick={() => alterarStatusQuestao(questao.codigo, "validada")}
+                          >
+                            Validar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {inventarioQuestoesTodas.length > inventarioQuestoesExibidas.length && (
+            <p className="helper">Mostrando as primeiras 150 questões do filtro para manter a tela leve. Refine a busca ou os filtros para localizar um item específico.</p>
+          )}
         </section>
         )}
 
@@ -4432,15 +4569,15 @@ function ItemBank({
               <div className="form-grid">
                 <Field label="Código da questão" value={questaoDraft.codigo} onChange={() => undefined} readOnly helper="Código preservado — não muda ao editar." />
                 <label>
-                  Componente curricular
+                  Competência vinculada
                   <select
-                    value={questaoDraft.componente_curricular}
+                    value={competenciaFiltroQuestaoModal}
                     disabled={questaoTravada}
-                    onChange={(event) => selecionarComponenteQuestao(event.target.value)}
+                    onChange={(event) => selecionarCompetenciaQuestaoModal(event.target.value)}
                   >
-                    <option value="">Selecione o componente</option>
-                    {componentesDaQuestao.map((componente) => (
-                      <option key={componente} value={componente}>{componente}</option>
+                    <option value="">Selecione a competência</option>
+                    {competenciasDoCurso.map((competencia) => (
+                      <option key={competencia.codigo} value={competencia.codigo}>{visiblePedagogicalCode(competencia.codigo)} · {competencia.descricao}</option>
                     ))}
                   </select>
                 </label>
@@ -4449,21 +4586,21 @@ function ItemBank({
                   <select
                     value={questaoDraft.descritor_codigo}
                     disabled={questaoTravada}
-                    onChange={(event) => {
-                      const descritor = descritoresDoComponenteDaQuestao.find((item) => item.codigo === event.target.value);
-                      setQuestaoDraft({
-                        ...questaoDraft,
-                        descritor_codigo: event.target.value,
-                        componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
-                      });
-                    }}
+                    onChange={(event) => selecionarDescritorQuestaoModal(event.target.value)}
                   >
                     <option value="">Selecione</option>
-                    {descritoresDoComponenteDaQuestao.map((descritor) => (
+                    {descritoresParaModalEdicao.map((descritor) => (
                       <option key={descritor.codigo} value={descritor.codigo}>{visiblePedagogicalCode(descritor.codigo)} · {descritor.componente_curricular} · {descritor.descricao}</option>
                     ))}
                   </select>
                 </label>
+                <Field
+                  label="Componente curricular"
+                  value={questaoDraft.componente_curricular}
+                  onChange={() => undefined}
+                  readOnly
+                  helper="Derivado automaticamente do descritor escolhido acima."
+                />
                 <label>
                   Status
                   <select value={questaoDraft.status} onChange={(event) => setQuestaoDraft({ ...questaoDraft, status: event.target.value as QuestaoDraft["status"] })}>
