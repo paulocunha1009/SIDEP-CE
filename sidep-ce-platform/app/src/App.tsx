@@ -11,7 +11,7 @@
   UserRoundCog,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { NivelLegend, PerformanceBarChart, StatusDoughnutChart } from "./charts";
+import { NivelLegend, nivelAprendizagem, PerformanceBarChart, StatusDoughnutChart } from "./charts";
 import logoCentec from "./assets/logo-centec-transparent.png";
 import logoCrede03 from "./assets/logo-crede-03-transparent.png";
 import logoSeduc from "./assets/logo-seduc-transparent.png";
@@ -5822,7 +5822,7 @@ function Reports({
   setMessage: (message: string) => void;
 }) {
   const [syncing, setSyncing] = useState(false);
-  const [activeReportTab, setActiveReportTab] = useState<"geral" | "avaliacao" | "individual" | "pedagogico" | "exportacoes">("geral");
+  const [activeReportTab, setActiveReportTab] = useState<"geral" | "regional" | "avaliacao" | "individual" | "pedagogico" | "exportacoes">("geral");
   const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("");
   const [selectedResponseId, setSelectedResponseId] = useState("");
   const [filtroEscolaInep, setFiltroEscolaInep] = useState("");
@@ -6043,6 +6043,68 @@ function Reports({
   function percentNumber(item: { acertos: number; total: number }) {
     return item.total ? Math.round((item.acertos / item.total) * 10000) / 100 : 0;
   }
+
+  // Painel regional por escola: uma linha por escola do escopo (inclusive as
+  // que ainda nao tem nenhuma resposta, para sinalizar falta de participacao
+  // para quem gerencia varias escolas — regional/SEDUC/administrador).
+  function escolaDaResposta(resposta: RespostaAvaliacaoDraft) {
+    return resposta.escola_inep || avaliacaoPorCodigo.get(resposta.avaliacao_codigo)?.escola_inep || "-";
+  }
+
+  const descritorResumoPorEscola = new Map<string, Map<string, { acertos: number; total: number }>>();
+  respostasEscopo.forEach((resposta) => {
+    const inep = escolaDaResposta(resposta);
+    if (!descritorResumoPorEscola.has(inep)) descritorResumoPorEscola.set(inep, new Map());
+    const mapaEscola = descritorResumoPorEscola.get(inep)!;
+    resposta.ordem_questoes.forEach((codigoQuestao) => {
+      const questao = questaoPorCodigo.get(codigoQuestao);
+      if (!questao) return;
+      const correta = resposta.respostas[codigoQuestao] === questao.gabarito;
+      const descritor = mapaEscola.get(questao.descritor_codigo) ?? { acertos: 0, total: 0 };
+      descritor.total += 1;
+      if (correta) descritor.acertos += 1;
+      mapaEscola.set(questao.descritor_codigo, descritor);
+    });
+  });
+
+  const coberturaPorEscola = new Map<string, { cobertos: Set<string>; totalDescritores: Set<string> }>();
+  coberturaPorTurma.forEach((entrada) => {
+    const chaveEscola = entrada.escola_inep ?? "-";
+    if (!coberturaPorEscola.has(chaveEscola)) {
+      coberturaPorEscola.set(chaveEscola, { cobertos: new Set(), totalDescritores: new Set() });
+    }
+    const acumulado = coberturaPorEscola.get(chaveEscola)!;
+    entrada.cobertos.forEach((codigo) => acumulado.cobertos.add(codigo));
+    const todosDoCurso = descritoresPorCurso.get(entrada.curso) ?? new Set<string>();
+    todosDoCurso.forEach((codigo) => acumulado.totalDescritores.add(codigo));
+  });
+
+  const painelRegionalLinhas = schools
+    .map((escola) => {
+      const respostasDaEscola = respostasEscopo.filter((resposta) => escolaDaResposta(resposta) === escola.codigo_inep);
+      const alunos = new Set(respostasDaEscola.map((resposta) => resposta.estudante_chave)).size;
+      const avaliacoesComResposta = new Set(respostasDaEscola.map((resposta) => resposta.avaliacao_codigo)).size;
+      const media = respostasDaEscola.length
+        ? Math.round((respostasDaEscola.reduce((total, resposta) => total + resposta.percentual_bruto, 0) / respostasDaEscola.length) * 100) / 100
+        : 0;
+      const cobertura = coberturaPorEscola.get(escola.codigo_inep);
+      const coberturaTexto = cobertura ? `${cobertura.cobertos.size}/${cobertura.totalDescritores.size || cobertura.cobertos.size}` : "0/0";
+      const resumoDescritoresEscola = descritorResumoPorEscola.get(escola.codigo_inep);
+      const descritoresCriticosEscola = resumoDescritoresEscola
+        ? Array.from(resumoDescritoresEscola.values()).filter((item) => nivelAprendizagem(percentNumber(item)) === "critico").length
+        : 0;
+      return {
+        escola: escola.nome_oficial,
+        inep: escola.codigo_inep,
+        alunos,
+        avaliacoesComResposta,
+        respostas: respostasDaEscola.length,
+        coberturaTexto,
+        media,
+        descritoresCriticosEscola,
+      };
+    })
+    .sort((a, b) => a.escola.localeCompare(b.escola));
 
   function slugReport(value: string) {
     return value
@@ -6639,6 +6701,9 @@ function Reports({
       )}
       <div className="item-bank-tabs report-tabs" role="tablist" aria-label="Subabas de relatórios">
         <button className={activeReportTab === "geral" ? "active" : ""} onClick={() => setActiveReportTab("geral")}>Visão Geral</button>
+        {schoolsProp.length > 1 && (
+          <button className={activeReportTab === "regional" ? "active" : ""} onClick={() => setActiveReportTab("regional")}>Regional</button>
+        )}
         <button className={activeReportTab === "avaliacao" ? "active" : ""} onClick={() => setActiveReportTab("avaliacao")}>Por Avaliação</button>
         <button className={activeReportTab === "individual" ? "active" : ""} onClick={() => setActiveReportTab("individual")}>Individual</button>
         <button className={activeReportTab === "pedagogico" ? "active" : ""} onClick={() => setActiveReportTab("pedagogico")}>Pedagógico</button>
@@ -6708,6 +6773,36 @@ function Reports({
             <DataTable
               headers={["Escola", "Turma", "Curso", "Cobertos", "Descritores pendentes"]}
               rows={linhasCobertura}
+            />
+          </section>
+        </div>
+      )}
+
+      {activeReportTab === "regional" && (
+        <div className="report-tab-content">
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Painel regional por escola</h3>
+                <p>
+                  Uma linha por escola do seu escopo, inclusive as que ainda não têm nenhuma resposta — para
+                  identificar rapidamente quais escolas ainda não engajaram, não só o desempenho de quem já
+                  participou.
+                </p>
+              </div>
+              <span className="count-chip">{painelRegionalLinhas.length} escola(s)</span>
+            </div>
+            <DataTable
+              headers={["Escola", "Alunos que responderam", "Avaliações aplicadas", "Respostas", "Cobertura de descritores", "Média geral", "Descritores críticos"]}
+              rows={painelRegionalLinhas.map((linha) => [
+                linha.escola,
+                String(linha.alunos),
+                String(linha.avaliacoesComResposta),
+                String(linha.respostas),
+                linha.coberturaTexto,
+                `${linha.media}%`,
+                String(linha.descritoresCriticosEscola),
+              ])}
             />
           </section>
         </div>
