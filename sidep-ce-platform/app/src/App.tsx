@@ -92,7 +92,7 @@ import type {
 type Role = "student" | "teacher" | "management";
 type View = "home" | "student" | "schools" | "teachers" | "regionalUsers" | "items" | "assessments" | "reports";
 type ItemBankTab = "competencias" | "descritores" | "questoes";
-type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario";
+type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario" | "analise";
 type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
 type AuthRole = "aluno" | "professor" | "gestao_escolar" | "regional" | "seduc" | "administrador";
 
@@ -416,6 +416,12 @@ const quantidadePorComponenteOptions = [2, 5, 10, 20];
 // em VITE_LOCAL_MASTER_PASSWORD (arquivo .env.local, nunca commitado). Sem essa
 // variavel, o login local do master fica desabilitado - ver authUsers abaixo.
 const LOCAL_MASTER_PASSWORD = ((import.meta.env.VITE_LOCAL_MASTER_PASSWORD as string | undefined) ?? "").trim();
+
+// Volume minimo de respostas por questao para calcular discriminacao (grupo
+// superior x inferior) com uma estabilidade minima - definido com o professor
+// responsavel em 10/08/2026. Abaixo disso a analise mostra "amostra
+// insuficiente" em vez de um numero estatisticamente sem sentido.
+const VOLUME_MINIMO_DISCRIMINACAO = 10;
 const DEFAULT_TEACHER_CPF = "00000000000";
 const MASTER_USER_STORAGE_KEY = "sidep-ce:master-user";
 const ASSESSMENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -3306,6 +3312,7 @@ function ItemBank({
   const [inventarioBusca, setInventarioBusca] = useState("");
   const [inventarioCompetenciaFiltro, setInventarioCompetenciaFiltro] = useState("todas");
   const [inventarioDescritorFiltro, setInventarioDescritorFiltro] = useState("todos");
+  const [analiseSoProblematicos, setAnaliseSoProblematicos] = useState(false);
   const [cursoExportacao, setCursoExportacao] = useState("todos");
   const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
@@ -3723,6 +3730,83 @@ function ItemBank({
       ].some((valor) => normalizeKey(valor).includes(termo));
     });
   const inventarioQuestoesExibidas = inventarioQuestoesTodas.slice(0, 150);
+
+  // Analise classica de itens: indice de acerto, discriminacao (grupo superior
+  // vs inferior por desempenho geral na propria tentativa) e distratores, a
+  // partir das respostas reais ja registradas (respostas grava a alternativa
+  // escolhida por questao, nao so certo/errado).
+  const respostasPorQuestao = new Map<string, RespostaAvaliacaoDraft[]>();
+  respostas.forEach((resposta) => {
+    resposta.ordem_questoes.forEach((codigoQuestao) => {
+      if (resposta.respostas[codigoQuestao] === undefined) return;
+      if (!respostasPorQuestao.has(codigoQuestao)) respostasPorQuestao.set(codigoQuestao, []);
+      respostasPorQuestao.get(codigoQuestao)!.push(resposta);
+    });
+  });
+
+  const analiseItens = questoesDoCurso.map((questao) => {
+    const respostasDoItem = respostasPorQuestao.get(questao.codigo) ?? [];
+    const n = respostasDoItem.length;
+    const acertos = respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length;
+    const indiceAcerto = n ? acertos / n : 0;
+    const dificuldadeEmpirica = !n ? "sem dados" : indiceAcerto >= 0.7 ? "fácil" : indiceAcerto >= 0.4 ? "médio" : "difícil";
+
+    const distratores = (["A", "B", "C", "D", "E"] as AlternativaKey[])
+      .filter((letra) => letra !== questao.gabarito)
+      .map((letra) => ({
+        letra,
+        total: respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
+      }));
+    const distratoresFracos = n ? distratores.filter((item) => item.total === 0).map((item) => item.letra) : [];
+
+    let discriminacao: number | null = null;
+    let distratorMaisEscolhidoPeloTopo: AlternativaKey | null = null;
+    if (n >= VOLUME_MINIMO_DISCRIMINACAO) {
+      const ordenadas = respostasDoItem.slice().sort((a, b) => b.percentual_bruto - a.percentual_bruto);
+      const tamanhoGrupo = Math.max(1, Math.round(n * 0.27));
+      const grupoSuperior = ordenadas.slice(0, tamanhoGrupo);
+      const grupoInferior = ordenadas.slice(n - tamanhoGrupo);
+      const pSuperior = grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoSuperior.length;
+      const pInferior = grupoInferior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoInferior.length;
+      discriminacao = Math.round((pSuperior - pInferior) * 100) / 100;
+
+      const contagemTopoPorAlternativa = (["A", "B", "C", "D", "E"] as AlternativaKey[]).map((letra) => ({
+        letra,
+        total: grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
+      }));
+      const maisEscolhidaPeloTopo = contagemTopoPorAlternativa.slice().sort((a, b) => b.total - a.total)[0];
+      if (maisEscolhidaPeloTopo && maisEscolhidaPeloTopo.letra !== questao.gabarito && maisEscolhidaPeloTopo.total > 0) {
+        distratorMaisEscolhidoPeloTopo = maisEscolhidaPeloTopo.letra;
+      }
+    }
+
+    const problematico =
+      n >= VOLUME_MINIMO_DISCRIMINACAO
+        ? (discriminacao !== null && discriminacao < 0.15) || Boolean(distratorMaisEscolhidoPeloTopo)
+        : false;
+    const candidataAncora =
+      questao.status === "validada" && discriminacao !== null && discriminacao >= 0.3 && indiceAcerto >= 0.3 && indiceAcerto <= 0.7;
+
+    return {
+      questao,
+      n,
+      indiceAcerto,
+      dificuldadeEmpirica,
+      distratoresFracos,
+      discriminacao,
+      distratorMaisEscolhidoPeloTopo,
+      problematico,
+      candidataAncora,
+    };
+  });
+
+  const analiseItensExibidos = (analiseSoProblematicos ? analiseItens.filter((item) => item.problematico) : analiseItens)
+    .slice()
+    .sort((a, b) => {
+      if (a.problematico !== b.problematico) return a.problematico ? -1 : 1;
+      return (a.discriminacao ?? 0) - (b.discriminacao ?? 0);
+    });
+
   const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
     const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
     const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
@@ -3867,6 +3951,12 @@ function ItemBank({
       title: "Consulta estruturada do banco de questões",
       description: "Veja código, descritor, competência, componente, gabarito, dificuldade e situação de cada item.",
       scope: "Inventário",
+    },
+    analise: {
+      eyebrow: "Análise clássica de itens",
+      title: "Índice de acerto, discriminação e distratores",
+      description: "Estatística empírica por questão a partir das respostas reais já registradas — preparação para calibração TRI.",
+      scope: "Análise",
     },
   };
 
@@ -4245,6 +4335,7 @@ function ItemBank({
             ["curadoria", "2. Curadoria"],
             ["cobertura", "3. Cobertura"],
             ["inventario", "4. Inventário"],
+            ["analise", "5. Análise de Itens"],
           ].map(([id, label]) => (
             <button
               key={id}
@@ -4648,6 +4739,82 @@ function ItemBank({
           {inventarioQuestoesTodas.length > inventarioQuestoesExibidas.length && (
             <p className="helper">Mostrando as primeiras 150 questões do filtro para manter a tela leve. Refine a busca ou os filtros para localizar um item específico.</p>
           )}
+        </section>
+        )}
+
+        {questaoSubTab === "analise" && (
+        <section className="question-module-section">
+          <div className="section-heading">
+            <div>
+              <h3>Análise clássica de itens</h3>
+              <p>
+                Estatística empírica calculada a partir das respostas reais já registradas neste curso — índice de
+                acerto, dificuldade empírica, discriminação e distratores. Diferente do campo manual "dificuldade
+                inicial pré-TRI" do cadastro, aqui tudo vem dos dados de resposta de verdade.
+              </p>
+            </div>
+            <label className="inline-filter">
+              <input
+                type="checkbox"
+                checked={analiseSoProblematicos}
+                onChange={(event) => setAnaliseSoProblematicos(event.target.checked)}
+              />
+              Só itens problemáticos
+            </label>
+          </div>
+
+          <div className="info-callout">
+            <strong>Volume mínimo para discriminação: {VOLUME_MINIMO_DISCRIMINACAO} respostas por questão.</strong>
+            <p>
+              Abaixo disso, a discriminação aparece como "amostra insuficiente" em vez de um número
+              estatisticamente sem sentido — o piloto ainda tem poucas respostas por questão na maioria dos itens.
+              Um item é sinalizado como <b>problemático</b> quando a discriminação está abaixo de 0,15 (baixo poder
+              de distinguir quem sabe de quem não sabe) ou quando uma alternativa errada foi mais escolhida que o
+              gabarito pelo grupo de melhor desempenho (possível indício de erro no gabarito). Um item vira
+              <b> candidato a âncora</b> quando já está validado, tem discriminação boa (≥ 0,30) e dificuldade
+              equilibrada (índice de acerto entre 30% e 70%).
+            </p>
+          </div>
+
+          <div className="table-wrap" tabIndex={0} aria-label="Tabela com rolagem horizontal quando necessario">
+            <table aria-label="Análise clássica de itens">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nº respostas</th>
+                  <th>Índice de acerto</th>
+                  <th>Dificuldade empírica</th>
+                  <th>Discriminação</th>
+                  <th>Distratores fracos</th>
+                  <th>Sinalização</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!analiseItensExibidos.length && (
+                  <tr>
+                    <td colSpan={7}>
+                      {analiseSoProblematicos ? "Nenhum item problemático encontrado no filtro atual." : "Nenhuma questão encontrada neste curso."}
+                    </td>
+                  </tr>
+                )}
+                {analiseItensExibidos.map((item) => (
+                  <tr key={item.questao.codigo}>
+                    <td>{item.questao.codigo}</td>
+                    <td>{item.n}</td>
+                    <td>{item.n ? `${Math.round(item.indiceAcerto * 10000) / 100}%` : "-"}</td>
+                    <td>{item.dificuldadeEmpirica}</td>
+                    <td>{item.discriminacao === null ? "amostra insuficiente" : item.discriminacao}</td>
+                    <td>{item.distratoresFracos.length ? item.distratoresFracos.join(", ") : item.n ? "nenhum" : "-"}</td>
+                    <td>
+                      {item.problematico && <span className="status-badge critico">Problemático</span>}
+                      {item.candidataAncora && <span className="status-badge validada">Candidato a âncora</span>}
+                      {!item.problematico && !item.candidataAncora && "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
         )}
 

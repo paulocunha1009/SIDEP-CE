@@ -2226,6 +2226,13 @@ textarea {
   color: #166534;
 }
 
+.status-badge.critico {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  margin-right: 6px;
+}
+
 .review-actions {
   display: grid;
   gap: 8px;
