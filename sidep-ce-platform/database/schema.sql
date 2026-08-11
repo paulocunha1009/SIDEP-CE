@@ -270,6 +270,30 @@ create index if not exists descritor_mvp_competencia_idx on descritor_mvp (compe
 create index if not exists questao_mvp_descritor_idx on questao_mvp (descritor_codigo);
 create index if not exists questao_mvp_status_idx on questao_mvp (status);
 
+-- intervencao_pedagogica_mvp (08/10/2026, Sprint 5): registro de acoes do
+-- professor/gestao escolar em resposta a descritores criticos. Nao reaproveita
+-- a tabela legada `intervencao_pedagogica` (removida na Sprint 4, sem uso real).
+create table if not exists intervencao_pedagogica_mvp (
+  id uuid primary key default gen_random_uuid(),
+  escola_inep varchar(20) not null,
+  professor_matricula varchar(40),
+  turma_codigo varchar(80) not null,
+  curso_tecnico varchar(180) not null,
+  descritor_codigo varchar(40) references descritor_mvp(codigo) on delete set null,
+  tipo varchar(30) not null default 'reforco'
+    check (tipo in ('reforco', 'recuperacao', 'atendimento_individual', 'outro')),
+  status varchar(20) not null default 'planejada'
+    check (status in ('planejada', 'realizada', 'cancelada')),
+  data_planejada date,
+  observacoes text,
+  criada_em timestamptz not null default now(),
+  atualizada_em timestamptz not null default now()
+);
+
+create index if not exists intervencao_pedagogica_mvp_escola_idx on intervencao_pedagogica_mvp (escola_inep);
+create index if not exists intervencao_pedagogica_mvp_professor_idx on intervencao_pedagogica_mvp (professor_matricula);
+create index if not exists intervencao_pedagogica_mvp_descritor_idx on intervencao_pedagogica_mvp (descritor_codigo);
+
 create table if not exists log_auditoria (
   id uuid primary key default gen_random_uuid(),
   usuario_tipo varchar(40),

@@ -203,6 +203,19 @@ export interface RespostaAvaliacaoDraft {
   origem: "local" | "supabase";
 }
 
+export interface IntervencaoPedagogicaDraft {
+  id?: string;
+  escola_inep: string;
+  professor_matricula?: string;
+  turma_codigo: string;
+  curso_tecnico: string;
+  descritor_codigo?: string;
+  tipo: "reforco" | "recuperacao" | "atendimento_individual" | "outro";
+  status: "planejada" | "realizada" | "cancelada";
+  data_planejada?: string;
+  observacoes?: string;
+}
+
 export interface ResultadoAcao<T> {
   data?: T;
   erro?: string;

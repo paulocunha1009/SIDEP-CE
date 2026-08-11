@@ -46,6 +46,7 @@ import {
   resolverUrlImagemQuestao,
 } from "./services/itemBankRepository";
 import { carregarCatalogoCurricularV2 } from "./services/curricularMatrixRepository";
+import { carregarIntervencoes, salvarIntervencao } from "./services/intervencaoRepository";
 import {
   carregarAvaliacoes,
   carregarAvaliacoesLocais,
@@ -79,6 +80,7 @@ import type {
   DescritorDraft,
   DescritorCurricularV2,
   EscolaDraft,
+  IntervencaoPedagogicaDraft,
   MatrizComponenteV2,
   PerfilAcesso,
   ProfessorDraft,
@@ -1143,6 +1145,7 @@ export function App() {
   });
   const [assessments, setAssessments] = useState<AvaliacaoDraft[]>([]);
   const [respostas, setRespostas] = useState<RespostaAvaliacaoDraft[]>([]);
+  const [intervencoes, setIntervencoes] = useState<IntervencaoPedagogicaDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Preparando ambiente do MVP.");
   const [masterUser, setMasterUser] = useState<AuthUser>(() => carregarMasterUser());
@@ -1157,6 +1160,7 @@ export function App() {
       descritoresBase,
       questoesBase,
       catalogoV2,
+      intervencoesOnline,
     ] = await Promise.all([
       carregarEscolas(),
       carregarProfessores(),
@@ -1166,6 +1170,7 @@ export function App() {
       carregarDescritores(),
       carregarQuestoes(),
       carregarCatalogoCurricularV2(),
+      carregarIntervencoes(),
     ]);
     const precisaSanearBanco =
       !supabaseConfigured && precisaAtualizarBancoNorteador(competenciasBase, descritoresBase, questoesBase);
@@ -1185,6 +1190,7 @@ export function App() {
     setCatalogoCurricularV2(catalogoV2);
     setAssessments(avaliacoesOnline);
     setRespostas(respostasOnline);
+    setIntervencoes(intervencoesOnline);
     setMessage(
       precisaSanearBanco
         ? "Banco local saneado: removi competências/descritores legados e apliquei a nomenclatura C/D."
@@ -1627,6 +1633,8 @@ export function App() {
               setCompetencias={setCompetencias}
               descritores={descritores}
               setDescritores={setDescritores}
+              intervencoes={intervencoes}
+              setIntervencoes={setIntervencoes}
               currentUser={currentUser}
               setMessage={setMessage}
             />
@@ -5801,6 +5809,8 @@ function Reports({
   setCompetencias,
   descritores,
   setDescritores,
+  intervencoes: intervencoesProp,
+  setIntervencoes,
   currentUser,
   setMessage,
 }: {
@@ -5818,17 +5828,31 @@ function Reports({
   setCompetencias: (competencias: CompetenciaDraft[]) => void;
   descritores: DescritorDraft[];
   setDescritores: (descritores: DescritorDraft[]) => void;
+  intervencoes: IntervencaoPedagogicaDraft[];
+  setIntervencoes: (intervencoes: IntervencaoPedagogicaDraft[]) => void;
   currentUser: AuthUser;
   setMessage: (message: string) => void;
 }) {
   const [syncing, setSyncing] = useState(false);
-  const [activeReportTab, setActiveReportTab] = useState<"geral" | "regional" | "avaliacao" | "individual" | "pedagogico" | "exportacoes">("geral");
+  const [activeReportTab, setActiveReportTab] = useState<"geral" | "regional" | "avaliacao" | "individual" | "pedagogico" | "intervencoes" | "exportacoes">("geral");
   const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("");
   const [selectedResponseId, setSelectedResponseId] = useState("");
   const [filtroEscolaInep, setFiltroEscolaInep] = useState("");
   const [filtroTurma, setFiltroTurma] = useState("");
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [salvandoIntervencao, setSalvandoIntervencao] = useState(false);
+  const [novaIntervencao, setNovaIntervencao] = useState<IntervencaoPedagogicaDraft>({
+    escola_inep: currentUser.escola_inep ?? "",
+    professor_matricula: currentUser.professor_matricula,
+    turma_codigo: "",
+    curso_tecnico: "",
+    descritor_codigo: "",
+    tipo: "reforco",
+    status: "planejada",
+    data_planejada: "",
+    observacoes: "",
+  });
 
   // Opcoes do filtro sempre listam o escopo completo (por perfil), nao o ja filtrado,
   // para o usuario poder trocar de escola/turma sem precisar limpar o filtro antes.
@@ -5880,6 +5904,39 @@ function Reports({
   const competenciaCodesInScope = new Set(descritoresEscopo.map((descritor) => descritor.competencia_codigo));
   const competenciasEscopo = competencias.filter((competencia) => competenciaCodesInScope.has(competencia.codigo));
   const canExportFullPedagogicalBase = currentUser.role === "administrador" || currentUser.role === "seduc";
+  const escolasInepEscopo = new Set(schools.map((school) => school.codigo_inep));
+  const intervencoesEscopo = intervencoesProp.filter((intervencao) => escolasInepEscopo.has(intervencao.escola_inep));
+  const podeRegistrarIntervencao = currentUser.role === "professor" || currentUser.role === "gestao_escolar" || currentUser.role === "administrador";
+  const cursosDisponiveisIntervencao = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico))).sort((a, b) => a.localeCompare(b));
+
+  async function salvarNovaIntervencao() {
+    if (!novaIntervencao.escola_inep || !novaIntervencao.turma_codigo.trim() || !novaIntervencao.curso_tecnico) {
+      setMessage("Preencha escola, turma e curso técnico para registrar a intervenção.");
+      return;
+    }
+    setSalvandoIntervencao(true);
+    const result = await salvarIntervencao(novaIntervencao);
+    setSalvandoIntervencao(false);
+    if (result.erro) {
+      setMessage(result.erro);
+      return;
+    }
+    if (result.data) {
+      setIntervencoes([...intervencoesProp.filter((item) => item.id !== result.data!.id), result.data]);
+    }
+    setNovaIntervencao({
+      escola_inep: currentUser.escola_inep ?? "",
+      professor_matricula: currentUser.professor_matricula,
+      turma_codigo: "",
+      curso_tecnico: "",
+      descritor_codigo: "",
+      tipo: "reforco",
+      status: "planejada",
+      data_planejada: "",
+      observacoes: "",
+    });
+    setMessage(`Intervenção registrada em modo ${result.modo}.`);
+  }
   const selectedAssessment = assessments.find((assessment) => assessment.codigo_acesso === selectedAssessmentCode) ?? assessments[0];
   const selectedStudentResponse = respostasEscopo.find((resposta) => resposta.id === selectedResponseId) ?? respostasEscopo[0];
   const respostasDaAvaliacaoSelecionada = selectedAssessment
@@ -6719,6 +6776,7 @@ function Reports({
         <button className={activeReportTab === "avaliacao" ? "active" : ""} onClick={() => setActiveReportTab("avaliacao")}>Por Avaliação</button>
         <button className={activeReportTab === "individual" ? "active" : ""} onClick={() => setActiveReportTab("individual")}>Individual</button>
         <button className={activeReportTab === "pedagogico" ? "active" : ""} onClick={() => setActiveReportTab("pedagogico")}>Pedagógico</button>
+        <button className={activeReportTab === "intervencoes" ? "active" : ""} onClick={() => setActiveReportTab("intervencoes")}>Intervenções</button>
         <button className={activeReportTab === "exportacoes" ? "active" : ""} onClick={() => setActiveReportTab("exportacoes")}>Exportações</button>
       </div>
 
@@ -7160,6 +7218,110 @@ function Reports({
                 `${resumo.acertos}/${resumo.total}`,
                 percent(resumo),
               ])}
+            />
+          </section>
+        </div>
+      )}
+
+      {activeReportTab === "intervencoes" && (
+        <div className="report-tab-content">
+          {podeRegistrarIntervencao && (
+            <section className="subpanel wide report-block">
+              <div className="section-heading">
+                <div>
+                  <h3>Registrar intervenção pedagógica</h3>
+                  <p>Ação em resposta a um descritor crítico ou de baixo desempenho — reforço, recuperação, atendimento individual.</p>
+                </div>
+              </div>
+              <div className="form-grid">
+                {schools.length > 1 ? (
+                  <label>
+                    Escola
+                    <select value={novaIntervencao.escola_inep} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, escola_inep: event.target.value })}>
+                      <option value="">Selecione a escola</option>
+                      {schools.map((school) => (
+                        <option key={school.codigo_inep} value={school.codigo_inep}>{school.nome_oficial}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <Field label="Escola" value={nomeEscola(novaIntervencao.escola_inep) === "-" ? novaIntervencao.escola_inep : nomeEscola(novaIntervencao.escola_inep)} onChange={() => undefined} readOnly />
+                )}
+                <Field label="Turma" value={novaIntervencao.turma_codigo} placeholder="Ex.: 1ª TEC. INF." onChange={(value) => setNovaIntervencao({ ...novaIntervencao, turma_codigo: value })} />
+                <label>
+                  Curso técnico
+                  <select value={novaIntervencao.curso_tecnico} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, curso_tecnico: event.target.value })}>
+                    <option value="">Selecione o curso</option>
+                    {cursosDisponiveisIntervencao.map((curso) => (
+                      <option key={curso} value={curso}>{curso}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Descritor alvo (opcional)
+                  <select value={novaIntervencao.descritor_codigo ?? ""} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, descritor_codigo: event.target.value })}>
+                    <option value="">Nenhum descritor específico</option>
+                    {descritoresEscopo.map((descritor) => (
+                      <option key={descritor.codigo} value={descritor.codigo}>{visiblePedagogicalCode(descritor.codigo)} · {descritor.descricao}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Tipo
+                  <select value={novaIntervencao.tipo} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, tipo: event.target.value as IntervencaoPedagogicaDraft["tipo"] })}>
+                    <option value="reforco">Reforço</option>
+                    <option value="recuperacao">Recuperação</option>
+                    <option value="atendimento_individual">Atendimento individual</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </label>
+                <label>
+                  Status
+                  <select value={novaIntervencao.status} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, status: event.target.value as IntervencaoPedagogicaDraft["status"] })}>
+                    <option value="planejada">Planejada</option>
+                    <option value="realizada">Realizada</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </label>
+                <label>
+                  Data planejada
+                  <input type="date" value={novaIntervencao.data_planejada ?? ""} onChange={(event) => setNovaIntervencao({ ...novaIntervencao, data_planejada: event.target.value })} />
+                </label>
+                <TextArea label="Observações" value={novaIntervencao.observacoes ?? ""} onChange={(value) => setNovaIntervencao({ ...novaIntervencao, observacoes: value })} />
+              </div>
+              <button className="primary" onClick={salvarNovaIntervencao} disabled={salvandoIntervencao}>
+                {salvandoIntervencao ? "Salvando..." : "Registrar intervenção"}
+              </button>
+            </section>
+          )}
+
+          <section className="subpanel wide report-block">
+            <div className="section-heading">
+              <div>
+                <h3>Intervenções registradas</h3>
+                <p>
+                  {currentUser.role === "regional" || currentUser.role === "seduc"
+                    ? "Acompanhamento — só professores e gestão escolar registram intervenções."
+                    : "Histórico de ações registradas dentro do seu escopo."}
+                </p>
+              </div>
+              <span className="count-chip">{intervencoesEscopo.length}</span>
+            </div>
+            <DataTable
+              headers={["Escola", "Turma", "Curso", "Descritor", "Tipo", "Status", "Data planejada", "Observações"]}
+              rows={intervencoesEscopo
+                .slice()
+                .sort((a, b) => (b.data_planejada ?? "").localeCompare(a.data_planejada ?? ""))
+                .map((intervencao) => [
+                  nomeEscola(intervencao.escola_inep),
+                  intervencao.turma_codigo,
+                  intervencao.curso_tecnico,
+                  intervencao.descritor_codigo ? visiblePedagogicalCode(intervencao.descritor_codigo) : "-",
+                  intervencao.tipo,
+                  intervencao.status,
+                  intervencao.data_planejada ?? "-",
+                  intervencao.observacoes ?? "",
+                ])}
             />
           </section>
         </div>
