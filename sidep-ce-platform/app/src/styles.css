@@ -2390,6 +2390,43 @@ textarea {
   padding-top: 12px;
 }
 
+.ai-review-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+
+.ai-suggestion-box {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  padding: 14px;
+}
+
+.ai-suggestion-comment {
+  font-style: italic;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.ai-suggestion-diff {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-suggestion-diff strong {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.ai-suggestion-diff p {
+  margin: 0;
+}
+
 .coverage-panel {
   border: 1px solid var(--line);
   background: #fff;

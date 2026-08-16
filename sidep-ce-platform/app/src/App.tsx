@@ -3,6 +3,7 @@
   BookOpenCheck,
   Building2,
   ClipboardList,
+  FileQuestion,
   GraduationCap,
   KeyRound,
   Landmark,
@@ -47,6 +48,8 @@ import {
 } from "./services/itemBankRepository";
 import { carregarCatalogoCurricularV2 } from "./services/curricularMatrixRepository";
 import { carregarIntervencoes, salvarIntervencao } from "./services/intervencaoRepository";
+import { solicitarRevisaoLinguistica } from "./services/aiRepository";
+import type { RevisaoLinguisticaSugestao } from "./services/aiRepository";
 import {
   carregarAvaliacoes,
   carregarAvaliacoesLocais,
@@ -90,7 +93,7 @@ import type {
 } from "./types";
 
 type Role = "student" | "teacher" | "management";
-type View = "home" | "student" | "schools" | "teachers" | "regionalUsers" | "items" | "assessments" | "reports";
+type View = "home" | "student" | "schools" | "teachers" | "regionalUsers" | "items" | "questoes" | "assessments" | "reports";
 type ItemBankTab = "competencias" | "descritores" | "questoes";
 type QuestaoSubTab = "cadastro" | "curadoria" | "cobertura" | "inventario" | "analise";
 type QuestaoStatusFiltro = QuestaoDraft["status"] | "todas";
@@ -1152,6 +1155,7 @@ export function App() {
   const [assessments, setAssessments] = useState<AvaliacaoDraft[]>([]);
   const [respostas, setRespostas] = useState<RespostaAvaliacaoDraft[]>([]);
   const [intervencoes, setIntervencoes] = useState<IntervencaoPedagogicaDraft[]>([]);
+  const [descritorParaNovaQuestao, setDescritorParaNovaQuestao] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Preparando ambiente do MVP.");
   const [masterUser, setMasterUser] = useState<AuthUser>(() => carregarMasterUser());
@@ -1541,6 +1545,7 @@ export function App() {
             {canUseTeacherArea && (
               <>
                 <NavButton active={view === "items"} onClick={() => setView("items")} icon={Layers3} label="Banco de Itens" />
+                <NavButton active={view === "questoes"} onClick={() => setView("questoes")} icon={FileQuestion} label="Questões" />
                 <NavButton active={view === "assessments"} onClick={() => setView("assessments")} icon={ClipboardList} label="Avaliacoes" />
               </>
             )}
@@ -1603,7 +1608,22 @@ export function App() {
               questoes={questoes}
               setQuestoes={setQuestoes}
               catalogoCurricularV2={catalogoCurricularV2}
+              setView={setView}
+              setDescritorParaNovaQuestao={setDescritorParaNovaQuestao}
+              setMessage={setMessage}
+            />
+          )}
+          {canUseTeacherArea && view === "questoes" && (
+            <QuestionBank
+              competencias={competencias}
+              setCompetencias={setCompetencias}
+              descritores={descritores}
+              setDescritores={setDescritores}
+              questoes={questoes}
+              setQuestoes={setQuestoes}
               respostas={respostas}
+              descritorParaNovaQuestao={descritorParaNovaQuestao}
+              limparDescritorParaNovaQuestao={() => setDescritorParaNovaQuestao(null)}
               setMessage={setMessage}
             />
           )}
@@ -3262,7 +3282,8 @@ function ItemBank({
   questoes,
   setQuestoes,
   catalogoCurricularV2,
-  respostas,
+  setView,
+  setDescritorParaNovaQuestao,
   setMessage,
 }: {
   competencias: CompetenciaDraft[];
@@ -3272,7 +3293,8 @@ function ItemBank({
   questoes: QuestaoDraft[];
   setQuestoes: (questoes: QuestaoDraft[]) => void;
   catalogoCurricularV2: CatalogoCurricularV2;
-  respostas: RespostaAvaliacaoDraft[];
+  setView: (view: View) => void;
+  setDescritorParaNovaQuestao: (codigo: string | null) => void;
   setMessage: (message: string) => void;
 }) {
   const [competenciaDraft, setCompetenciaDraft] = useState<CompetenciaDraft>({
@@ -3288,33 +3310,8 @@ function ItemBank({
     descricao: "D03 - Interpretar variáveis, operadores, entrada, saída e conversões de dados em algoritmos e programas Python.",
     nivel_esperado: "basico",
   });
-  const [questaoDraft, setQuestaoDraft] = useState<QuestaoDraft>({
-    codigo: "Q-INF-0001",
-    descritor_codigo: "D03",
-    componente_curricular: "Lógica de Programação I (Python)",
-    enunciado: "",
-    alternativa_a: "",
-    alternativa_b: "",
-    alternativa_c: "",
-    alternativa_d: "",
-    alternativa_e: "",
-    gabarito: "A",
-    justificativa: "",
-    imagem_url: "",
-    dificuldade_inicial: 1,
-    status: "rascunho",
-  });
   const [activeTab, setActiveTab] = useState<ItemBankTab>("competencias");
-  const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
-  const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
-  const [questaoEmEdicaoCodigo, setQuestaoEmEdicaoCodigo] = useState<string | null>(null);
-  const [competenciaFiltroQuestaoModal, setCompetenciaFiltroQuestaoModal] = useState("");
-  const [inventarioBusca, setInventarioBusca] = useState("");
-  const [inventarioCompetenciaFiltro, setInventarioCompetenciaFiltro] = useState("todas");
-  const [inventarioDescritorFiltro, setInventarioDescritorFiltro] = useState("todos");
-  const [analiseSoProblematicos, setAnaliseSoProblematicos] = useState(false);
   const [cursoExportacao, setCursoExportacao] = useState("todos");
-  const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
   const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
   const [matrizReferenciaCodigo, setMatrizReferenciaCodigo] = useState("EC-INF-2025");
   const [filtroComponenteV2, setFiltroComponenteV2] = useState("todos");
@@ -3398,118 +3395,12 @@ function ItemBank({
   const codigosCompetenciasDoCurso = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
   const descritoresDoCurso = descritores.filter((descritor) => codigosCompetenciasDoCurso.has(descritor.competencia_codigo));
   const codigosDescritoresDoCurso = new Set(descritoresDoCurso.map((descritor) => descritor.codigo));
-  const questoesDoCurso = questoes.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
-  const proximoCodigoQuestao = nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
-  const componentesDaQuestao = Array.from(new Set(descritoresDoCurso.map((descritor) => descritor.componente_curricular).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-  const descritoresDoComponenteDaQuestao = descritoresDoCurso.filter(
-    (descritor) => !questaoDraft.componente_curricular || descritor.componente_curricular === questaoDraft.componente_curricular,
-  );
-
-  useEffect(() => {
-    if (questaoEmEdicaoCodigo) return;
-    if (questaoDraft.codigo !== proximoCodigoQuestao) {
-      setQuestaoDraft((current) => ({ ...current, codigo: proximoCodigoQuestao }));
-    }
-  }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo, questaoEmEdicaoCodigo]);
-
-  useEffect(() => {
-    if (!componentesDaQuestao.length) return;
-    if (questaoDraft.componente_curricular && componentesDaQuestao.includes(questaoDraft.componente_curricular)) return;
-
-    const primeiroComponente = componentesDaQuestao[0];
-    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === primeiroComponente);
-    setQuestaoDraft((current) => ({
-      ...current,
-      componente_curricular: primeiroComponente,
-      descritor_codigo: primeiroDescritor?.codigo ?? "",
-    }));
-  }, [componentesDaQuestao, descritoresDoCurso, questaoDraft.componente_curricular]);
-
-  function selecionarComponenteQuestao(componente: string) {
-    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === componente);
-    setQuestaoDraft({
-      ...questaoDraft,
-      componente_curricular: componente,
-      descritor_codigo: primeiroDescritor?.codigo ?? "",
-    });
-  }
-
-  function selecionarCompetenciaQuestaoModal(competenciaCodigo: string) {
-    setCompetenciaFiltroQuestaoModal(competenciaCodigo);
-    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.competencia_codigo === competenciaCodigo);
-    setQuestaoDraft({
-      ...questaoDraft,
-      descritor_codigo: primeiroDescritor?.codigo ?? "",
-      componente_curricular: primeiroDescritor?.componente_curricular ?? "",
-    });
-  }
-
-  function selecionarDescritorQuestaoModal(descritorCodigo: string) {
-    const descritor = descritoresDoCurso.find((item) => item.codigo === descritorCodigo);
-    setQuestaoDraft({
-      ...questaoDraft,
-      descritor_codigo: descritorCodigo,
-      componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
-    });
-    setCompetenciaFiltroQuestaoModal(descritor?.competencia_codigo ?? competenciaFiltroQuestaoModal);
-  }
-
-  async function anexarImagemQuestao(file: File | undefined) {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setMessage("Selecione um arquivo de imagem valido.");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage("Imagem muito grande. Use arquivo com ate 2 MB para preservar a cota gratuita.");
-      return;
-    }
-
-    try {
-      if (supabaseConfigured && supabase) {
-        const extension = file.name.split(".").pop()?.toLowerCase() || "png";
-        const path = `questoes/${questaoDraft.codigo}/${Date.now()}-${sanitizeFileName(file.name)}.${extension}`;
-        const { error } = await supabase.storage.from(QUESTION_IMAGE_BUCKET).upload(path, file, {
-          cacheControl: "3600",
-          upsert: true,
-          contentType: file.type,
-        });
-        if (error) {
-          setMessage(`Falha no upload da imagem: ${error.message}. Confira se o bucket ${QUESTION_IMAGE_BUCKET} foi criado no Supabase.`);
-          return;
-        }
-        // Bucket privado: guardamos o caminho do objeto, nao uma URL publica. A exibicao
-        // resolve uma URL assinada sob demanda (QuestionImage), respeitando o status da questao.
-        setQuestaoDraft({ ...questaoDraft, imagem_url: path });
-        setMessage("Imagem enviada ao Supabase Storage e vinculada a questao.");
-        return;
-      }
-
-      const base64 = await fileToBase64(file);
-      setQuestaoDraft({ ...questaoDraft, imagem_url: base64 });
-      setMessage("Imagem anexada em modo local como base64. No online, use Supabase Storage.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Nao foi possivel anexar a imagem.");
-    }
-  }
-
   function trocarCursoSelecionado(curso: string) {
     const primeiraCompetencia = competencias.find((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso));
     const descritoresDaPrimeiraCompetencia = primeiraCompetencia
       ? descritores.filter((descritor) => descritor.competencia_codigo === primeiraCompetencia.codigo)
       : [];
     const primeiroDescritor = descritoresDaPrimeiraCompetencia[0];
-    const codigosCompetenciasNovoCurso = new Set(
-      competencias
-        .filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso))
-        .map((competencia) => competencia.codigo),
-    );
-    const codigosDescritoresNovoCurso = new Set(
-      descritores
-        .filter((descritor) => codigosCompetenciasNovoCurso.has(descritor.competencia_codigo))
-        .map((descritor) => descritor.codigo),
-    );
-    const questoesNovoCurso = questoes.filter((questao) => codigosDescritoresNovoCurso.has(questao.descritor_codigo));
     setCursoSelecionado(curso);
     setCompetenciaDraft({ ...competenciaDraft, curso_tecnico: curso, codigo: "C01" });
     setDescritorDraft({
@@ -3517,12 +3408,6 @@ function ItemBank({
       codigo: "D01",
       competencia_codigo: primeiraCompetencia?.codigo ?? "",
       componente_curricular: primeiroDescritor?.componente_curricular ?? descritorDraft.componente_curricular,
-    });
-    setQuestaoDraft({
-      ...questaoDraft,
-      codigo: nextQuestionCodeForCourse(curso, questoesNovoCurso),
-      descritor_codigo: primeiroDescritor?.codigo ?? "",
-      componente_curricular: primeiroDescritor?.componente_curricular ?? questaoDraft.componente_curricular,
     });
   }
 
@@ -3583,97 +3468,7 @@ function ItemBank({
     }
     const result = await salvarDescritor(normalized);
     setDescritores([...descritores.filter((item) => item.codigo !== normalized.codigo), normalized]);
-    setQuestaoDraft({
-      ...questaoDraft,
-      descritor_codigo: normalized.codigo,
-      componente_curricular: normalized.componente_curricular,
-    });
     setMessage(result.erro ?? `Descritor salvo em modo ${result.modo}.`);
-  }
-
-  async function saveQuestao() {
-    const alternativas = [
-      questaoDraft.alternativa_a,
-      questaoDraft.alternativa_b,
-      questaoDraft.alternativa_c,
-      questaoDraft.alternativa_d,
-      questaoDraft.alternativa_e,
-    ];
-    if (!questaoDraft.codigo || !questaoDraft.descritor_codigo || !questaoDraft.enunciado || alternativas.some((item) => !item)) {
-      setMessage("Preencha código, descritor, enunciado e todas as alternativas da questão.");
-      return;
-    }
-    if (!descritoresDoCurso.some((item) => item.codigo === questaoDraft.descritor_codigo)) {
-      setMessage("A questão precisa estar vinculada a um descritor cadastrado no curso em trabalho.");
-      return;
-    }
-    const descritorDaQuestao = descritoresDoCurso.find((item) => item.codigo === questaoDraft.descritor_codigo);
-    if (!descritorDaQuestao || descritorDaQuestao.componente_curricular !== questaoDraft.componente_curricular) {
-      setMessage("Selecione um descritor do componente curricular escolhido para esta questão.");
-      return;
-    }
-    if (questaoDraft.dificuldade_inicial < 0.1 || questaoDraft.dificuldade_inicial > 5) {
-      setMessage("A dificuldade inicial pré-TRI deve ficar entre 0.1 e 5.");
-      return;
-    }
-
-    const eraEdicao = Boolean(questaoEmEdicaoCodigo);
-    const codigoAtual = questaoEmEdicaoCodigo ?? nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
-    const conteudoTravado =
-      questaoTravada && questaoEmEdicaoOriginal
-        ? {
-            enunciado: questaoEmEdicaoOriginal.enunciado,
-            alternativa_a: questaoEmEdicaoOriginal.alternativa_a,
-            alternativa_b: questaoEmEdicaoOriginal.alternativa_b,
-            alternativa_c: questaoEmEdicaoOriginal.alternativa_c,
-            alternativa_d: questaoEmEdicaoOriginal.alternativa_d,
-            alternativa_e: questaoEmEdicaoOriginal.alternativa_e,
-            gabarito: questaoEmEdicaoOriginal.gabarito,
-            descritor_codigo: questaoEmEdicaoOriginal.descritor_codigo,
-            componente_curricular: questaoEmEdicaoOriginal.componente_curricular,
-          }
-        : {};
-    const normalized = { ...questaoDraft, ...conteudoTravado, codigo: codigoAtual };
-    const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
-    const normalizedFingerprint = questionFingerprint(normalized);
-    const duplicate = questoes.find((questao) => {
-      if (questao.codigo.toUpperCase() === normalized.codigo) return false;
-
-      return normalizeQuestionText(questao.enunciado) === normalizedEnunciado || questionFingerprint(questao) === normalizedFingerprint;
-    });
-
-    if (duplicate) {
-      setMessage(
-        `Duplicidade bloqueada: esta questão parece igual à ${duplicate.codigo}. Revise o enunciado/alternativas antes de salvar.`,
-      );
-      return;
-    }
-
-    const result = await salvarQuestao(normalized);
-    const questoesAtualizadas = [...questoes.filter((item) => item.codigo !== normalized.codigo), normalized];
-    const questoesAtualizadasDoCurso = questoesAtualizadas.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
-    setQuestoes(questoesAtualizadas);
-    setQuestaoDraft({
-      ...questaoDraft,
-      codigo: nextQuestionCodeForCourse(cursoSelecionado, questoesAtualizadasDoCurso),
-      enunciado: "",
-      alternativa_a: "",
-      alternativa_b: "",
-      alternativa_c: "",
-      alternativa_d: "",
-      alternativa_e: "",
-      justificativa: "",
-      imagem_url: "",
-    });
-    if (eraEdicao) {
-      fecharEdicaoQuestao();
-    }
-    setMessage(
-      result.erro ??
-        (eraEdicao
-          ? `Questão ${normalized.codigo} atualizada. ${questaoStatusHint(normalized.status)}`
-          : `Questão ${normalized.codigo} salva em modo ${result.modo} como ${questaoStatusLabel(normalized.status).toLowerCase()}. ${questaoStatusHint(normalized.status)}`),
-    );
   }
 
   function importNorteadores() {
@@ -3686,192 +3481,11 @@ function ItemBank({
     setMessage("Banco v0.3 importado: descritores-base de Informática com meta de 20 questões e itens novos em revisão docente.");
   }
 
-  async function alterarStatusQuestao(codigo: string, status: QuestaoDraft["status"]) {
-    const questao = questoes.find((item) => item.codigo === codigo);
-    if (!questao) {
-      setMessage("Questão não encontrada no banco de itens.");
-      return;
-    }
-
-    const atualizada = { ...questao, status };
-    await salvarQuestao(atualizada);
-    setQuestoes(questoes.map((item) => (item.codigo === codigo ? atualizada : item)));
-    setMessage(`${codigo} alterada para ${questaoStatusLabel(status)}. ${questaoStatusHint(status)}`);
-  }
-
+  const questoesDoCurso = questoes.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
   const questoesValidadas = questoesDoCurso.filter((questao) => questao.status === "validada").length;
   const questoesEmRevisao = questoesDoCurso.filter((questao) => questao.status === "em_revisao").length;
   const questoesRascunho = questoesDoCurso.filter((questao) => questao.status === "rascunho").length;
-  const questoesFiltradas = questoesDoCurso
-    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
-    .slice(0, 80);
-  const descritoresParaFiltroInventario = descritoresDoCurso
-    .filter((descritor) => inventarioCompetenciaFiltro === "todas" || descritor.competencia_codigo === inventarioCompetenciaFiltro)
-    .sort((a, b) => a.codigo.localeCompare(b.codigo));
-  const inventarioQuestoesTodas = questoesDoCurso
-    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
-    .filter((questao) => {
-      if (inventarioCompetenciaFiltro === "todas") return true;
-      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
-      return descritor?.competencia_codigo === inventarioCompetenciaFiltro;
-    })
-    .filter((questao) => inventarioDescritorFiltro === "todos" || questao.descritor_codigo === inventarioDescritorFiltro)
-    .filter((questao) => {
-      const termo = normalizeKey(inventarioBusca);
-      if (!termo) return true;
-      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
-      const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
-      return [
-        questao.codigo,
-        questao.enunciado,
-        questao.componente_curricular,
-        descritor?.descricao ?? "",
-        competencia?.descricao ?? "",
-      ].some((valor) => normalizeKey(valor).includes(termo));
-    });
-  const inventarioQuestoesExibidas = inventarioQuestoesTodas.slice(0, 150);
-
-  // Analise classica de itens: indice de acerto, discriminacao (grupo superior
-  // vs inferior por desempenho geral na propria tentativa) e distratores, a
-  // partir das respostas reais ja registradas (respostas grava a alternativa
-  // escolhida por questao, nao so certo/errado).
-  const respostasPorQuestao = new Map<string, RespostaAvaliacaoDraft[]>();
-  respostas.forEach((resposta) => {
-    resposta.ordem_questoes.forEach((codigoQuestao) => {
-      if (resposta.respostas[codigoQuestao] === undefined) return;
-      if (!respostasPorQuestao.has(codigoQuestao)) respostasPorQuestao.set(codigoQuestao, []);
-      respostasPorQuestao.get(codigoQuestao)!.push(resposta);
-    });
-  });
-
-  const analiseItens = questoesDoCurso.map((questao) => {
-    const respostasDoItem = respostasPorQuestao.get(questao.codigo) ?? [];
-    const n = respostasDoItem.length;
-    const acertos = respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length;
-    const indiceAcerto = n ? acertos / n : 0;
-    const dificuldadeEmpirica = !n ? "sem dados" : indiceAcerto >= 0.7 ? "fácil" : indiceAcerto >= 0.4 ? "médio" : "difícil";
-
-    const distratores = (["A", "B", "C", "D", "E"] as AlternativaKey[])
-      .filter((letra) => letra !== questao.gabarito)
-      .map((letra) => ({
-        letra,
-        total: respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
-      }));
-    const distratoresFracos = n ? distratores.filter((item) => item.total === 0).map((item) => item.letra) : [];
-
-    let discriminacao: number | null = null;
-    let distratorMaisEscolhidoPeloTopo: AlternativaKey | null = null;
-    if (n >= VOLUME_MINIMO_DISCRIMINACAO) {
-      const ordenadas = respostasDoItem.slice().sort((a, b) => b.percentual_bruto - a.percentual_bruto);
-      const tamanhoGrupo = Math.max(1, Math.round(n * 0.27));
-      const grupoSuperior = ordenadas.slice(0, tamanhoGrupo);
-      const grupoInferior = ordenadas.slice(n - tamanhoGrupo);
-      const pSuperior = grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoSuperior.length;
-      const pInferior = grupoInferior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoInferior.length;
-      discriminacao = Math.round((pSuperior - pInferior) * 100) / 100;
-
-      const contagemTopoPorAlternativa = (["A", "B", "C", "D", "E"] as AlternativaKey[]).map((letra) => ({
-        letra,
-        total: grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
-      }));
-      const maisEscolhidaPeloTopo = contagemTopoPorAlternativa.slice().sort((a, b) => b.total - a.total)[0];
-      if (maisEscolhidaPeloTopo && maisEscolhidaPeloTopo.letra !== questao.gabarito && maisEscolhidaPeloTopo.total > 0) {
-        distratorMaisEscolhidoPeloTopo = maisEscolhidaPeloTopo.letra;
-      }
-    }
-
-    const problematico =
-      n >= VOLUME_MINIMO_DISCRIMINACAO
-        ? (discriminacao !== null && discriminacao < 0.15) || Boolean(distratorMaisEscolhidoPeloTopo)
-        : false;
-    const candidataAncora =
-      questao.status === "validada" && discriminacao !== null && discriminacao >= 0.3 && indiceAcerto >= 0.3 && indiceAcerto <= 0.7;
-
-    return {
-      questao,
-      n,
-      indiceAcerto,
-      dificuldadeEmpirica,
-      distratoresFracos,
-      discriminacao,
-      distratorMaisEscolhidoPeloTopo,
-      problematico,
-      candidataAncora,
-    };
-  });
-
-  const analiseItensExibidos = (analiseSoProblematicos ? analiseItens.filter((item) => item.problematico) : analiseItens)
-    .slice()
-    .sort((a, b) => {
-      if (a.problematico !== b.problematico) return a.problematico ? -1 : 1;
-      return (a.discriminacao ?? 0) - (b.discriminacao ?? 0);
-    });
-
-  const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
-    const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
-    const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
-    const questoesDaCompetencia = questoes.filter((questao) => codigosDescritores.has(questao.descritor_codigo));
-
-    return {
-      competencia,
-      descritores: descritoresDaCompetencia.length,
-      total: questoesDaCompetencia.length,
-      validadas: questoesDaCompetencia.filter((questao) => questao.status === "validada").length,
-      emRevisao: questoesDaCompetencia.filter((questao) => questao.status === "em_revisao").length,
-      rascunhos: questoesDaCompetencia.filter((questao) => questao.status === "rascunho").length,
-    };
-  });
-  const coberturaDescritores = descritoresDoCurso.map((descritor) => {
-    const questoesDoDescritor = questoes.filter((questao) => questao.descritor_codigo === descritor.codigo);
-
-    return {
-      descritor,
-      total: questoesDoDescritor.length,
-      validadas: questoesDoDescritor.filter((questao) => questao.status === "validada").length,
-      emRevisao: questoesDoDescritor.filter((questao) => questao.status === "em_revisao").length,
-      rascunhos: questoesDoDescritor.filter((questao) => questao.status === "rascunho").length,
-    };
-  });
   const competenciaSelecionada = competencias.find((item) => item.codigo === descritorDraft.competencia_codigo);
-  const descritorSelecionado = descritores.find((item) => item.codigo === questaoDraft.descritor_codigo);
-  const competenciaDaQuestao = descritorSelecionado
-    ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
-    : undefined;
-  const descritoresParaModalEdicao = descritoresDoCurso.filter(
-    (descritor) => !competenciaFiltroQuestaoModal || descritor.competencia_codigo === competenciaFiltroQuestaoModal,
-  );
-  const codigosQuestoesUsadas = useMemo(
-    () => new Set(respostas.flatMap((resposta) => resposta.ordem_questoes)),
-    [respostas],
-  );
-  const questaoEmEdicaoOriginal = questaoEmEdicaoCodigo ? questoes.find((item) => item.codigo === questaoEmEdicaoCodigo) : undefined;
-  const questaoTravada = Boolean(
-    questaoEmEdicaoOriginal &&
-      questaoEmEdicaoOriginal.status === "validada" &&
-      codigosQuestoesUsadas.has(questaoEmEdicaoOriginal.codigo),
-  );
-
-  function iniciarEdicaoQuestao(questao: QuestaoDraft) {
-    const descritorVinculado = descritores.find((item) => item.codigo === questao.descritor_codigo);
-    const competenciaVinculada = descritorVinculado
-      ? competencias.find((item) => item.codigo === descritorVinculado.competencia_codigo)
-      : undefined;
-    if (competenciaVinculada && normalizeCourseName(competenciaVinculada.curso_tecnico) !== normalizeCourseName(cursoSelecionado)) {
-      setCursoSelecionado(competenciaVinculada.curso_tecnico);
-    }
-    setQuestaoEmEdicaoCodigo(questao.codigo);
-    setQuestaoDraft({ ...questao });
-    if (descritorVinculado) setDescritorDraft({ ...descritorVinculado });
-    if (competenciaVinculada) setCompetenciaDraft({ ...competenciaVinculada });
-    setCompetenciaFiltroQuestaoModal(competenciaVinculada?.codigo ?? "");
-    setQuestaoEmLeitura(questao);
-  }
-
-  function fecharEdicaoQuestao() {
-    setQuestaoEmLeitura(null);
-    setQuestaoEmEdicaoCodigo(null);
-    setCompetenciaFiltroQuestaoModal("");
-  }
 
   const cursosDisponiveisExportacao = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico))).sort((a, b) =>
     a.localeCompare(b),
@@ -3919,46 +3533,9 @@ function ItemBank({
   }
 
   function useDescritorInQuestao(descritor: DescritorDraft) {
-    setQuestaoDraft({
-      ...questaoDraft,
-      descritor_codigo: descritor.codigo,
-      componente_curricular: descritor.componente_curricular,
-    });
-    setActiveTab("questoes");
+    setDescritorParaNovaQuestao(descritor.codigo);
+    setView("questoes");
   }
-
-  const questaoSubTabDetails: Record<QuestaoSubTab, { eyebrow: string; title: string; description: string; scope: string }> = {
-    cadastro: {
-      eyebrow: "Banco de Itens",
-      title: "Cadastro qualificado de questões",
-      description: "Crie itens vinculados a descritores, componentes e competências, preservando rastreabilidade para o diagnóstico pré-TRI.",
-      scope: "Cadastro",
-    },
-    curadoria: {
-      eyebrow: "Curadoria docente",
-      title: "Validação técnica e pedagógica dos itens",
-      description: "Revise, valide ou devolva questões ao rascunho antes que elas entrem nas avaliações dos estudantes.",
-      scope: "Curadoria",
-    },
-    cobertura: {
-      eyebrow: "Cobertura curricular",
-      title: "Distribuição do banco por competência e descritor",
-      description: "Acompanhe a quantidade de itens por competência, descritor, status e componente curricular.",
-      scope: "Cobertura",
-    },
-    inventario: {
-      eyebrow: "Inventário técnico",
-      title: "Consulta estruturada do banco de questões",
-      description: "Veja código, descritor, competência, componente, gabarito, dificuldade e situação de cada item.",
-      scope: "Inventário",
-    },
-    analise: {
-      eyebrow: "Análise clássica de itens",
-      title: "Índice de acerto, discriminação e distratores",
-      description: "Estatística empírica por questão a partir das respostas reais já registradas — preparação para calibração TRI.",
-      scope: "Análise",
-    },
-  };
 
   return (
     <section className="panel">
@@ -4198,9 +3775,6 @@ function ItemBank({
         <button className={activeTab === "descritores" ? "active" : ""} onClick={() => setActiveTab("descritores")}>
           Descritores
         </button>
-        <button className={activeTab === "questoes" ? "active" : ""} onClick={() => setActiveTab("questoes")}>
-          Questões
-        </button>
       </div>
 
       {activeTab === "competencias" && (
@@ -4315,7 +3889,665 @@ function ItemBank({
         </section>
       )}
 
-      {activeTab === "questoes" && (
+    </section>
+  );
+}
+
+
+function QuestionBank({
+  competencias,
+  setCompetencias,
+  descritores,
+  setDescritores,
+  questoes,
+  setQuestoes,
+  respostas,
+  descritorParaNovaQuestao,
+  limparDescritorParaNovaQuestao,
+  setMessage,
+}: {
+  competencias: CompetenciaDraft[];
+  setCompetencias: (competencias: CompetenciaDraft[]) => void;
+  descritores: DescritorDraft[];
+  setDescritores: (descritores: DescritorDraft[]) => void;
+  questoes: QuestaoDraft[];
+  setQuestoes: (questoes: QuestaoDraft[]) => void;
+  respostas: RespostaAvaliacaoDraft[];
+  descritorParaNovaQuestao: string | null;
+  limparDescritorParaNovaQuestao: () => void;
+  setMessage: (message: string) => void;
+}) {
+  const [competenciaDraft, setCompetenciaDraft] = useState<CompetenciaDraft>({
+    codigo: "C02",
+    curso_tecnico: "Técnico em Informática",
+    descricao: "C02 - Desenvolver soluções computacionais por meio de raciocínio lógico, algoritmos, programação estruturada e orientação a objetos.",
+    fonte: "Matriz curricular 2025/2026 e arquitetura SIDEP-CE",
+  });
+  const [descritorDraft, setDescritorDraft] = useState<DescritorDraft>({
+    codigo: "D03",
+    competencia_codigo: "C02",
+    componente_curricular: "Lógica de Programação I (Python)",
+    descricao: "D03 - Interpretar variáveis, operadores, entrada, saída e conversões de dados em algoritmos e programas Python.",
+    nivel_esperado: "basico",
+  });
+  const [questaoDraft, setQuestaoDraft] = useState<QuestaoDraft>({
+    codigo: "Q-INF-0001",
+    descritor_codigo: "D03",
+    componente_curricular: "Lógica de Programação I (Python)",
+    enunciado: "",
+    alternativa_a: "",
+    alternativa_b: "",
+    alternativa_c: "",
+    alternativa_d: "",
+    alternativa_e: "",
+    gabarito: "A",
+    justificativa: "",
+    imagem_url: "",
+    dificuldade_inicial: 1,
+    status: "rascunho",
+  });
+  const [questaoStatusFiltro, setQuestaoStatusFiltro] = useState<QuestaoStatusFiltro>("em_revisao");
+  const [questaoEmLeitura, setQuestaoEmLeitura] = useState<QuestaoDraft | null>(null);
+  const [questaoEmEdicaoCodigo, setQuestaoEmEdicaoCodigo] = useState<string | null>(null);
+  const [competenciaFiltroQuestaoModal, setCompetenciaFiltroQuestaoModal] = useState("");
+  const [sugestaoIa, setSugestaoIa] = useState<RevisaoLinguisticaSugestao | null>(null);
+  const [comentarioIa, setComentarioIa] = useState("");
+  const [carregandoIa, setCarregandoIa] = useState(false);
+  const [inventarioBusca, setInventarioBusca] = useState("");
+  const [inventarioCompetenciaFiltro, setInventarioCompetenciaFiltro] = useState("todas");
+  const [inventarioDescritorFiltro, setInventarioDescritorFiltro] = useState("todos");
+  const [analiseSoProblematicos, setAnaliseSoProblematicos] = useState(false);
+  const [questaoSubTab, setQuestaoSubTab] = useState<QuestaoSubTab>("cadastro");
+  const [cursoSelecionado, setCursoSelecionado] = useState("Técnico em Informática");
+  const cursosDoBanco = Array.from(new Set(competencias.map((competencia) => competencia.curso_tecnico).filter(Boolean)));
+  const cursosCadastro = [...cursosTecnicosOficiais.map((curso) => curso.nome), ...cursosDoBanco.filter((curso) => !findOfficialCourse(curso))]
+    .sort((a, b) => a.localeCompare(b));
+  const cursoAtual = findOfficialCourse(cursoSelecionado);
+  const competenciasDoCurso = competencias.filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoSelecionado));
+  const codigosCompetenciasDoCurso = new Set(competenciasDoCurso.map((competencia) => competencia.codigo));
+  const descritoresDoCurso = descritores.filter((descritor) => codigosCompetenciasDoCurso.has(descritor.competencia_codigo));
+  const codigosDescritoresDoCurso = new Set(descritoresDoCurso.map((descritor) => descritor.codigo));
+  const questoesDoCurso = questoes.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
+  const proximoCodigoQuestao = nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
+  const componentesDaQuestao = Array.from(new Set(descritoresDoCurso.map((descritor) => descritor.componente_curricular).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const descritoresDoComponenteDaQuestao = descritoresDoCurso.filter(
+    (descritor) => !questaoDraft.componente_curricular || descritor.componente_curricular === questaoDraft.componente_curricular,
+  );
+
+  useEffect(() => {
+    if (questaoEmEdicaoCodigo) return;
+    if (questaoDraft.codigo !== proximoCodigoQuestao) {
+      setQuestaoDraft((current) => ({ ...current, codigo: proximoCodigoQuestao }));
+    }
+  }, [cursoSelecionado, proximoCodigoQuestao, questaoDraft.codigo, questaoEmEdicaoCodigo]);
+
+  useEffect(() => {
+    if (!componentesDaQuestao.length) return;
+    if (questaoDraft.componente_curricular && componentesDaQuestao.includes(questaoDraft.componente_curricular)) return;
+
+    const primeiroComponente = componentesDaQuestao[0];
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === primeiroComponente);
+    setQuestaoDraft((current) => ({
+      ...current,
+      componente_curricular: primeiroComponente,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+    }));
+  }, [componentesDaQuestao, descritoresDoCurso, questaoDraft.componente_curricular]);
+
+  useEffect(() => {
+    if (!descritorParaNovaQuestao) return;
+    const descritor = descritores.find((item) => item.codigo === descritorParaNovaQuestao);
+    if (descritor) {
+      const competencia = competencias.find((item) => item.codigo === descritor.competencia_codigo);
+      if (competencia && normalizeCourseName(competencia.curso_tecnico) !== normalizeCourseName(cursoSelecionado)) {
+        setCursoSelecionado(competencia.curso_tecnico);
+      }
+      setQuestaoDraft((current) => ({
+        ...current,
+        descritor_codigo: descritor.codigo,
+        componente_curricular: descritor.componente_curricular,
+      }));
+      setQuestaoSubTab("cadastro");
+    }
+    limparDescritorParaNovaQuestao();
+  }, [descritorParaNovaQuestao]);
+
+  function selecionarComponenteQuestao(componente: string) {
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.componente_curricular === componente);
+    setQuestaoDraft({
+      ...questaoDraft,
+      componente_curricular: componente,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+    });
+  }
+
+  function selecionarCompetenciaQuestaoModal(competenciaCodigo: string) {
+    setCompetenciaFiltroQuestaoModal(competenciaCodigo);
+    const primeiroDescritor = descritoresDoCurso.find((descritor) => descritor.competencia_codigo === competenciaCodigo);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+      componente_curricular: primeiroDescritor?.componente_curricular ?? "",
+    });
+  }
+
+  function selecionarDescritorQuestaoModal(descritorCodigo: string) {
+    const descritor = descritoresDoCurso.find((item) => item.codigo === descritorCodigo);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: descritorCodigo,
+      componente_curricular: descritor?.componente_curricular ?? questaoDraft.componente_curricular,
+    });
+    setCompetenciaFiltroQuestaoModal(descritor?.competencia_codigo ?? competenciaFiltroQuestaoModal);
+  }
+
+  async function anexarImagemQuestao(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage("Selecione um arquivo de imagem valido.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("Imagem muito grande. Use arquivo com ate 2 MB para preservar a cota gratuita.");
+      return;
+    }
+
+    try {
+      if (supabaseConfigured && supabase) {
+        const extension = file.name.split(".").pop()?.toLowerCase() || "png";
+        const path = `questoes/${questaoDraft.codigo}/${Date.now()}-${sanitizeFileName(file.name)}.${extension}`;
+        const { error } = await supabase.storage.from(QUESTION_IMAGE_BUCKET).upload(path, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+        if (error) {
+          setMessage(`Falha no upload da imagem: ${error.message}. Confira se o bucket ${QUESTION_IMAGE_BUCKET} foi criado no Supabase.`);
+          return;
+        }
+        // Bucket privado: guardamos o caminho do objeto, nao uma URL publica. A exibicao
+        // resolve uma URL assinada sob demanda (QuestionImage), respeitando o status da questao.
+        setQuestaoDraft({ ...questaoDraft, imagem_url: path });
+        setMessage("Imagem enviada ao Supabase Storage e vinculada a questao.");
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      setQuestaoDraft({ ...questaoDraft, imagem_url: base64 });
+      setMessage("Imagem anexada em modo local como base64. No online, use Supabase Storage.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel anexar a imagem.");
+    }
+  }
+
+  function trocarCursoSelecionadoQuestao(curso: string) {
+    const codigosCompetenciasNovoCurso = new Set(
+      competencias
+        .filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(curso))
+        .map((competencia) => competencia.codigo),
+    );
+    const codigosDescritoresNovoCurso = new Set(
+      descritores
+        .filter((descritor) => codigosCompetenciasNovoCurso.has(descritor.competencia_codigo))
+        .map((descritor) => descritor.codigo),
+    );
+    const questoesNovoCurso = questoes.filter((questao) => codigosDescritoresNovoCurso.has(questao.descritor_codigo));
+    const primeiroDescritor = descritores.find((descritor) => codigosDescritoresNovoCurso.has(descritor.codigo));
+    setCursoSelecionado(curso);
+    setQuestaoDraft({
+      ...questaoDraft,
+      codigo: nextQuestionCodeForCourse(curso, questoesNovoCurso),
+      descritor_codigo: primeiroDescritor?.codigo ?? "",
+      componente_curricular: primeiroDescritor?.componente_curricular ?? questaoDraft.componente_curricular,
+    });
+  }
+
+  async function saveCompetencia() {
+    if (!competenciaDraft.codigo || !competenciaDraft.curso_tecnico || !competenciaDraft.descricao) {
+      setMessage("Preencha código, curso técnico e descrição da competência.");
+      return;
+    }
+
+    const normalized = {
+      ...competenciaDraft,
+      curso_tecnico: cursoSelecionado,
+      codigo: scopedPedagogicalCode(cursoSelecionado, competenciaDraft.codigo),
+    };
+    const repeatedInCourse = competencias.some(
+      (item) =>
+        item.codigo !== normalized.codigo &&
+        normalizeCourseName(item.curso_tecnico) === normalizeCourseName(normalized.curso_tecnico) &&
+        visiblePedagogicalCode(item.codigo) === visiblePedagogicalCode(normalized.codigo),
+    );
+    if (repeatedInCourse) {
+      setMessage(`Já existe a competência ${visiblePedagogicalCode(normalized.codigo)} cadastrada para ${normalized.curso_tecnico}.`);
+      return;
+    }
+    const result = await salvarCompetencia(normalized);
+    setCompetencias([...competencias.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    setMessage(result.erro ?? `Competência salva em modo ${result.modo}.`);
+  }
+
+  async function saveDescritor() {
+    if (!descritorDraft.codigo || !descritorDraft.competencia_codigo || !descritorDraft.descricao) {
+      setMessage("Preencha código, competência vinculada e descrição do descritor.");
+      return;
+    }
+    if (!competenciasDoCurso.some((item) => item.codigo === descritorDraft.competencia_codigo)) {
+      setMessage("O descritor precisa estar vinculado a uma competência cadastrada no curso em trabalho.");
+      return;
+    }
+
+    const competenciaVinculada = competencias.find((item) => item.codigo === descritorDraft.competencia_codigo);
+    const cursoDoDescritor = competenciaVinculada?.curso_tecnico ?? cursoSelecionado;
+    const normalized = { ...descritorDraft, codigo: scopedPedagogicalCode(cursoDoDescritor, descritorDraft.codigo) };
+    const competenciasMesmoCurso = new Set(
+      competencias
+        .filter((competencia) => normalizeCourseName(competencia.curso_tecnico) === normalizeCourseName(cursoDoDescritor))
+        .map((competencia) => competencia.codigo),
+    );
+    const repeatedInCourse = descritores.some(
+      (item) =>
+        item.codigo !== normalized.codigo &&
+        competenciasMesmoCurso.has(item.competencia_codigo) &&
+        visiblePedagogicalCode(item.codigo) === visiblePedagogicalCode(normalized.codigo),
+    );
+    if (repeatedInCourse) {
+      setMessage(`Já existe o descritor ${visiblePedagogicalCode(normalized.codigo)} cadastrado para ${cursoDoDescritor}.`);
+      return;
+    }
+    const result = await salvarDescritor(normalized);
+    setDescritores([...descritores.filter((item) => item.codigo !== normalized.codigo), normalized]);
+    setQuestaoDraft({
+      ...questaoDraft,
+      descritor_codigo: normalized.codigo,
+      componente_curricular: normalized.componente_curricular,
+    });
+    setMessage(result.erro ?? `Descritor salvo em modo ${result.modo}.`);
+  }
+
+  async function saveQuestao() {
+    const alternativas = [
+      questaoDraft.alternativa_a,
+      questaoDraft.alternativa_b,
+      questaoDraft.alternativa_c,
+      questaoDraft.alternativa_d,
+      questaoDraft.alternativa_e,
+    ];
+    if (!questaoDraft.codigo || !questaoDraft.descritor_codigo || !questaoDraft.enunciado || alternativas.some((item) => !item)) {
+      setMessage("Preencha código, descritor, enunciado e todas as alternativas da questão.");
+      return;
+    }
+    if (!descritoresDoCurso.some((item) => item.codigo === questaoDraft.descritor_codigo)) {
+      setMessage("A questão precisa estar vinculada a um descritor cadastrado no curso em trabalho.");
+      return;
+    }
+    const descritorDaQuestao = descritoresDoCurso.find((item) => item.codigo === questaoDraft.descritor_codigo);
+    if (!descritorDaQuestao || descritorDaQuestao.componente_curricular !== questaoDraft.componente_curricular) {
+      setMessage("Selecione um descritor do componente curricular escolhido para esta questão.");
+      return;
+    }
+    if (questaoDraft.dificuldade_inicial < 0.1 || questaoDraft.dificuldade_inicial > 5) {
+      setMessage("A dificuldade inicial pré-TRI deve ficar entre 0.1 e 5.");
+      return;
+    }
+
+    const eraEdicao = Boolean(questaoEmEdicaoCodigo);
+    const codigoAtual = questaoEmEdicaoCodigo ?? nextQuestionCodeForCourse(cursoSelecionado, questoesDoCurso);
+    const conteudoTravado =
+      questaoTravada && questaoEmEdicaoOriginal
+        ? {
+            enunciado: questaoEmEdicaoOriginal.enunciado,
+            alternativa_a: questaoEmEdicaoOriginal.alternativa_a,
+            alternativa_b: questaoEmEdicaoOriginal.alternativa_b,
+            alternativa_c: questaoEmEdicaoOriginal.alternativa_c,
+            alternativa_d: questaoEmEdicaoOriginal.alternativa_d,
+            alternativa_e: questaoEmEdicaoOriginal.alternativa_e,
+            gabarito: questaoEmEdicaoOriginal.gabarito,
+            descritor_codigo: questaoEmEdicaoOriginal.descritor_codigo,
+            componente_curricular: questaoEmEdicaoOriginal.componente_curricular,
+          }
+        : {};
+    const normalized = { ...questaoDraft, ...conteudoTravado, codigo: codigoAtual };
+    const normalizedEnunciado = normalizeQuestionText(normalized.enunciado);
+    const normalizedFingerprint = questionFingerprint(normalized);
+    const duplicate = questoes.find((questao) => {
+      if (questao.codigo.toUpperCase() === normalized.codigo) return false;
+
+      return normalizeQuestionText(questao.enunciado) === normalizedEnunciado || questionFingerprint(questao) === normalizedFingerprint;
+    });
+
+    if (duplicate) {
+      setMessage(
+        `Duplicidade bloqueada: esta questão parece igual à ${duplicate.codigo}. Revise o enunciado/alternativas antes de salvar.`,
+      );
+      return;
+    }
+
+    const result = await salvarQuestao(normalized);
+    const questoesAtualizadas = [...questoes.filter((item) => item.codigo !== normalized.codigo), normalized];
+    const questoesAtualizadasDoCurso = questoesAtualizadas.filter((questao) => codigosDescritoresDoCurso.has(questao.descritor_codigo));
+    setQuestoes(questoesAtualizadas);
+    setQuestaoDraft({
+      ...questaoDraft,
+      codigo: nextQuestionCodeForCourse(cursoSelecionado, questoesAtualizadasDoCurso),
+      enunciado: "",
+      alternativa_a: "",
+      alternativa_b: "",
+      alternativa_c: "",
+      alternativa_d: "",
+      alternativa_e: "",
+      justificativa: "",
+      imagem_url: "",
+    });
+    if (eraEdicao) {
+      fecharEdicaoQuestao();
+    }
+    setMessage(
+      result.erro ??
+        (eraEdicao
+          ? `Questão ${normalized.codigo} atualizada. ${questaoStatusHint(normalized.status)}`
+          : `Questão ${normalized.codigo} salva em modo ${result.modo} como ${questaoStatusLabel(normalized.status).toLowerCase()}. ${questaoStatusHint(normalized.status)}`),
+    );
+  }
+
+  async function alterarStatusQuestao(codigo: string, status: QuestaoDraft["status"]) {
+    const questao = questoes.find((item) => item.codigo === codigo);
+    if (!questao) {
+      setMessage("Questão não encontrada no banco de itens.");
+      return;
+    }
+
+    const atualizada = { ...questao, status };
+    await salvarQuestao(atualizada);
+    setQuestoes(questoes.map((item) => (item.codigo === codigo ? atualizada : item)));
+    setMessage(`${codigo} alterada para ${questaoStatusLabel(status)}. ${questaoStatusHint(status)}`);
+  }
+
+  const questoesValidadas = questoesDoCurso.filter((questao) => questao.status === "validada").length;
+  const questoesEmRevisao = questoesDoCurso.filter((questao) => questao.status === "em_revisao").length;
+  const questoesRascunho = questoesDoCurso.filter((questao) => questao.status === "rascunho").length;
+  const questoesFiltradas = questoesDoCurso
+    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
+    .slice(0, 80);
+  const descritoresParaFiltroInventario = descritoresDoCurso
+    .filter((descritor) => inventarioCompetenciaFiltro === "todas" || descritor.competencia_codigo === inventarioCompetenciaFiltro)
+    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+  const inventarioQuestoesTodas = questoesDoCurso
+    .filter((questao) => questaoStatusFiltro === "todas" || questao.status === questaoStatusFiltro)
+    .filter((questao) => {
+      if (inventarioCompetenciaFiltro === "todas") return true;
+      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+      return descritor?.competencia_codigo === inventarioCompetenciaFiltro;
+    })
+    .filter((questao) => inventarioDescritorFiltro === "todos" || questao.descritor_codigo === inventarioDescritorFiltro)
+    .filter((questao) => {
+      const termo = normalizeKey(inventarioBusca);
+      if (!termo) return true;
+      const descritor = descritores.find((item) => item.codigo === questao.descritor_codigo);
+      const competencia = descritor ? competencias.find((item) => item.codigo === descritor.competencia_codigo) : undefined;
+      return [
+        questao.codigo,
+        questao.enunciado,
+        questao.componente_curricular,
+        descritor?.descricao ?? "",
+        competencia?.descricao ?? "",
+      ].some((valor) => normalizeKey(valor).includes(termo));
+    });
+  const inventarioQuestoesExibidas = inventarioQuestoesTodas.slice(0, 150);
+
+  // Analise classica de itens: indice de acerto, discriminacao (grupo superior
+  // vs inferior por desempenho geral na propria tentativa) e distratores, a
+  // partir das respostas reais ja registradas (respostas grava a alternativa
+  // escolhida por questao, nao so certo/errado).
+  const respostasPorQuestao = new Map<string, RespostaAvaliacaoDraft[]>();
+  respostas.forEach((resposta) => {
+    resposta.ordem_questoes.forEach((codigoQuestao) => {
+      if (resposta.respostas[codigoQuestao] === undefined) return;
+      if (!respostasPorQuestao.has(codigoQuestao)) respostasPorQuestao.set(codigoQuestao, []);
+      respostasPorQuestao.get(codigoQuestao)!.push(resposta);
+    });
+  });
+
+  const analiseItens = questoesDoCurso.map((questao) => {
+    const respostasDoItem = respostasPorQuestao.get(questao.codigo) ?? [];
+    const n = respostasDoItem.length;
+    const acertos = respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length;
+    const indiceAcerto = n ? acertos / n : 0;
+    const dificuldadeEmpirica = !n ? "sem dados" : indiceAcerto >= 0.7 ? "fácil" : indiceAcerto >= 0.4 ? "médio" : "difícil";
+
+    const distratores = (["A", "B", "C", "D", "E"] as AlternativaKey[])
+      .filter((letra) => letra !== questao.gabarito)
+      .map((letra) => ({
+        letra,
+        total: respostasDoItem.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
+      }));
+    const distratoresFracos = n ? distratores.filter((item) => item.total === 0).map((item) => item.letra) : [];
+
+    let discriminacao: number | null = null;
+    let distratorMaisEscolhidoPeloTopo: AlternativaKey | null = null;
+    if (n >= VOLUME_MINIMO_DISCRIMINACAO) {
+      const ordenadas = respostasDoItem.slice().sort((a, b) => b.percentual_bruto - a.percentual_bruto);
+      const tamanhoGrupo = Math.max(1, Math.round(n * 0.27));
+      const grupoSuperior = ordenadas.slice(0, tamanhoGrupo);
+      const grupoInferior = ordenadas.slice(n - tamanhoGrupo);
+      const pSuperior = grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoSuperior.length;
+      const pInferior = grupoInferior.filter((resposta) => resposta.respostas[questao.codigo] === questao.gabarito).length / grupoInferior.length;
+      discriminacao = Math.round((pSuperior - pInferior) * 100) / 100;
+
+      const contagemTopoPorAlternativa = (["A", "B", "C", "D", "E"] as AlternativaKey[]).map((letra) => ({
+        letra,
+        total: grupoSuperior.filter((resposta) => resposta.respostas[questao.codigo] === letra).length,
+      }));
+      const maisEscolhidaPeloTopo = contagemTopoPorAlternativa.slice().sort((a, b) => b.total - a.total)[0];
+      if (maisEscolhidaPeloTopo && maisEscolhidaPeloTopo.letra !== questao.gabarito && maisEscolhidaPeloTopo.total > 0) {
+        distratorMaisEscolhidoPeloTopo = maisEscolhidaPeloTopo.letra;
+      }
+    }
+
+    const problematico =
+      n >= VOLUME_MINIMO_DISCRIMINACAO
+        ? (discriminacao !== null && discriminacao < 0.15) || Boolean(distratorMaisEscolhidoPeloTopo)
+        : false;
+    const candidataAncora =
+      questao.status === "validada" && discriminacao !== null && discriminacao >= 0.3 && indiceAcerto >= 0.3 && indiceAcerto <= 0.7;
+
+    return {
+      questao,
+      n,
+      indiceAcerto,
+      dificuldadeEmpirica,
+      distratoresFracos,
+      discriminacao,
+      distratorMaisEscolhidoPeloTopo,
+      problematico,
+      candidataAncora,
+    };
+  });
+
+  const analiseItensExibidos = (analiseSoProblematicos ? analiseItens.filter((item) => item.problematico) : analiseItens)
+    .slice()
+    .sort((a, b) => {
+      if (a.problematico !== b.problematico) return a.problematico ? -1 : 1;
+      return (a.discriminacao ?? 0) - (b.discriminacao ?? 0);
+    });
+
+  const coberturaCompetencias = competenciasDoCurso.map((competencia) => {
+    const descritoresDaCompetencia = descritores.filter((descritor) => descritor.competencia_codigo === competencia.codigo);
+    const codigosDescritores = new Set(descritoresDaCompetencia.map((descritor) => descritor.codigo));
+    const questoesDaCompetencia = questoes.filter((questao) => codigosDescritores.has(questao.descritor_codigo));
+
+    return {
+      competencia,
+      descritores: descritoresDaCompetencia.length,
+      total: questoesDaCompetencia.length,
+      validadas: questoesDaCompetencia.filter((questao) => questao.status === "validada").length,
+      emRevisao: questoesDaCompetencia.filter((questao) => questao.status === "em_revisao").length,
+      rascunhos: questoesDaCompetencia.filter((questao) => questao.status === "rascunho").length,
+    };
+  });
+  const coberturaDescritores = descritoresDoCurso.map((descritor) => {
+    const questoesDoDescritor = questoes.filter((questao) => questao.descritor_codigo === descritor.codigo);
+
+    return {
+      descritor,
+      total: questoesDoDescritor.length,
+      validadas: questoesDoDescritor.filter((questao) => questao.status === "validada").length,
+      emRevisao: questoesDoDescritor.filter((questao) => questao.status === "em_revisao").length,
+      rascunhos: questoesDoDescritor.filter((questao) => questao.status === "rascunho").length,
+    };
+  });
+  const descritorSelecionado = descritores.find((item) => item.codigo === questaoDraft.descritor_codigo);
+  const competenciaDaQuestao = descritorSelecionado
+    ? competencias.find((item) => item.codigo === descritorSelecionado.competencia_codigo)
+    : undefined;
+  const descritoresParaModalEdicao = descritoresDoCurso.filter(
+    (descritor) => !competenciaFiltroQuestaoModal || descritor.competencia_codigo === competenciaFiltroQuestaoModal,
+  );
+  const codigosQuestoesUsadas = useMemo(
+    () => new Set(respostas.flatMap((resposta) => resposta.ordem_questoes)),
+    [respostas],
+  );
+  const questaoEmEdicaoOriginal = questaoEmEdicaoCodigo ? questoes.find((item) => item.codigo === questaoEmEdicaoCodigo) : undefined;
+  const questaoTravada = Boolean(
+    questaoEmEdicaoOriginal &&
+      questaoEmEdicaoOriginal.status === "validada" &&
+      codigosQuestoesUsadas.has(questaoEmEdicaoOriginal.codigo),
+  );
+
+  function iniciarEdicaoQuestao(questao: QuestaoDraft) {
+    const descritorVinculado = descritores.find((item) => item.codigo === questao.descritor_codigo);
+    const competenciaVinculada = descritorVinculado
+      ? competencias.find((item) => item.codigo === descritorVinculado.competencia_codigo)
+      : undefined;
+    if (competenciaVinculada && normalizeCourseName(competenciaVinculada.curso_tecnico) !== normalizeCourseName(cursoSelecionado)) {
+      setCursoSelecionado(competenciaVinculada.curso_tecnico);
+    }
+    setQuestaoEmEdicaoCodigo(questao.codigo);
+    setQuestaoDraft({ ...questao });
+    if (descritorVinculado) setDescritorDraft({ ...descritorVinculado });
+    if (competenciaVinculada) setCompetenciaDraft({ ...competenciaVinculada });
+    setCompetenciaFiltroQuestaoModal(competenciaVinculada?.codigo ?? "");
+    setQuestaoEmLeitura(questao);
+  }
+
+  function fecharEdicaoQuestao() {
+    setQuestaoEmLeitura(null);
+    setQuestaoEmEdicaoCodigo(null);
+    setCompetenciaFiltroQuestaoModal("");
+    setSugestaoIa(null);
+    setComentarioIa("");
+  }
+
+  async function solicitarRevisaoIa() {
+    setCarregandoIa(true);
+    setSugestaoIa(null);
+    const resultado = await solicitarRevisaoLinguistica({
+      codigo: questaoDraft.codigo,
+      enunciado: questaoDraft.enunciado,
+      alternativa_a: questaoDraft.alternativa_a,
+      alternativa_b: questaoDraft.alternativa_b,
+      alternativa_c: questaoDraft.alternativa_c,
+      alternativa_d: questaoDraft.alternativa_d,
+      alternativa_e: questaoDraft.alternativa_e,
+      gabarito: questaoDraft.gabarito,
+      justificativa: questaoDraft.justificativa,
+    });
+    setCarregandoIa(false);
+    if (resultado.erro) {
+      setMessage(resultado.erro);
+      return;
+    }
+    if (resultado.sugestao) {
+      setSugestaoIa(resultado.sugestao);
+      setComentarioIa(resultado.comentario ?? "");
+    }
+  }
+
+  function aplicarSugestaoIa() {
+    if (!sugestaoIa) return;
+    setQuestaoDraft({
+      ...questaoDraft,
+      enunciado: sugestaoIa.enunciado,
+      alternativa_a: sugestaoIa.alternativa_a,
+      alternativa_b: sugestaoIa.alternativa_b,
+      alternativa_c: sugestaoIa.alternativa_c,
+      alternativa_d: sugestaoIa.alternativa_d,
+      alternativa_e: sugestaoIa.alternativa_e,
+      justificativa: sugestaoIa.justificativa,
+    });
+    setSugestaoIa(null);
+    setComentarioIa("");
+    setMessage("Sugestão da IA aplicada ao formulário — revise e clique em \"Salvar questão\" para confirmar.");
+  }
+
+  function descartarSugestaoIa() {
+    setSugestaoIa(null);
+    setComentarioIa("");
+  }
+
+  const questaoSubTabDetails: Record<QuestaoSubTab, { eyebrow: string; title: string; description: string; scope: string }> = {
+    cadastro: {
+      eyebrow: "Banco de Itens",
+      title: "Cadastro qualificado de questões",
+      description: "Crie itens vinculados a descritores, componentes e competências, preservando rastreabilidade para o diagnóstico pré-TRI.",
+      scope: "Cadastro",
+    },
+    curadoria: {
+      eyebrow: "Curadoria docente",
+      title: "Validação técnica e pedagógica dos itens",
+      description: "Revise, valide ou devolva questões ao rascunho antes que elas entrem nas avaliações dos estudantes.",
+      scope: "Curadoria",
+    },
+    cobertura: {
+      eyebrow: "Cobertura curricular",
+      title: "Distribuição do banco por competência e descritor",
+      description: "Acompanhe a quantidade de itens por competência, descritor, status e componente curricular.",
+      scope: "Cobertura",
+    },
+    inventario: {
+      eyebrow: "Inventário técnico",
+      title: "Consulta estruturada do banco de questões",
+      description: "Veja código, descritor, competência, componente, gabarito, dificuldade e situação de cada item.",
+      scope: "Inventário",
+    },
+    analise: {
+      eyebrow: "Análise clássica de itens",
+      title: "Índice de acerto, discriminação e distratores",
+      description: "Estatística empírica por questão a partir das respostas reais já registradas — preparação para calibração TRI.",
+      scope: "Análise",
+    },
+  };
+
+  return (
+    <section className="panel">
+      <section className="dashboard-hero page-banner">
+        <div>
+          <p className="eyebrow">Banco de Itens</p>
+          <h2>Questões e curadoria</h2>
+          <p>
+            Cadastre, valide e analise as questões vinculadas aos descritores e competências do curso em trabalho.
+          </p>
+        </div>
+        <div className="dashboard-scope">
+          <span>Base</span>
+          <strong>{questoesDoCurso.length} itens</strong>
+        </div>
+      </section>
+      <div className="toolbar">
+        <label>
+          Curso em trabalho
+          <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionadoQuestao(event.target.value)}>
+            {cursosCadastro.map((curso) => (
+              <option key={curso} value={curso}>{curso}</option>
+            ))}
+          </select>
+        </label>
+        <div className="status-chip course-chip">
+          {cursoAtual ? `${cursoAtual.codigo} · ${cursoAtual.eixo}` : "Curso não oficial"}
+        </div>
+      </div>
+
       <section className="subpanel wide">
         <section className="dashboard-hero subtab-banner">
           <div>
@@ -4382,7 +4614,7 @@ function ItemBank({
         <div className="course-context-panel">
           <label>
             Curso técnico da questão
-            <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionado(event.target.value)}>
+            <select value={cursoSelecionado} onChange={(event) => trocarCursoSelecionadoQuestao(event.target.value)}>
               {cursosCadastro.map((curso) => (
                 <option key={curso} value={curso}>{curso}</option>
               ))}
@@ -4819,7 +5051,6 @@ function ItemBank({
         )}
 
       </section>
-      )}
 
       {questaoEmLeitura && (
         <div className="modal-backdrop" role="presentation" onClick={fecharEdicaoQuestao}>
@@ -4943,6 +5174,65 @@ function ItemBank({
                   />
                 </label>
               </div>
+
+              {supabaseConfigured && (
+                <div className="ai-review-panel">
+                  <button
+                    className="secondary small"
+                    type="button"
+                    onClick={solicitarRevisaoIa}
+                    disabled={questaoTravada || carregandoIa}
+                  >
+                    {carregandoIa ? "Consultando IA..." : "Revisar linguagem com IA"}
+                  </button>
+                  <p className="helper">
+                    A IA só sugere melhorias de clareza/gramática — nunca muda o gabarito nem salva nada sozinha.
+                    Revise e clique em "Aplicar sugestão" para trazer o texto para o formulário.
+                  </p>
+
+                  {sugestaoIa && (
+                    <div className="ai-suggestion-box">
+                      {comentarioIa && <p className="ai-suggestion-comment">{comentarioIa}</p>}
+                      <div className="ai-suggestion-diff">
+                        <div>
+                          <strong>Enunciado (sugestão)</strong>
+                          <p>{sugestaoIa.enunciado}</p>
+                        </div>
+                        <div>
+                          <strong>Alternativa A</strong>
+                          <p>{sugestaoIa.alternativa_a}</p>
+                        </div>
+                        <div>
+                          <strong>Alternativa B</strong>
+                          <p>{sugestaoIa.alternativa_b}</p>
+                        </div>
+                        <div>
+                          <strong>Alternativa C</strong>
+                          <p>{sugestaoIa.alternativa_c}</p>
+                        </div>
+                        <div>
+                          <strong>Alternativa D</strong>
+                          <p>{sugestaoIa.alternativa_d}</p>
+                        </div>
+                        <div>
+                          <strong>Alternativa E</strong>
+                          <p>{sugestaoIa.alternativa_e}</p>
+                        </div>
+                        {sugestaoIa.justificativa && (
+                          <div>
+                            <strong>Justificativa (sugestão)</strong>
+                            <p>{sugestaoIa.justificativa}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="modal-actions">
+                        <button className="secondary" type="button" onClick={descartarSugestaoIa}>Descartar</button>
+                        <button className="primary" type="button" onClick={aplicarSugestaoIa}>Aplicar sugestão ao formulário</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="modal-section">
